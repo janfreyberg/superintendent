@@ -4,7 +4,7 @@ from setuptools import setup
 from codecs import open
 from os import path
 
-blurb = 'A package that provides ipywidgets for standard neuroimaging plotting'
+blurb = ''
 if path.isfile('README.md'):
     readme = open('README.md', 'r').read()
 else:
@@ -13,7 +13,7 @@ else:
 version = '0.0.1'
 
 setup(
-    name='niwidgets',
+    name='superintendent',
     version=version,
     description=blurb,
     long_description=readme,
