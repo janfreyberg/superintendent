@@ -1,5 +1,8 @@
 """Tools to supervise your classification."""
 
+from . import iterator_functions
+from . import display_functions
+
 import pandas as pd
 import numpy as np
 import IPython.display
@@ -59,16 +62,20 @@ class SemiSupervisor():
         self.progressbar = widgets.IntProgress(min=0, max=10, value=0,
                                                description='Progress:')
         # set default display function
-        self._display_func = (display_func if display_func
-                              else self._default_display_func)
+        self._display_func = (
+            display_func if display_func
+            else display_functions._default_display_func
+        )
         # set default iterator
         if isinstance(features, pd.DataFrame):
-            self._data_iterator = self._iterate_over_df
+            self._data_iterator = iterator_functions._iterate_over_df
         elif isinstance(features, pd.Series):
-            self._data_iterator = self._iterate_over_series
+            self._data_iterator = iterator_functions._iterate_over_series
         else:
-            self._data_iterator = (data_iterator if data_iterator
-                                   else self._default_data_iterator)
+            self._data_iterator = (
+                data_iterator if data_iterator
+                else iterator_functions._default_data_iterator
+            )
 
     @classmethod
     def from_dataframe(cls, *args, **kwargs):
@@ -79,35 +86,37 @@ class SemiSupervisor():
             raise ValueError('When using from_dataframe, input features '
                              'needs to be a dataframe.')
         # set the default display func for this method
-        kwargs['display_func'] = kwargs.get('display_func',
-                                            cls._default_display_func)
-        kwargs['data_iterator'] = kwargs.get('data_iterator',
-                                             cls._iterate_over_df)
+        kwargs['display_func'] = kwargs.get(
+            'display_func', display_functions._default_display_func
+        )
+        kwargs['data_iterator'] = kwargs.get(
+            'data_iterator', iterator_functions._iterate_over_df
+        )
         instance = cls(*args, **kwargs)
 
-        instance._data_iterator = instance._iterate_over_df
         return instance
 
     @classmethod
     def from_images(cls, *args, image_size=None, **kwargs):
-        if not isinstance(args[1], np.ndarray):
+        if not isinstance(args[0], np.ndarray):
             raise ValueError('When using from_images, input features '
                              'needs to be a numpy array.')
         if image_size is None:
             # check if image is square
-            if (int(np.sqrt(args[1].shape[1]))**2 == args[1].shape[1]):
-                image_size = (np.sqrt(args[1].shape[1]),
-                              np.sqrt(args[1].shape[1]))
+            if (int(np.sqrt(args[0].shape[1]))**2 == args[0].shape[1]):
+                image_size = 'square'
             else:
                 raise ValueError('If image_size is None, the image needs to '
                                  f'be square, but yours has '
-                                 f'{args[1].shape[1]} pixels.')
+                                 f'{args[0].shape[1]} pixels.')
         # set the default display func for this method
         kwargs['display_func'] = kwargs.get(
-            'display_func', partial(cls._image_display_func, imsize=image_size)
+            'display_func', partial(display_functions._image_display_func,
+                                    imsize=image_size)
         )
-        kwargs['data_iterator'] = kwargs.get('data_iterator',
-                                             cls._iterate_over_df)
+        kwargs['data_iterator'] = kwargs.get(
+            'data_iterator', iterator_functions._iterate_over_ndarray
+        )
         instance = cls(*args, **kwargs)
         return instance
 
@@ -212,36 +221,6 @@ class SemiSupervisor():
         self.new_labels = self._new_labels
         self._render_finished()
         yield
-
-    # data iterators ----------------------------------------------------------
-    def _default_data_iterator(self, data, shuffle=True):
-        index = (np.random.permutation(len(data)) if shuffle
-                 else np.arange(len(data)))
-        for idx in index:
-            yield idx, data[idx]
-
-    def _iterate_over_df(self, df, shuffle=True):
-        index = df.index.tolist()
-        if shuffle:
-            np.random.shuffle(index)
-        for idx in index:
-            yield idx, df.loc[[idx]]
-
-    def _iterate_over_series(self, series, shuffle=True):
-        if shuffle:
-            yield from series.sample(frac=1).items()
-        else:
-            yield from series.items()
-
-    # display functions -------------------------------------------------------
-    def _default_display_func(self, feature):
-        IPython.display.display(feature)
-
-    def _image_display_func(self, feature, imsize=None):
-        if imsize == 'square':
-            feature.reshape((np.sqrt(feature.size)))
-        plt.imshow(feature)
-        plt.show()
 
     def _apply_annotation(self, sender):
         # TODO: add some checks for returned value here
