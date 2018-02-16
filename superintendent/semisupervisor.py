@@ -2,7 +2,7 @@
 
 import pandas as pd
 import numpy as np
-from IPython.display import display, clear_output
+import IPython.display
 import ipywidgets as widgets
 import traitlets
 import time
@@ -19,7 +19,7 @@ class SemiSupervisor():
     around without an adult in the room.
     """
 
-    def __init__(self, classifier, features, labels,
+    def __init__(self, features, labels, classifier=None,
                  visualisation=None,
                  display_func=None, data_iterator=None):
         # classifier, features, labels, confidence=None):
@@ -48,17 +48,27 @@ class SemiSupervisor():
         self.labels = self._valid_data(labels)
         self._new_labels = np.zeros_like(self.labels)
         self.visualisation = self._valid_visualisation(visualisation)
-        # self.label_options_ = np.unique(labels)
-        # self.confidence = confidence
-        self.retrain_button = widgets.Button(description='Retrain',
-                                             icon='refresh')
-        self.retrain_button.on_click(self.reclassify)
+
+        if classifier is not None:
+            self.retrain_button = widgets.Button(description='Retrain',
+                                                 icon='refresh')
+            self.retrain_button.on_click(self.reclassify)
+        else:
+            self.retrain_button = widgets.HBox([])
+
         self.progressbar = widgets.IntProgress(min=0, max=10, value=0,
                                                description='Progress:')
+        # set default display function
         self._display_func = (display_func if display_func
                               else self._default_display_func)
-        self._data_iterator = (data_iterator if data_iterator
-                               else self._default_data_iterator)
+        # set default iterator
+        if isinstance(features, pd.DataFrame):
+            self._data_iterator = self._iterate_over_df
+        elif isinstance(features, pd.Series):
+            self._data_iterator = self._iterate_over_series
+        else:
+            self._data_iterator = (data_iterator if data_iterator
+                                   else self._default_data_iterator)
 
     @classmethod
     def from_dataframe(cls, *args, **kwargs):
@@ -72,10 +82,10 @@ class SemiSupervisor():
         kwargs['display_func'] = kwargs.get('display_func',
                                             cls._default_display_func)
         kwargs['data_iterator'] = kwargs.get('data_iterator',
-                                             cls._iterate_over_pandas)
+                                             cls._iterate_over_df)
         instance = cls(*args, **kwargs)
 
-        instance._data_iterator = instance._iterate_over_pandas
+        instance._data_iterator = instance._iterate_over_df
         return instance
 
     @classmethod
@@ -97,21 +107,21 @@ class SemiSupervisor():
             'display_func', partial(cls._image_display_func, imsize=image_size)
         )
         kwargs['data_iterator'] = kwargs.get('data_iterator',
-                                             cls._iterate_over_pandas)
+                                             cls._iterate_over_df)
         instance = cls(*args, **kwargs)
         return instance
 
     def _valid_classifier(self, classifier):
-        if not (hasattr(classifier, 'fit')
-                and hasattr(classifier, 'predict')):
+        if classifier is not None and not (hasattr(classifier, 'fit') and
+                                           hasattr(classifier, 'predict')):
             raise ValueError('The classifier needs to conform to '
                              'the sklearn interface (fit/predict).')
         return classifier
 
     def _valid_data(self, features):
-        if not isinstance(features, (pd.DataFrame, np.ndarray)):
+        if not isinstance(features, (pd.DataFrame, pd.Series, np.ndarray)):
             raise ValueError('The features need to be an array or '
-                             'a dataframe.')
+                             'a pandas dataframe / sequence.')
         return features
 
     def _valid_visualisation(self, visualisation):
@@ -125,85 +135,113 @@ class SemiSupervisor():
         """
         Re-classify labels.
         """
-        clear_output()
-        display(widgets.HTML(
+        IPython.display.clear_output()
+        IPython.display.display(widgets.HTML(
             '<h1>Retraining... '
             '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i>'
         ))
         time.sleep(2)
-        clear_output()
+        IPython.display.clear_output()
         for feature in self.features:
             pass
 
-    def annotate(self, unlabelled=None, options=None, shuffle=True):
+    def annotate(self, relabel=None, options=None, shuffle=True):
         """
         Provide labels for items that don't have any labels.
 
         Parameters
         ----------
 
-        unlabelled : np.array | pd.Series
-            The labels that aren't classified yet. If None, all data is shown.
-        """
-        if unlabelled is None:
-            unlabelled = np.full(self.labels.shape, True)
-        # else:
-        #     unlabelled = np.array(self.labels).astype(bool)
-        self._new_labels = self.labels.copy()
+        relabel : np.array | pd.Series | list
+            A boolean array-like that is true for each label you would like to
+            re-label. Only one other special case is implemented - if you pass
+            a single value, all data with that label will be re-labelled.
 
-        if not any(unlabelled):
-            raise ValueError("unlabelled should be a boolean array.")
+        options : np.array | pd.Series | list
+            the options for re-labelling. If None, all unique values in options
+            is offered.
+
+        shuffle : bool
+            Whether to randomise the order of relabelling (default True)
+        """
+        if relabel is None:
+            relabel = np.full(self.labels.shape, True)
+        else:
+            relabel = np.array(relabel)
+        # check that the relabel shape matches the data shape
+
+        if relabel.size == 1:
+            # special case of relabelling one class
+            relabel = self.labels == relabel
+        elif relabel.size != self.labels.size:
+            raise ValueError("The size of the relabel array has to match "
+                             "the size of the labels passed on creation.")
+
+        self._new_labels = self.labels.copy()
+        self._new_labels[:] = np.nan
+
+        if not any(relabel):
+            raise ValueError("relabel should be a boolean array.")
 
         if options is None:
             options = np.unique(self.labels)
 
         self._current_annotation_iterator = self._annotation_iterator(
-            unlabelled, options
+            relabel, options
         )
         # reset the progress bar
-        self.progressbar.max = unlabelled.sum()
+        self.progressbar.max = relabel.sum()
         self.progressbar.value = 0
 
         # start the iteration cycle
         next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, unlabelled, options):
+    def _annotation_iterator(self, relabel, options):
         for i, row in self._data_iterator(self.features, shuffle=True):
-            if unlabelled[i]:
+            if relabel[i]:
                 self._render_annotator(row, options)
                 yield  # allow the user to give input
                 self.progressbar.value += 1  # update progressbar
                 # wait for the new value
-                self._new_labels[i] = yield
-        # if the loop is over, display a "no more unlabelled options" widget
-        clear_output()
+                if isinstance(self._new_labels, (pd.Series, pd.DataFrame)):
+                    self._new_labels.loc[i] = yield
+                else:
+                    self._new_labels[i] = yield
+        # if the loop is over, display a "no more relabel options" widget
+        IPython.display.clear_output()
         self.new_labels = self._new_labels
         self._render_finished()
         yield
 
+    # data iterators ----------------------------------------------------------
     def _default_data_iterator(self, data, shuffle=True):
-        idx = range(len(data))
-        if shuffle:
-            idx = range(len(data))
-            order = np.random.shuffle(idx)
-        for id in idx:
-            yield data[order]
-        yield from zip(idx, data[order])
+        index = (np.random.permutation(len(data)) if shuffle
+                 else np.arange(len(data)))
+        for idx in index:
+            yield idx, data[idx]
 
-    def _default_display_func(self, unit):
-        display(unit)
+    def _iterate_over_df(self, df, shuffle=True):
+        index = df.index.tolist()
+        if shuffle:
+            np.random.shuffle(index)
+        for idx in index:
+            yield idx, df.loc[[idx]]
+
+    def _iterate_over_series(self, series, shuffle=True):
+        if shuffle:
+            yield from series.sample(frac=1).items()
+        else:
+            yield from series.items()
+
+    # display functions -------------------------------------------------------
+    def _default_display_func(self, feature):
+        IPython.display.display(feature)
 
     def _image_display_func(self, feature, imsize=None):
         if imsize == 'square':
             feature.reshape((np.sqrt(feature.size)))
         plt.imshow(feature)
         plt.show()
-
-    def _iterate_over_pandas(self, df, shuffle=True):
-        if shuffle:
-            df = df.sample(frac=1)
-        for index, row in df.iterrows():
-            yield index, row.to_frame(name=index).T
 
     def _apply_annotation(self, sender):
         # TODO: add some checks for returned value here
@@ -222,7 +260,7 @@ class SemiSupervisor():
         # print(feature)
         with feature_display:
             # display(feature)
-            self._display_func(self, feature)
+            self._display_func(feature)
 
         # make the options widget
         if len(options) <= 5:
@@ -259,8 +297,8 @@ class SemiSupervisor():
             )),
             widgets.HBox(options_widgets), widgets.HBox(other_widget)
         ])
-        clear_output()
-        display(layout)
+        IPython.display.clear_output()
+        IPython.display.display(layout)
 
     def _render_finished(self):
         self.progressbar.bar_style = 'success'
@@ -273,4 +311,4 @@ class SemiSupervisor():
                     justify_content='center',)
             )
         ])
-        display(widget)
+        IPython.display.display(widget)
