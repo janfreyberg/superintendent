@@ -16,7 +16,7 @@ plt.ion()
 
 class SemiSupervisor():
     """
-    Semi-supervise your data.
+    Semi-supervise your learning.
 
     When full supervision isn't necessary but you don't want your data to run
     around without an adult in the room.
@@ -242,7 +242,7 @@ class SemiSupervisor():
             self._display_func(feature)
 
         # make the options widget
-        if len(options) <= 5:
+        if len(options) <= 12:
             options_widgets = [widgets.Button(description=str(option))
                                for option in options]
         else:
