@@ -215,7 +215,13 @@ class SemiSupervisor():
                 if isinstance(self._new_labels, (pd.Series, pd.DataFrame)):
                     self._new_labels.loc[i] = yield
                 else:
-                    self._new_labels[i] = yield
+                    new_val = yield
+                    try:
+                        self._new_labels[i] = new_val
+                    except ValueError:
+                        # catching assignment of string to number array
+                        self._new_labels = self._new_labels.astype(np.object)
+                        self._new_labels[i] = new_val
         # if the loop is over, display a "no more relabel options" widget
         IPython.display.clear_output()
         self.new_labels = self._new_labels
