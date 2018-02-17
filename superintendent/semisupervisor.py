@@ -54,32 +54,22 @@ class SemiSupervisor():
         self.classifier = self._valid_classifier(classifier)
         self.features = self._valid_data(features)
         self.labels = self._valid_data(labels)
-        self._new_labels = np.zeros_like(self.labels)
-        self.visualisation = self._valid_visualisation(visualisation)
-
-        if classifier is not None:
-            self.retrain_button = widgets.Button(description='Retrain',
-                                                 icon='refresh')
-            self.retrain_button.on_click(self.reclassify)
-        else:
-            self.retrain_button = widgets.HBox([])
 
         self.progressbar = widgets.IntProgress(min=0, max=10, value=0,
                                                description='Progress:')
-        # set default display function
-        self._display_func = (
-            display_func if display_func
-            else display_functions._default_display_func
-        )
-        # set default iterator
-        if isinstance(features, pd.DataFrame):
+
+        self._display_func = (display_func if display_func is not None
+                              else display_functions._default_display_func)
+
+        if data_iterator is not None:
+            self._data_iterator = data_iterator
+        elif isinstance(features, pd.DataFrame):
             self._data_iterator = iterator_functions._iterate_over_df
         elif isinstance(features, pd.Series):
             self._data_iterator = iterator_functions._iterate_over_series
         else:
-            self._data_iterator = (
-                data_iterator if data_iterator
-                else iterator_functions._default_data_iterator
+            self._data_iterator = iterator_functions._default_data_iterator
+
         if keyboard_shortcuts:
             self.event_manager = ipyevents.events.Event(
                 source=self.layout, watched_events=['keydown']
@@ -275,11 +265,8 @@ class SemiSupervisor():
 
     def _render_annotator(self, feature, options, other_option=True,
                           finished=False):
-        # display the feature
         feature_display = widgets.Output()
-        # print(feature)
         with feature_display:
-            # display(feature)
             self._display_func(feature)
 
         # make the options widget
@@ -287,13 +274,12 @@ class SemiSupervisor():
             options_widgets = [widgets.Button(description=str(option))
                                for option in options]
         else:
-            options_widgets = [widgets.Dropdown(options=[str(option) for option
-                                                         in options],
-                                                description='Label:'),
-                               widgets.Button(description='submit',
-                                              tooltip='Submit label.',
-                                              button_style='success')]
-            # link the dropdown to the button
+            options_widgets = [
+                widgets.Dropdown(options=[str(option) for option in options],
+                                 description='Label:'),
+                widgets.Button(description='submit', tooltip='Submit label.',
+                               button_style='success')
+            ]
             traitlets.link((options_widgets[0], 'value'),
                            (options_widgets[1], 'description'))
         # configure the submission method
