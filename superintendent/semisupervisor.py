@@ -5,9 +5,13 @@ from . import display_functions
 
 import pandas as pd
 import numpy as np
+
 import IPython.display
 import ipywidgets as widgets
 import traitlets
+
+import ipyevents
+
 import time
 from functools import partial
 from matplotlib import pyplot as plt
@@ -23,9 +27,8 @@ class SemiSupervisor():
     """
 
     def __init__(self, features, labels, classifier=None,
-                 visualisation=None,
-                 display_func=None, data_iterator=None):
-        # classifier, features, labels, confidence=None):
+                 display_func=None, data_iterator=None,
+                 keyboard_shortcuts=True):
         """
         Make a class that allows semi-supervision.
 
@@ -46,6 +49,8 @@ class SemiSupervisor():
         confidence : np.array | pd.Series | pd.DataFrame
             optionally, provide the confidence for your labels.
         """
+        self.layout = widgets.VBox([])
+
         self.classifier = self._valid_classifier(classifier)
         self.features = self._valid_data(features)
         self.labels = self._valid_data(labels)
@@ -75,7 +80,13 @@ class SemiSupervisor():
             self._data_iterator = (
                 data_iterator if data_iterator
                 else iterator_functions._default_data_iterator
+        if keyboard_shortcuts:
+            self.event_manager = ipyevents.events.Event(
+                source=self.layout, watched_events=['keydown']
             )
+            self.event_manager.on_dom_event(self._onkeydown)
+        else:
+            self.event_manager = None
 
     @classmethod
     def from_dataframe(cls, *args, **kwargs):
@@ -123,8 +134,15 @@ class SemiSupervisor():
     def _valid_classifier(self, classifier):
         if classifier is not None and not (hasattr(classifier, 'fit') and
                                            hasattr(classifier, 'predict')):
+
+            self.retrain_button = widgets.Button(description='Retrain',
+                                                 icon='refresh')
+            self.retrain_button.on_click(self.reclassify)
+
             raise ValueError('The classifier needs to conform to '
                              'the sklearn interface (fit/predict).')
+        else:
+            self.retrain_button = widgets.HBox([])
         return classifier
 
     def _valid_data(self, features):
@@ -154,7 +172,8 @@ class SemiSupervisor():
         for feature in self.features:
             pass
 
-    def annotate(self, relabel=None, options=None, shuffle=True):
+    def annotate(self, relabel=None, options=None, shuffle=True,
+                 shortcuts=None):
         """
         Provide labels for items that don't have any labels.
 
@@ -195,6 +214,13 @@ class SemiSupervisor():
         if options is None:
             options = np.unique(self.labels)
 
+        if self.event_manager is not None:
+            if shortcuts is None:
+                shortcuts = [str(a + 1) for a in range(len(options))]
+            self._key_option_mapping = {
+                key: option for key, option in zip(shortcuts, options)
+            }
+
         self._current_annotation_iterator = self._annotation_iterator(
             relabel, options
         )
@@ -234,9 +260,18 @@ class SemiSupervisor():
             value = sender.description
         elif isinstance(sender, widgets.Text):
             value = sender.value
+        else:
+            value = sender
         # send the value back into the iterator
         next(self._current_annotation_iterator)
         self._current_annotation_iterator.send(value)
+
+    def _onkeydown(self, event):
+        if event['type'] == 'keydown':
+            pressed_option = self._key_option_mapping.get(event.get('key'),
+                                                          None)
+            if pressed_option is not None:
+                self._apply_annotation(pressed_option)
 
     def _render_annotator(self, feature, options, other_option=True,
                           finished=False):
@@ -273,7 +308,7 @@ class SemiSupervisor():
         else:
             other_widget = []
 
-        layout = widgets.VBox([
+        self.layout.children = [
             widgets.HBox([self.retrain_button, self.progressbar]),
             widgets.Box([feature_display],
                         layout=widgets.Layout(
@@ -281,19 +316,20 @@ class SemiSupervisor():
                             justify_content='center',
             )),
             widgets.HBox(options_widgets), widgets.HBox(other_widget)
-        ])
+        ]
         IPython.display.clear_output()
-        IPython.display.display(layout)
+        IPython.display.display(self.layout)
 
     def _render_finished(self):
         self.progressbar.bar_style = 'success'
-        widget = widgets.VBox([
+        self.layout.children = [
             widgets.HBox([self.retrain_button, self.progressbar]),
             widgets.Box(
-                [widgets.HTML(u'<h1>Finished labelling 🎉')],
+                [widgets.HTML(u'<h1>Finished labelling 🎉!')],
                 layout=widgets.Layout(
                     display='flex', width='100%', padding='5% 0',
-                    justify_content='center',)
+                    justify_content='center'
+                )
             )
-        ])
-        IPython.display.display(widget)
+        ]
+        IPython.display.display(self.layout)
