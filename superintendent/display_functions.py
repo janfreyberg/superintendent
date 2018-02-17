@@ -13,4 +13,5 @@ def _image_display_func(feature, imsize=None):
     if imsize == 'square':
         feature = feature.reshape(2 * [int(np.sqrt(feature.size))])
     plt.imshow(feature, cmap='binary')
+    plt.axis('off')
     plt.show()
