@@ -212,7 +212,7 @@ class SemiSupervisor():
             }
 
         self._current_annotation_iterator = self._annotation_iterator(
-            relabel, options
+            relabel, options, shuffle=shuffle
         )
         # reset the progress bar
         self.progressbar.max = relabel.sum()
@@ -221,8 +221,8 @@ class SemiSupervisor():
         # start the iteration cycle
         next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, relabel, options):
-        for i, row in self._data_iterator(self.features, shuffle=True):
+    def _annotation_iterator(self, relabel, options, shuffle=True):
+        for i, row in self._data_iterator(self.features, shuffle=shuffle):
             if relabel[i]:
                 self._render_annotator(row, options)
                 yield  # allow the user to give input
