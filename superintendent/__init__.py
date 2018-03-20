@@ -1,1 +1,1 @@
-from .semisupervisor import SemiSupervisor
+from .semisupervisor import SemiSupervisor  # noqa
