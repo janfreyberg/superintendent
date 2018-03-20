@@ -17,15 +17,16 @@ setup(
     version=version,
     description=blurb,
     long_description=readme,
-    url='https://github.com/janfreyberg/sueprintendent',
-    download_url='https://github.com/janfreyberg/sueprintendent/' +
+    url='https://github.com/janfreyberg/superintendent',
+    download_url='https://github.com/janfreyberg/superintendent/' +
         version + '.tar.gz',
     # Author details
     author='Jan Freyberg',
     author_email='jan.freyberg@gmail.com',
     packages=['superintendent'],
     keywords=['widgets', 'labelling', 'annotation'],
-    install_requires=['ipywidgets']
+    install_requires=['ipywidgets', 'ipyevents', 'numpy',
+                      'pandas', 'matplotlib']
     # Include the template file
     # package_data={
     #     '': ['data/*nii*',
