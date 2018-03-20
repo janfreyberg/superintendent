@@ -14,6 +14,13 @@ It's very much in early early alpha, so don't expect it to work! But if you want
 pip install superintendent
 ```
 
+If you want to also use the keyboard shortcuts for labelling faster, you will also have to enable the 
+ipyevents jupyter extension:
+
+```
+jupyter nbextension enable --py --sys-prefix ipyevents
+```
+
 ### Usage
 
 ```python
