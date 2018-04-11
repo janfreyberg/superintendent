@@ -6,16 +6,14 @@ want to semi-supervise your machine learning?
 
 This package is designed to provide a `ipywidget`-based interactive labelling tool for your data.
 
-It's very much in early early alpha, so don't expect it to work! But if you want to have a go, here's how you would do it:
-
 ### Installation
 
 ```
 pip install superintendent
 ```
 
-If you want to also use the keyboard shortcuts for labelling faster, you will also have to enable the 
-ipyevents jupyter extension:
+If you want to also use the keyboard shortcuts for labelling faster, you will
+also have to enable the ipyevents jupyter extension:
 
 ```
 jupyter nbextension enable --py --sys-prefix ipyevents
@@ -41,9 +39,8 @@ print(example_df)
 5     I love the anger.         -1
 ```
 
-This is a small & silly example dataframe, but as you can see, the labels
-aren't right (e.g. `Get out.` is labelled positive). So let's create some new
-labels.
+This is a small & silly example dataframe, but as you can see, the labels aren't
+right (e.g. `Get out.` is labelled positive). So let's create some new labels.
 
 ```python
 widget = SemiSupervisor(example_df[['sentence']], example_df[['sentiment']])
@@ -69,3 +66,8 @@ print(widget.new_labels)
 4        -1
 5         1
 ```
+
+### Making labelling more efficient
+
+`superintendent` uses `ipyevents` to capture keystrokes while you are hovering
+your mouse over the widget. This means you can use
