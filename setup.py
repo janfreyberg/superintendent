@@ -2,15 +2,21 @@
 from setuptools import setup
 # To use a consistent encoding
 from codecs import open
-from os import path
+import os.path
+
+here = os.path.dirname(os.path.abspath(__file__))
+
+version_ns = {}
+with open(os.path.join(here, 'superintendent', 'version.py')) as f:
+    exec(f.read(), {}, version_ns)
+
+version = version_ns['version']
 
 blurb = ''
-if path.isfile('README.md'):
+if os.path.isfile('README.md'):
     readme = open('README.md', 'r').read()
 else:
     readme = blurb
-
-version = '0.0.1'
 
 setup(
     name='superintendent',
@@ -19,7 +25,7 @@ setup(
     long_description=readme,
     url='https://github.com/janfreyberg/superintendent',
     download_url='https://github.com/janfreyberg/superintendent/' +
-        version + '.tar.gz',
+        version_ns['version'] + '.tar.gz',
     # Author details
     author='Jan Freyberg',
     author_email='jan.freyberg@gmail.com',
