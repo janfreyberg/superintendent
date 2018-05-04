@@ -33,10 +33,4 @@ setup(
     keywords=['widgets', 'labelling', 'annotation'],
     install_requires=['ipywidgets', 'ipyevents', 'numpy',
                       'pandas', 'matplotlib']
-    # Include the template file
-    # package_data={
-    #     '': ['data/*nii*',
-    #          'data/examples_surfaces/lh.*',
-    #          'data/examples_surfaces/*.ctab']
-    # },
 )
