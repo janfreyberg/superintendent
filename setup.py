@@ -12,7 +12,7 @@ with open(os.path.join(here, 'superintendent', 'version.py')) as f:
 
 version = version_ns['version']
 
-blurb = ''
+blurb = 'Interactive machine learning supervision.'
 if os.path.isfile('README.md'):
     readme = open('README.md', 'r').read()
 else:
@@ -23,12 +23,13 @@ setup(
     version=version,
     description=blurb,
     long_description=readme,
+    long_description_content_type='text/markdown',
     url='https://github.com/janfreyberg/superintendent',
     download_url='https://github.com/janfreyberg/superintendent/' +
         version_ns['version'] + '.tar.gz',
     # Author details
     author='Jan Freyberg',
-    author_email='jan.freyberg@gmail.com',
+    author_email='jan@asidatascience.com',
     packages=['superintendent'],
     keywords=['widgets', 'labelling', 'annotation'],
     install_requires=['ipywidgets', 'ipyevents', 'numpy',
