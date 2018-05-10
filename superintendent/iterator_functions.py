@@ -1,6 +1,6 @@
 """Helper functions for iterating over different types of data."""
 
-# import pandas as pd
+import pandas as pd
 import numpy as np
 import itertools
 import operator
@@ -19,30 +19,22 @@ def grouper(n, iterable):
             yield chunk
 
 
-def _default_data_iterator(data, shuffle=True, chunk_size=1):
-    index = (np.random.permutation(len(data)) if shuffle
-             else np.arange(len(data)))
-    for idxs in grouper(chunk_size, index):
-        yield idxs, [operator.itemgetter(idx)(data) for idx in idxs]
-
-
-def _iterate_over_df(df, shuffle=True, chunk_size=1):
-    index = df.index.tolist()
+def get_index(data, shuffle=True):
+    index = list(range(len(data)))
     if shuffle:
         np.random.shuffle(index)
-    for idxs in grouper(chunk_size, index):
-        yield idxs, df.loc[list(idxs)]
+    return index
 
 
-def _iterate_over_series(series, shuffle=True, chunk_size=1):
-    index = (series.sample(frac=1).index if shuffle
-             else series.index)
-    for idxs in grouper(chunk_size, index):
-        yield idxs, series[list(idxs)]
+def get_values(data, idxs):
+    if isinstance(data, np.ndarray):
+        return data[list(idxs), ...]
+    elif isinstance(data, (pd.Series, pd.DataFrame)):
+        return data.iloc[list(idxs)]
+    else:
+        return [operator.itemgetter(idx)(data) for idx in idxs]
 
 
-def _iterate_over_ndarray(array, shuffle=True, chunk_size=1):
-    index = (np.random.permutation(array.shape[0]) if shuffle
-             else np.arange(array.shape[0]))
-    for idx in grouper(chunk_size, index):
-        yield idx, array[list(idx), ...]
+def iterate(data, shuffle=True, chunk_size=1):
+    for idxs in grouper(chunk_size, get_index(data, shuffle=shuffle)):
+        yield idxs, get_values(data, idxs)
