@@ -1,0 +1,8 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+script:
+  - pip install flake8
+  - flake8 niwidgets
+  - python setup.py test

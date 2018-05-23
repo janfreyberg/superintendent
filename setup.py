@@ -33,5 +33,7 @@ setup(
     packages=['superintendent'],
     keywords=['widgets', 'labelling', 'annotation'],
     install_requires=['ipywidgets', 'ipyevents', 'numpy',
-                      'pandas', 'matplotlib']
+                      'pandas', 'matplotlib'],
+    tests_require=['pytest'],
+    setup_requires=['pytest-runner']
 )

@@ -6,8 +6,8 @@ import itertools
 import operator
 
 
-def grouper(n, iterable):
-    iterator = iter(iterable)
+def stratified_grouper(n, iterable, include):
+    iterator = itertools.compress(iterable, include)
     if n == 1:
         for item in iterator:
             yield (item,)
@@ -35,6 +35,10 @@ def get_values(data, idxs):
         return [operator.itemgetter(idx)(data) for idx in idxs]
 
 
-def iterate(data, shuffle=True, chunk_size=1):
-    for idxs in grouper(chunk_size, get_index(data, shuffle=shuffle)):
+def iterate(data, shuffle=True, chunk_size=1, include=None):
+    if include is None:
+        include = np.ones(len(data), dtype=bool)
+    for idxs in stratified_grouper(chunk_size,
+                                   get_index(data, shuffle=shuffle),
+                                   include):
         yield idxs, get_values(data, idxs)

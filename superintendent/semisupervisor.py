@@ -70,12 +70,8 @@ class SemiSupervisor():
 
         if data_iterator is not None:
             self._data_iterator = data_iterator
-        elif isinstance(features, pd.DataFrame):
-            self._data_iterator = iterator_functions._iterate_over_df
-        elif isinstance(features, pd.Series):
-            self._data_iterator = iterator_functions._iterate_over_series
         else:
-            self._data_iterator = iterator_functions._default_data_iterator
+            self._data_iterator = iterator_functions.iterate
 
         if keyboard_shortcuts:
             self.event_manager = ipyevents.events.Event(
@@ -98,7 +94,7 @@ class SemiSupervisor():
             'display_func', display_functions._default_display_func
         )
         kwargs['data_iterator'] = kwargs.get(
-            'data_iterator', iterator_functions._iterate_over_df
+            'data_iterator', iterator_functions.iterate
         )
         instance = cls(*args, **kwargs)
 
@@ -115,15 +111,16 @@ class SemiSupervisor():
                 image_size = 'square'
             else:
                 raise ValueError('If image_size is None, the image needs to '
-                                 f'be square, but yours has '
-                                 f'{args[0].shape[1]} pixels.')
+                                 + 'be square, but yours has '
+                                 + str(args[0].shape[1])
+                                 + ' pixels.')
         # set the default display func for this method
         kwargs['display_func'] = kwargs.get(
             'display_func', partial(display_functions._image_display_func,
                                     imsize=image_size)
         )
         kwargs['data_iterator'] = kwargs.get(
-            'data_iterator', iterator_functions._iterate_over_ndarray
+            'data_iterator', iterator_functions.iterate
         )
         instance = cls(*args, **kwargs)
         return instance
