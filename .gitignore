@@ -4,3 +4,4 @@
 dist
 test.ipynb
 .pytest_cache
+**/*.ipynb
