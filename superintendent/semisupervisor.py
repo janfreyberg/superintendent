@@ -1,21 +1,19 @@
 """Tools to supervise your classification."""
 
-from . import iterator_functions
-from . import display_functions
-from . import validation
-
-import pandas as pd
-import numpy as np
+import time
+from functools import partial
 
 import IPython.display
 import ipywidgets as widgets
+import numpy as np
+import pandas as pd
 import traitlets
+from matplotlib import pyplot as plt
 
 import ipyevents
 
-import time
-from functools import partial
-from matplotlib import pyplot as plt
+from . import display_functions, iterator_functions, validation
+
 plt.ion()
 
 

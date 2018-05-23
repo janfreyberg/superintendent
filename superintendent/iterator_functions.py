@@ -1,9 +1,10 @@
 """Helper functions for iterating over different types of data."""
 
-import pandas as pd
-import numpy as np
 import itertools
 import operator
+
+import numpy as np
+import pandas as pd
 
 
 def stratified_grouper(n, iterable, include):

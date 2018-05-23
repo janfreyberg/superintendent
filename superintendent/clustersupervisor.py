@@ -1,19 +1,18 @@
 """Tools to supervise your clustering."""
 
-from . import iterator_functions
-from . import display_functions
-from . import validation
-
-import pandas as pd
-import numpy as np
+from functools import partial
 
 import IPython.display
 import ipywidgets as widgets
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
+from . import display_functions, iterator_functions, validation
+
 # import traitlets
 # import ipyevents
 
-from functools import partial
-from matplotlib import pyplot as plt
 plt.ion()
 
 

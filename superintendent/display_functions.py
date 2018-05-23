@@ -1,11 +1,12 @@
 """Helper functions for displaying types of data."""
 
-from matplotlib import pyplot as plt
+import functools
+import operator
+
+import IPython.display
 import numpy as np
 import pandas as pd
-import IPython.display
-import operator
-import functools
+from matplotlib import pyplot as plt
 
 
 def get_values(data, idxs):
