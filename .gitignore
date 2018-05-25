@@ -6,3 +6,4 @@ test.ipynb
 .pytest_cache
 .eggs
 **/*.pyc
+build
