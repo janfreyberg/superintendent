@@ -1,6 +1,8 @@
 
 # superintendent
 
+[![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
+
 ![](logo.png)
 
 want to semi-supervise your machine learning?
