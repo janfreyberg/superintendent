@@ -1,7 +1,8 @@
 .ipynb_checkpoints
 *egg-info
-*__pycache__
+__pycache__
 dist
 test.ipynb
 .pytest_cache
-**/*.ipynb
+.eggs
+**/*.pyc
