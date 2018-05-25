@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-import superintendent.iterator_functions
+import superintendent.iterating
 import itertools
 
 
@@ -24,7 +24,7 @@ test_parameters = list(itertools.product(data_opts, chunk_sizes, shuffle_opts))
 def test_iteration(data, chunk_size, shuffle):
     datatype = type(data)
     i = 0
-    for idx, val in (superintendent.iterator_functions.iterate(
+    for idx, val in (superintendent.iterating.iterate(
                      data, chunk_size=chunk_size, shuffle=shuffle)):
         # type checks:
         assert isinstance(idx, tuple)
