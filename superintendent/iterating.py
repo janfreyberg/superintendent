@@ -43,3 +43,6 @@ def iterate(data, shuffle=True, chunk_size=1, include=None):
                                    get_index(data, shuffle=shuffle),
                                    include):
         yield idxs, get_values(data, idxs)
+
+
+functions = {'default': iterate}
