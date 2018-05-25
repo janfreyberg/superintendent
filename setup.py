@@ -2,35 +2,38 @@
 from setuptools import setup
 # To use a consistent encoding
 from codecs import open
-from os import path
+import os.path
 
-blurb = ''
-if path.isfile('README.md'):
+here = os.path.dirname(os.path.abspath(__file__))
+
+version_ns = {}
+with open(os.path.join(here, 'superintendent', 'version.py')) as f:
+    exec(f.read(), {}, version_ns)
+
+version = version_ns['version']
+
+blurb = 'Interactive machine learning supervision.'
+if os.path.isfile('README.md'):
     readme = open('README.md', 'r').read()
 else:
     readme = blurb
-
-version = '0.0.1'
 
 setup(
     name='superintendent',
     version=version,
     description=blurb,
     long_description=readme,
+    long_description_content_type='text/markdown',
     url='https://github.com/janfreyberg/superintendent',
     download_url='https://github.com/janfreyberg/superintendent/' +
-        version + '.tar.gz',
+        version_ns['version'] + '.tar.gz',
     # Author details
     author='Jan Freyberg',
-    author_email='jan.freyberg@gmail.com',
+    author_email='jan@asidatascience.com',
     packages=['superintendent'],
     keywords=['widgets', 'labelling', 'annotation'],
     install_requires=['ipywidgets', 'ipyevents', 'numpy',
-                      'pandas', 'matplotlib']
-    # Include the template file
-    # package_data={
-    #     '': ['data/*nii*',
-    #          'data/examples_surfaces/lh.*',
-    #          'data/examples_surfaces/*.ctab']
-    # },
+                      'pandas', 'matplotlib'],
+    tests_require=['pytest'],
+    setup_requires=['pytest-runner']
 )
