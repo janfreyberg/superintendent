@@ -12,10 +12,13 @@ def valid_classifier(classifier):
 
 
 def valid_data(features):
-    if not isinstance(features, (pd.DataFrame, pd.Series, np.ndarray)):
-        raise ValueError('The features need to be an array or '
-                         'a pandas dataframe / sequence.')
-    return features
+    if isinstance(features, (pd.DataFrame, pd.Series, np.ndarray)):
+        return features
+    elif isinstance(features, (list, tuple)):
+        return np.array(features)
+    else:
+        raise ValueError('The features need to be an array, array-like, or '
+                         'a pandas DataFrame / Series.')
 
 
 def valid_visualisation(visualisation):
