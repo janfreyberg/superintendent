@@ -158,3 +158,28 @@ class SemiSupervisor(base.Labeller):
         if self.event_manager is not None:
             self.event_manager.close()
         yield self._render_finished()
+
+    def retrain(self, *args):
+        """Retrain the classifier you passed when creating this widget.
+
+        This calls the fit method of your class with the data that you've
+        labelled. It will also score the classifier and display the
+        performance.
+        """
+        if self.classifier is None:
+            raise ValueError("No classifier to retrain.")
+        labelled = np.nonzero(~np.isnan(self.new_labels))[0]
+        unlabelled = np.nonzero(np.isnan(self.new_labels))[0]
+        X = get_values(self.features, labelled)
+        y = get_values(self.new_labels, labelled)
+        self._render_processing(message="Retraining... ")
+        self.classifier.fit(X, y)
+        try:
+            self.performance = self.eval_method(self.classifier, X, y)
+            self.model_performance.value = "Score: {:.2f}".format(
+                self.performance["test_score"].mean()
+            )
+        except ValueError:
+            self.performance = "not available (too few labelled points)"
+            self.model_performance.value = "Score: {}".format(self.performance)
+        self._compose()
