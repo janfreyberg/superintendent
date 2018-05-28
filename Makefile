@@ -7,7 +7,8 @@ gh-pages:
 	make -C docs/ api html
 	mv ./docs/_build/html/* ./
 	rm -rf docs superintendent
-	echo "baseurl: /superintendent" >> _config.yml
+	echo "baseurl: /superintendent" > _config.yml
+	touch .nojekyll
 	git add -A
 	git commit -m "publishing updated docs..."
 	git push origin gh-pages
