@@ -111,7 +111,7 @@ class SemiSupervisor(base.Labeller):
             raise ValueError("relabel should be a boolean array.")
 
         if options is None:
-            options = np.unique(self.labels)
+            options = np.unique(self.labels[~np.isnan(self.labels)])
 
         self.input_widget.options = list(options)
 
