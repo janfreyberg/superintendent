@@ -1,4 +1,4 @@
-"""Tools to supervise your classification."""
+"""Tools to supervise classification."""
 
 import numpy as np
 import pandas as pd
@@ -7,19 +7,41 @@ from . import base
 
 
 class SemiSupervisor(base.Labeller):
+    """
+    A class for labelling your data.
+
+    This class is designed to label data for (semi-)supervised learning
+    algorithms. It allows you to label data. In the future, it will also allow
+    you to re-train an algorithm.
+
+    Parameters
+    ----------
+    features : list, np.ndarray, pd.Series, pd.DataFrame
+        An array or sequence of data in which each element (if 1D) or each row
+        (if 2D) represents one data point for which you'd like to generate
+        labels.
+    labels : list, np.ndarray, pd.Series, pd.DataFrame, optional
+        If you already have some labels, but would like to re-label some, then
+        you can pass these in as labels.
+    display_func : callable
+        A function that will be used to display the data. This function should
+        take in two arguments, first the data to display, and second the number
+        of data points to display (set to 1 for this class).
+
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.chunk_size = 1
 
-    def annotate(self, relabel=None, options=None, shuffle=True,
-                 shortcuts=None):
+    def annotate(
+        self, relabel=None, options=None, shuffle=True, shortcuts=None
+    ):
         """
         Provide labels for items that don't have any labels.
 
         Parameters
         ----------
-
         relabel : np.array | pd.Series | list
             A boolean array-like that is true for each label you would like to
             re-label. Only one other special case is implemented - if you pass
@@ -41,8 +63,10 @@ class SemiSupervisor(base.Labeller):
             # special case of relabelling one class
             relabel = self.labels == relabel
         elif relabel.size != self.labels.size:
-            raise ValueError("The size of the relabel array has to match "
-                             "the size of the labels passed on creation.")
+            raise ValueError(
+                "The size of the relabel array has to match "
+                "the size of the labels passed on creation."
+            )
 
         self.new_labels = self.labels.copy()
         if self.new_labels.dtype == np.int64:
@@ -65,10 +89,11 @@ class SemiSupervisor(base.Labeller):
         #         key: option for key, option in zip(shortcuts, options)}
 
         self._current_annotation_iterator = self._annotation_iterator(
-            relabel, options, shuffle=shuffle)
+            relabel, options, shuffle=shuffle
+        )
         # reset the progress bar
         self.progressbar.max = relabel.sum()
-        self.progressbar.bar_style = ''
+        self.progressbar.bar_style = ""
         self.progressbar.value = 0
 
         # start the iteration cycle
@@ -92,8 +117,9 @@ class SemiSupervisor(base.Labeller):
                         self.new_labels = self.new_labels.astype(np.object)
                         self.new_labels[i] = new_val
             if new_val not in self.input_widget.options:
-                self.input_widget.options = (self.input_widget.options
-                                             + [new_val])
+                self.input_widget.options = self.input_widget.options + [
+                    new_val
+                ]
 
         if self.event_manager is not None:
             self.event_manager.close()

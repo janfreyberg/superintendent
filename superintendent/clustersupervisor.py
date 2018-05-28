@@ -9,8 +9,10 @@ from .base import Labeller
 
 
 class ClusterSupervisor(Labeller):
-    def __init__(self, features, cluster_labels, representativeness=None,
-                 **kwargs):
+
+    def __init__(
+        self, features, cluster_labels, representativeness=None, **kwargs
+    ):
         super().__init__(features, **kwargs)
         self.cluster_labels = validation.valid_data(cluster_labels)
         self.clusters = np.unique(self.cluster_labels)
@@ -26,16 +28,13 @@ class ClusterSupervisor(Labeller):
 
         Parameters
         ----------
-
         relabel : np.array | pd.Series | list
             A boolean array-like that is true for each label you would like to
             re-label. Only one other special case is implemented - if you pass
             a single value, all data with that label will be re-labelled.
-
         options : np.array | pd.Series | list
             the options for re-labelling. If None, all unique values in options
             is offered.
-
         shuffle : bool
             Whether to randomise the order of relabelling (default True)
         """
@@ -54,7 +53,8 @@ class ClusterSupervisor(Labeller):
         self.new_labels[:] = np.nan
 
         self._current_annotation_iterator = self._annotation_iterator(
-            shuffle=shuffle)
+            shuffle=shuffle
+        )
         # reset the progress bar
         self.progressbar.max = len(self.clusters)
         self.progressbar.value = 0
@@ -69,15 +69,19 @@ class ClusterSupervisor(Labeller):
         """
         for cluster in self.new_clusters:
 
-            sorted_index = [i for i, (rep, label) in
-                            sorted(enumerate(zip(self.representativeness,
-                                                 self.cluster_labels)),
-                                   key=lambda triplet: triplet[1][0],
-                                   reverse=True)
-                            if label == cluster]
+            sorted_index = [
+                i
+                for i, (rep, label) in sorted(
+                    enumerate(
+                        zip(self.representativeness, self.cluster_labels)
+                    ),
+                    key=lambda triplet: triplet[1][0],
+                    reverse=True,
+                )
+                if label == cluster
+            ]
 
-            features = iterating.get_values(
-                self.features, sorted_index)
+            features = iterating.get_values(self.features, sorted_index)
 
             new_val = yield self._compose(features, [])
             self.progressbar.value += 1
@@ -92,14 +96,15 @@ class ClusterSupervisor(Labeller):
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
             except ValueError:
-                self.new_labels = (self.new_labels.astype(np.object))
+                self.new_labels = self.new_labels.astype(np.object)
                 self.new_labels[
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
 
             if new_val not in self.input_widget.options:
-                self.input_widget.options = (self.input_widget.options
-                                             + [new_val])
+                self.input_widget.options = self.input_widget.options + [
+                    new_val
+                ]
             # self.input_widget.options = [
             #     val for val in self.new_clusters.values() if val is not None
             # ]

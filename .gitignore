@@ -7,3 +7,6 @@ test.ipynb
 .eggs
 **/*.pyc
 build
+docs/_build
+_static
+

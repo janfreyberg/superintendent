@@ -1,0 +1,4 @@
+sphinx_rtd_theme
+recommonmark
+m2r
+numpydoc

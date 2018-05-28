@@ -1,15 +1,18 @@
 
-# superintendent
+# Superintendent
 
 [![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
+[![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
+---
 
 ![](logo.png)
 
-want to semi-supervise your machine learning?
-
 This package is designed to provide a `ipywidget`-based interactive labelling tool for your data.
 
-### Installation
+## Installation
 
 ```
 pip install superintendent
@@ -23,14 +26,13 @@ jupyter nbextension enable --py --sys-prefix ipyevents
 ```
 
 
-### Use case 1: Labelling individual data points
+## Use case 1: Labelling individual data points
 
 Let's assume we have a text dataset that contains some labelled sentences and
 some unlabelled sentences. For example, we could get the headlines for a bunch
-of UK news websites (the code for this comes from the amazing github project
+of UK news websites (the code for this comes from the github project
 [compare-headlines](https://github.com/isobelweinberg/compare-headlines/blob/master/scrape-headlines.ipynb)
 by [isobelweinberg](https://github.com/isobelweinberg)):
-
 
 ```python
 import requests
@@ -80,7 +82,7 @@ labelling_widget.new_labels
 
 ---
 
-### Use case 2: Labelling clusters
+## Use case 2: Labelling clusters
 
 Another common task is labelling clusters of points. Let's say, for example,
 that we've k-means-clustered the above data and assigned one of
@@ -152,7 +154,7 @@ labelling_widget.annotate(chunk_size=np.inf, )
 labelling_widget.new_labels
 ```
 
-### Use case 3: labelling images
+## Use case 3: labelling images
 
 For labelling images, there is a special factory method that sets the right display functions.
 
@@ -178,7 +180,7 @@ widget.annotate(options=list(range(10)))
 
 ---
 
-### Use case 3: labelling images
+## Use case 4: labelling clusters of images
 
 The same can be done for clustered images:
 
@@ -204,7 +206,6 @@ embedding = TSNE(
 
 ```python
 clusters = KMeans(n_clusters=10, n_jobs=-1).fit_predict(embedding)
-
 ```
 
 
@@ -223,5 +224,3 @@ Once you've done that, you can check how our clustering worked!
 ```python
 (digits.target == cluster_labeller.cluster_labels).mean()
 ```
-
----

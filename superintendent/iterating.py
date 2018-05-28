@@ -8,6 +8,7 @@ import pandas as pd
 
 
 def stratified_grouper(n, iterable, include):
+    """Iterate in chunks, optionally ingnoring some elements."""
     iterator = itertools.compress(iterable, include)
     if n == 1:
         for item in iterator:
@@ -21,6 +22,7 @@ def stratified_grouper(n, iterable, include):
 
 
 def get_index(data, shuffle=True):
+    """Get an integer index, either shuffled or not."""
     index = list(range(len(data)))
     if shuffle:
         np.random.shuffle(index)
@@ -28,6 +30,7 @@ def get_index(data, shuffle=True):
 
 
 def get_values(data, idxs):
+    """Get values from numpy and pandas objects equivalently."""
     if isinstance(data, np.ndarray):
         return data[list(idxs), ...]
     elif isinstance(data, (pd.Series, pd.DataFrame)):
@@ -37,12 +40,13 @@ def get_values(data, idxs):
 
 
 def iterate(data, shuffle=True, chunk_size=1, include=None):
+    """Iterate over data objects."""
     if include is None:
         include = np.ones(len(data), dtype=bool)
-    for idxs in stratified_grouper(chunk_size,
-                                   get_index(data, shuffle=shuffle),
-                                   include):
+    for idxs in stratified_grouper(
+        chunk_size, get_index(data, shuffle=shuffle), include
+    ):
         yield idxs, get_values(data, idxs)
 
 
-functions = {'default': iterate}
+functions = {"default": iterate}
