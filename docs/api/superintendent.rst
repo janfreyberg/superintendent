@@ -36,6 +36,14 @@ superintendent\.iterating module
     :undoc-members:
     :show-inheritance:
 
+superintendent\.prioritisation module
+-------------------------------------
+
+.. automodule:: superintendent.prioritisation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 superintendent\.semisupervisor module
 -------------------------------------
 
