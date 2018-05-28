@@ -10,7 +10,9 @@ def valid_classifier(classifier):
         and hasattr(classifier, "fit")
         and hasattr(classifier, "predict")
     ):
-        return True
+        return classifier
+    elif classifier is None:
+        return None
     else:
         raise ValueError(
             "The classifier needs to conform to "
