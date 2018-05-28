@@ -1,9 +1,14 @@
 """Tools to supervise classification."""
 
+from functools import partial
+
 import numpy as np
 import pandas as pd
+import ipywidgets as widgets
+import sklearn.model_selection
 
-from . import base
+from . import base, validation, prioritisation
+from .display import get_values
 
 
 class SemiSupervisor(base.Labeller):
@@ -66,7 +71,53 @@ class SemiSupervisor(base.Labeller):
         to label next based on your model's predictions.
 
         """
+        super().__init__(
+            features,
+            labels=labels,
+            display_func=display_func,
+            data_iterator=data_iterator,
+            keyboard_shortcuts=keyboard_shortcuts,
+            *args,
+            **kwargs
+        )
         self.chunk_size = 1
+        self.classifier = validation.valid_classifier(classifier)
+        if self.classifier is not None:
+            self.retrain_button = widgets.Button(
+                description="Retrain",
+                disabled=False,
+                button_style="",
+                tooltip="Click me",
+                icon="refresh",
+            )
+            self.retrain_button.on_click(self.retrain)
+            self.model_performance = widgets.HTML("")
+            self.top_bar.children = (
+                widgets.HBox(
+                    [self.progressbar], layout=widgets.Layout(width="50%")
+                ),
+                widgets.HBox(
+                    [self.retrain_button, self.model_performance],
+                    layout=widgets.Layout(width="50%"),
+                ),
+            )
+        if eval_method is None:
+            self.eval_method = partial(
+                sklearn.model_selection.cross_validate,
+                cv=3,
+                n_jobs=-1,
+                return_train_score=False,
+            )
+        if reorder is not None and isinstance(reorder, str):
+            if reorder not in prioritisation.functions:
+                raise NotImplemented(
+                    "Unknown reordering function {}.".format(reorder)
+                )
+            self.reorder = prioritisation.functions[reorder]
+        elif reorder is not None and callable(reorder):
+            self.reorder = reorder
+        else:
+            self.reorder = None
 
     def annotate(
         self, relabel=None, options=None, shuffle=True, shortcuts=None
@@ -181,4 +232,10 @@ class SemiSupervisor(base.Labeller):
         except ValueError:
             self.performance = "not available (too few labelled points)"
             self.model_performance.value = "Score: {}".format(self.performance)
+        if self.reorder is not None:
+            self.ordering = unlabelled[self.reorder(
+                self.classifier.predict_proba(
+                    get_values(self.features, unlabelled)
+                )
+            )]
         self._compose()
