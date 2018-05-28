@@ -116,7 +116,7 @@ class SemiSupervisor(base.Labeller):
         self.input_widget.options = list(options)
 
         self._current_annotation_iterator = self._annotation_iterator(
-            relabel, options, shuffle=shuffle
+            relabel, shuffle=shuffle
         )
         # reset the progress bar
         self.progressbar.max = relabel.sum()
