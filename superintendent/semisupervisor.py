@@ -23,15 +23,49 @@ class SemiSupervisor(base.Labeller):
     labels : list, np.ndarray, pd.Series, pd.DataFrame, optional
         If you already have some labels, but would like to re-label some, then
         you can pass these in as labels.
-    display_func : callable
+    classifier : sklearn.base.ClassifierMixin, optional
+        An object that implements the standard sklearn fit/predict methods. If
+        provided, a button for retraining the model is shown, and the model
+        performance under k-fold crossvalidation can be read as you go along.
+    display_func : callable, optional
         A function that will be used to display the data. This function should
         take in two arguments, first the data to display, and second the number
         of data points to display (set to 1 for this class).
+    eval_method : callable, optional
+        A function that accepts the classifier, features, and labels as input
+        and returns a dictionary of values that contain the key 'test_score'.
+        The default is sklearn.model_selection.cross_validate, with cv=3. Use
+        functools.partial to create a function with its parameters fixed.
+    reorder : str, callable, optional
+        One of the reordering algorithms specified in
+        :py:mod:`superintendent.prioritisation`. This describes a function that
+        receives input in the shape of n_samples, n_labels and calculates the
+        priority in terms of information value in labelling a data point.
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        features,
+        labels=None,
+        classifier=None,
+        display_func=None,
+        data_iterator=None,
+        keyboard_shortcuts=True,
+        eval_method=None,
+        reorder=None,
+        *args,
+        **kwargs
+    ):
+        """
+        A class for labelling your data.
+
+        This class is designed to label data for (semi-)supervised learning
+        algorithms. It allows you to label data, periodically re-train your
+        algorithm and assess its performance, and determine which data points
+        to label next based on your model's predictions.
+
+        """
         self.chunk_size = 1
 
     def annotate(
