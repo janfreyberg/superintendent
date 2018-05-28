@@ -76,17 +76,17 @@ class SemiSupervisor(base.Labeller):
 
         Parameters
         ----------
-        relabel : np.array | pd.Series | list
+        relabel : np.array, pd.Series, list, optional
             A boolean array-like that is true for each label you would like to
             re-label. Only one other special case is implemented - if you pass
-            a single value, all data with that label will be re-labelled.
-
-        options : np.array | pd.Series | list
-            the options for re-labelling. If None, all unique values in options
+            a single value, all data with that label will be re-labelled. If
+            None (default), all data is relabelled.
+        options : np.array, pd.Series, list, optional
+            the options for re-labelling. If None, all unique values in labels
             is offered.
-
         shuffle : bool
             Whether to randomise the order of relabelling (default True)
+
         """
         if relabel is None:
             relabel = np.full(self.labels.shape, True)
