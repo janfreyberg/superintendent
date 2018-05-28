@@ -21,22 +21,6 @@ api:
 	rm -f api/*
 	sphinx-apidoc -o api $(PROJDIR) $(PROJDIR)/version.py $(PROJDIR)/base.py
 
-gh-pages:
-	git checkout gh-pages
-	rm -rf *
-	git checkout master $(GH_PAGES_SOURCES)
-	git reset HEAD
-	# cp ./index.ipynb doc/examples.ipynb
-	make api
-	make html
-	mv -fv $(BUILDDIR)/html/* ./
-	rm -rf $(SOURCEDIR) build
-	> .nojekyll
-	git add -A
-	git commit -m "Generated gh-pages automatically."
-	git push origin gh-pages
-	git checkout master
-
 .PHONY: help Makefile api server gh-pages
 
 # Catch-all target: route all unknown targets to Sphinx using the new

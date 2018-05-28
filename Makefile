@@ -1,0 +1,17 @@
+
+
+gh-pages:
+	git checkout gh-pages
+	rm -rf *
+	git checkout master docs superintendent README.md
+	make -C docs/ api html
+	mv ./docs/_build/html/* ./
+	rm -rf docs superintendent
+	git add -A
+	git commit -m "publishing updated docs..."
+	git push origin gh-pages
+	# switch back
+	git checkout master
+
+
+.PHONY: gh-pages
