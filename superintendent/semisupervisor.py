@@ -133,19 +133,25 @@ class SemiSupervisor(base.Labeller):
         # start the iteration cycle
         return next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, relabel, options, shuffle=True):
+    def _annotation_iterator(self, relabel, shuffle=True):
 
         for i, row in self._data_iterator(self.features, shuffle=shuffle):
             if relabel[i]:
 
-                new_val = yield self._compose(row, options)
-
+                new_val = yield self._compose(row)
+                try:
+                    new_val = int(new_val)
+                except ValueError:
+                    try:
+                        new_val = float(new_val)
+                    except ValueError:
+                        pass
                 self.progressbar.value += 1
                 if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
                     self.new_labels.loc[i] = new_val
                 else:
                     try:
-                        self.new_labels[i] = float(new_val)
+                        self.new_labels[i] = new_val
                     except ValueError:
                         # catching assignment of string to number array
                         self.new_labels = self.new_labels.astype(np.object)
