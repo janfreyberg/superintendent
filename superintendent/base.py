@@ -15,35 +15,31 @@ class Labeller:
     Data point labelling.
 
     This class allows you to label individual data points.
+
+    Parameters
+    ----------
+
+    features : np.array | pd.DataFrame
+        The input array for your model
+    labels : np.array, pd.Series, pd.DataFrame, optional
+        The labels for your data.
+    display_func : str, func, optional
+        Either a function that accepts one row of features and returns
+        what should be displayed with IPython's `display`, or a string
+        that is any of 'img', 'image'.
+
     """
 
     def __init__(
         self,
         features,
         labels=None,
-        classifier=None,
         display_func=None,
         data_iterator=None,
         keyboard_shortcuts=True,
     ):
         """
         Make a class that allows you to label data points.
-
-        Parameters
-        ----------
-
-        features : np.array | pd.DataFrame
-            The input array for your model
-        labels : np.array | pd.Series | pd.DataFrame
-            The labels for your data.
-        classifier : object
-            An object that implements the standard sklearn fit/predict methods.
-        display_func : str | func
-            Either a function that accepts one row of features and returns
-            what should be displayed with IPython's `display`, or a string
-            that is any of 'img'.
-        confidence : np.array | pd.Series | pd.DataFrame
-            optionally, provide the confidence for your labels.
 
         """
         # the widget elements
@@ -169,22 +165,16 @@ class Labeller:
         elif event["type"] == "keydown":
             pass
 
-    def _compose(self, feature, options, other_option=True):
+    def _compose(self, feature=None):
 
-        if self.timer > 0.5:
-            with self.feature_output:
-                IPython.display.clear_output(wait=True)
-                IPython.display.display(
-                    widgets.HTML(
-                        "<h1>Rendering... "
-                        '<i class="fa fa-spinner fa-spin"'
-                        ' aria-hidden="true"></i>'
-                    )
-                )
-        with self.timer:
-            with self.feature_output:
-                IPython.display.clear_output(wait=True)
-                self._display_func(feature, n_samples=self.chunk_size)
+        if feature is not None:
+            if self.timer > 0.5:
+                self._render_processing()
+
+            with self.timer:
+                with self.feature_output:
+                    IPython.display.clear_output(wait=True)
+                    self._display_func(feature, n_samples=self.chunk_size)
 
         self.layout.children = [
             self.top_bar,
@@ -192,6 +182,16 @@ class Labeller:
             self.input_widget,
         ]
         return self
+
+    def _render_processing(self, message="Rendering..."):
+        self.layout.children = [
+            self.top_bar,
+            widgets.HTML(
+                "<h1>{}".format(message)
+                + '<i class="fa fa-spinner fa-spin"'
+                + ' aria-hidden="true"></i>'
+            ),
+        ]
 
     def _render_finished(self):
         self.progressbar.bar_style = "success"
