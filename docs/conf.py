@@ -106,10 +106,12 @@ todo_include_todos = True
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
+html_favicon = 'favicon.ico'
+html_logo = 'logo.png'
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
 # html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -119,13 +121,11 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
-#
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
     '**': [
         'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
+        'globaltoc.html'
     ]
 }
 

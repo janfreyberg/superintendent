@@ -5,7 +5,9 @@
 
 # Superintendent documentation
 
-![](logo.png)
+[![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
+[![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Superintendent is designed to provide flexible `ipywidget`-based tools for
 labelling your data and growing your algorithm. At the moment this is restricted
@@ -19,8 +21,6 @@ that's worth labelling.
 
    Example use cases <narrative.md>
    API Reference <api/modules.rst>
-
-<!-- .. mdinclude:: ../README.md -->
 
 ## Indices and tables
 
