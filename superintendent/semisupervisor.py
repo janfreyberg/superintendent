@@ -115,13 +115,6 @@ class SemiSupervisor(base.Labeller):
 
         self.input_widget.options = list(options)
 
-        # if self.event_manager is not None:
-        #     # self.event_manager.open()
-        #     if shortcuts is None:
-        #         shortcuts = [str(a + 1) for a in range(len(options))]
-        #     self._key_option_mapping = {
-        #         key: option for key, option in zip(shortcuts, options)}
-
         self._current_annotation_iterator = self._annotation_iterator(
             relabel, options, shuffle=shuffle
         )
