@@ -31,22 +31,10 @@ class Submitter(widgets.VBox):
     max_buttons = traitlets.Integer(12)
 
     def __init__(self, options=(), max_buttons=12, other_option=True):
-        """
-        Create a widget that will render submission options.
+        """Create a widget that will render submission options.
 
         Note that all parameters can also be changed through assignment after
         you create the widget.
-
-        Parameters
-        ----------
-        options : list, tuple, optional
-            The data submission options.
-        max_buttons : int
-            The number buttons you want to display. If len(options) >
-            max_buttons, the options will be displayed in a dropdown instead.
-        other_option : bool, optional
-            Whether the widget should contain a text box for users to type in
-            a value not in options.
 
         """
         super().__init__([])
@@ -133,6 +121,7 @@ class Timer:
 
     .. code-block:: python
 
+        from superintendent.controls import Timer
         timer = Timer()
         with timer: print('some quick computation')
         if timer < 1: print('quick computation took less than a second')
