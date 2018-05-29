@@ -241,11 +241,16 @@ class SemiSupervisor(base.Labeller):
             self.performance = "not available (too few labelled points)"
             self.model_performance.value = "Score: {}".format(self.performance)
         if self.reorder is not None:
-            self.ordering = unlabelled[self.reorder(
-                self.classifier.predict_proba(
-                    get_values(self.features, unlabelled)
-                )
-            )]
+            self._label_queue = deque(
+                np.array(self._label_queue)[
+                    self.reorder(
+                        self.classifier.predict_proba(
+                            get_values(self.features, list(self._label_queue))
+                        )
+                    )
+                ]
+            )
+
         self._compose()
     def _undo(self, change=None):
         # pop the last two, since one has already been popped
