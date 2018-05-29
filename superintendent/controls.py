@@ -66,10 +66,16 @@ class Submitter(widgets.VBox):
             The function to be called when the widget is submitted.
         """
         self.submission_functions.append(func)
+        self._compose()  # recompose to remove cursor from text field
+
+    def _sort_options(self, change=None):
+        self.options = list(sorted(self.options))
+        self._compose()
 
     @traitlets.observe("other_option", "options", "max_buttons")
     def _compose(self, change=None):
 
+        self.options = [str(option) for option in self.options]
         if len(self.options) <= self.max_buttons:
             control_elements = widgets.HBox(
                 [
@@ -98,7 +104,8 @@ class Submitter(widgets.VBox):
                 (control_elements.children[1], "description"),
             )
             control_elements.children[1].on_click(self._when_submitted)
-
+        sort_button = widgets.Button(description="Sort options", icon="sort")
+        sort_button.on_click(self._sort_options)
         if self.other_option:
             other_widget = widgets.Text(
                 value="",
@@ -106,9 +113,17 @@ class Submitter(widgets.VBox):
                 placeholder="Hit enter to submit.",
             )
             other_widget.on_submit(self._when_submitted)
-            self.children = [control_elements, other_widget]
+            self.children = [
+                control_elements,
+                widgets.HBox(
+                    [other_widget, sort_button],
+                    layout=widgets.Layout(
+                        justify_content="space-between"
+                    ),
+                ),
+            ]
         else:
-            self.children = [control_elements]
+            self.children = [control_elements, widgets.HBox([sort_button])]
 
 
 @total_ordering
