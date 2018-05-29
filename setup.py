@@ -32,8 +32,14 @@ setup(
     author_email='jan@asidatascience.com',
     packages=['superintendent'],
     keywords=['widgets', 'labelling', 'annotation'],
-    install_requires=['ipywidgets', 'ipyevents', 'numpy',
-                      'pandas', 'matplotlib'],
+    install_requires=[
+        'ipywidgets',
+        'ipyevents',
+        'numpy',
+        'pandas',
+        'matplotlib',
+        'scikit-learn',
+        ],
     tests_require=['pytest'],
     setup_requires=['pytest-runner']
 )
