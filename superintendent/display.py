@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 def get_values(data, idxs):
     """Helper function to index numpy arrays and pandas objects similarly."""
     if isinstance(data, np.ndarray):
-        return data[idxs, ...]  # for idx in list(idxs)]
+        return data[idxs, ...]
     elif isinstance(data, (pd.Series, pd.DataFrame)):
         return data.iloc[list(idxs)]
     else:
