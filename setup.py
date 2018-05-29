@@ -39,6 +39,7 @@ setup(
         'pandas',
         'matplotlib',
         'scikit-learn',
+        'scipy'
         ],
     tests_require=['pytest'],
     setup_requires=['pytest-runner']
