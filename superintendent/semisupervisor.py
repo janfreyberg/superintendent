@@ -83,6 +83,9 @@ class SemiSupervisor(base.Labeller):
         )
         self.chunk_size = 1
         self.classifier = validation.valid_classifier(classifier)
+        self.undo_button = widgets.Button(description="Undo", icon="undo")
+        self.undo_button.on_click(self._undo)
+        self.top_bar.children = (*self.top_bar.children, self.undo_button)
         if self.classifier is not None:
             self.retrain_button = widgets.Button(
                 description="Retrain",
@@ -95,7 +98,8 @@ class SemiSupervisor(base.Labeller):
             self.model_performance = widgets.HTML("")
             self.top_bar.children = (
                 widgets.HBox(
-                    [self.progressbar], layout=widgets.Layout(width="50%")
+                    [*self.top_bar.children],
+                    layout=widgets.Layout(width="50%"),
                 ),
                 widgets.HBox(
                     [self.retrain_button, self.model_performance],
@@ -224,7 +228,6 @@ class SemiSupervisor(base.Labeller):
         if self.classifier is None:
             raise ValueError("No classifier to retrain.")
         labelled = np.nonzero(~np.isnan(self.new_labels))[0]
-        unlabelled = np.nonzero(np.isnan(self.new_labels))[0]
         X = get_values(self.features, labelled)
         y = get_values(self.new_labels, labelled)
         self._render_processing(message="Retraining... ")
@@ -244,3 +247,24 @@ class SemiSupervisor(base.Labeller):
                 )
             )]
         self._compose()
+    def _undo(self, change=None):
+        # pop the last two, since one has already been popped
+        curr = self._already_labelled.pop()
+        prev = self._already_labelled.pop()
+        # remove option if it existed only once:
+        if (self.new_labels == self.new_labels[prev]).sum() == 1:
+            self.input_widget.options = [
+                option
+                for option in self.input_widget.options
+                if option != str(self.new_labels[prev])
+            ]
+        # set the previous, labelled one to nan:
+        if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
+            self.new_labels.loc[prev] = np.nan
+        else:
+            self.new_labels[prev] = np.nan
+        # append the previous and current one to queue:
+        self._label_queue.append(curr)
+        self._label_queue.append(prev)
+        # send a nan for the current one - this also advances it:
+        self._current_annotation_iterator.send(np.nan)
