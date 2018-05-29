@@ -1,6 +1,7 @@
 """Tools to supervise classification."""
 
 from functools import partial
+from collections import deque
 
 import numpy as np
 import pandas as pd
@@ -166,9 +167,15 @@ class SemiSupervisor(base.Labeller):
 
         self.input_widget.options = list(options)
 
-        self._current_annotation_iterator = self._annotation_iterator(
-            relabel, shuffle=shuffle
-        )
+        relabel = np.nonzero(relabel)[0]
+
+        if shuffle:
+            np.random.shuffle(relabel)
+
+        self._label_queue = deque(relabel)
+        self._already_labelled = deque([])
+
+        self._current_annotation_iterator = self._annotation_iterator()
         # reset the progress bar
         self.progressbar.max = relabel.sum()
         self.progressbar.bar_style = ""
@@ -177,32 +184,30 @@ class SemiSupervisor(base.Labeller):
         # start the iteration cycle
         return next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, relabel, shuffle=True):
+    def _annotation_iterator(self):
+        """Relabel should be integer indices"""
 
-        for i, row in self._data_iterator(self.features, shuffle=shuffle):
-            if relabel[i]:
+        while len(self._label_queue) > 0:
+            idx = self._label_queue.pop()
+            self._already_labelled.append(idx)
+            row = get_values(self.features, [idx])
 
-                new_val = yield self._compose(row)
-                try:
-                    new_val = int(new_val)
-                except ValueError:
-                    try:
-                        new_val = float(new_val)
-                    except ValueError:
-                        pass
-                self.progressbar.value += 1
-                if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
-                    self.new_labels.loc[i] = new_val
-                else:
-                    try:
-                        self.new_labels[i] = new_val
-                    except ValueError:
-                        # catching assignment of string to number array
-                        self.new_labels = self.new_labels.astype(np.object)
-                        self.new_labels[i] = new_val
-            if new_val not in self.input_widget.options:
+            new_val = yield self._compose(row)
+            try:
+                new_val = float(new_val)
+            except ValueError:
+                # catching assignment of string to number array
+                self.new_labels = self.new_labels.astype(np.object)
+
+            if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
+                self.new_labels.loc[idx] = new_val
+            else:
+                self.new_labels[idx] = new_val
+            if str(new_val) not in self.input_widget.options and not np.isnan(
+                new_val
+            ):
                 self.input_widget.options = self.input_widget.options + [
-                    new_val
+                    str(new_val)
                 ]
 
         if self.event_manager is not None:
