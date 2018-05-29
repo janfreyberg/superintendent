@@ -168,8 +168,13 @@ class SemiSupervisor(base.Labeller):
 
         if options is None:
             options = np.unique(self.labels[~np.isnan(self.labels)])
-
-        self.input_widget.options = [float(val) for val in list(options)]
+        options = list(options)
+        for i, option in enumerate(options):
+            try:
+                options[i] = float(option)
+            except ValueError:
+                pass
+        self.input_widget.options = options
 
         relabel = np.nonzero(relabel)[0]
 
@@ -252,6 +257,7 @@ class SemiSupervisor(base.Labeller):
             )
 
         self._compose()
+
     def _undo(self, change=None):
         # pop the last two, since one has already been popped
         curr = self._already_labelled.pop()
