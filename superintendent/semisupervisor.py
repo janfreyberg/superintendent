@@ -169,7 +169,7 @@ class SemiSupervisor(base.Labeller):
         if options is None:
             options = np.unique(self.labels[~np.isnan(self.labels)])
 
-        self.input_widget.options = list(options)
+        self.input_widget.options = [float(val) for val in list(options)]
 
         relabel = np.nonzero(relabel)[0]
 
