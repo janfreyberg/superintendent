@@ -83,7 +83,7 @@ class ClusterSupervisor(Labeller):
 
             features = iterating.get_values(self.features, sorted_index)
 
-            new_val = yield self._compose(features, [])
+            new_val = yield self._compose(features)
             self.progressbar.value += 1
 
             try:
