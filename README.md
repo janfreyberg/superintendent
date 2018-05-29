@@ -224,3 +224,33 @@ Once you've done that, you can check how our clustering worked!
 ```python
 (digits.target == cluster_labeller.cluster_labels).mean()
 ```
+
+## Use case 5: Active learning
+
+Often, we have a rough idea of an algorithm that might do well on a given task, even if we don't have any labels at all. For example, I know that for a simple image set like MNIST, logistic regression actually does surprisingly well.
+
+In this case, we want to do two things:
+1. We want to keep track of our algorithm's performance
+2. We want to leverage our algorithm's predictions to decide what data point to label.
+
+Both of these things can be done with superintendent. For point one, all we need to do is pass an object that conforms to the fit / predict syntax of sklearn as the `classifier` keyword argument.
+
+For the second point, we can choose any function that takes in probabilities of labels (in shape `n_samples, n_classes`), sorts them, and returns the sorted integer index from most in need of labelling to least in need of labelling. Superintendent provides some functions, described in the `superintendent.prioritisation` submodule, that can achieve this. One of these is the `entropy` function, which calculates the entropy of predicted probabilities and prioritises high-entropy samples.
+
+As an example:
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import load_digits
+from superintendent import SemiSupervisor
+
+digits = load_digits()
+
+data_labeller = SemiSupervisor.from_images(
+    digits.data[:500, :],
+    classifier=LogisticRegression(),
+    reorder='entropy'
+)
+
+data_labeller.annotate(options=range(10))
+```
