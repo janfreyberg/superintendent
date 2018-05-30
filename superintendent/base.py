@@ -148,11 +148,12 @@ class Labeller:
 
     def _apply_annotation(self, sender):
 
+        self.progressbar.value += 1
         if isinstance(sender, dict) and "value" in sender:
             value = sender["value"]
-            self._current_annotation_iterator.send(value)
         else:
-            self._current_annotation_iterator.send(sender)
+            value = sender
+        self._current_annotation_iterator.send(value)
 
     def _onkeydown(self, event):
 
