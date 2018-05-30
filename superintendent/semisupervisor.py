@@ -212,9 +212,8 @@ class SemiSupervisor(base.Labeller):
                 self.new_labels.loc[idx] = new_val
             else:
                 self.new_labels[idx] = new_val
-            if str(new_val) not in self.input_widget.options and not np.isnan(
-                new_val
-            ):
+            if (str(new_val) not in self.input_widget.options
+                    and str(new_val).lower() != 'nan'):
                 self.input_widget.options = self.input_widget.options + [
                     str(new_val)
                 ]
