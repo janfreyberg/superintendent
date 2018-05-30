@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tools to supervise your clustering."""
-from collections import OrderedDict
+from collections import OrderedDict, deque
 
 import numpy as np
 
@@ -52,50 +52,43 @@ class ClusterSupervisor(Labeller):
         self.new_labels = self.cluster_labels.copy().astype(float)
         self.new_labels[:] = np.nan
 
-        self._current_annotation_iterator = self._annotation_iterator(
-            shuffle=shuffle
-        )
+        self._label_queue = deque(self.new_clusters.keys())
+        if shuffle:
+            np.random.shuffle(self._label_queue)
+
+        self._current_annotation_iterator = self._annotation_iterator()
         # reset the progress bar
-        self.progressbar.max = len(self.clusters)
+        self.progressbar.max = len(self._label_queue)
         self.progressbar.value = 0
 
         # start the iteration cycle
         return next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, shuffle=True):
+    def _annotation_iterator(self):
         """
         The method that iterates over the clusters and presents them for
         annotation.
         """
-        for cluster in self.new_clusters:
-
+        while len(self._label_queue) > 0:
+            cluster = self._label_queue.pop()
             sorted_index = [
-                i
-                for i, (rep, label) in sorted(
+                i for i, (rep, label) in sorted(
                     enumerate(
-                        zip(self.representativeness, self.cluster_labels)
-                    ),
+                        zip(self.representativeness, self.cluster_labels)),
                     key=lambda triplet: triplet[1][0],
-                    reverse=True,
-                )
+                    reverse=True)
                 if label == cluster
             ]
-
             features = iterating.get_values(self.features, sorted_index)
-
             new_val = yield self._compose(features)
-            self.progressbar.value += 1
 
             try:
-                self.new_labels[cluster] = float(new_val)
-            except ValueError:
-                self.new_clusters[cluster] = new_val
-
-            try:
+                self.new_clusters[cluster] = float(new_val)
                 self.new_labels[
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
             except ValueError:
+                self.new_clusters[cluster] = new_val
                 self.new_labels = self.new_labels.astype(np.object)
                 self.new_labels[
                     self.cluster_labels == cluster
@@ -103,11 +96,8 @@ class ClusterSupervisor(Labeller):
 
             if new_val not in self.input_widget.options:
                 self.input_widget.options = self.input_widget.options + [
-                    new_val
+                    str(new_val)
                 ]
-            # self.input_widget.options = [
-            #     val for val in self.new_clusters.values() if val is not None
-            # ]
 
         self.cluster_names = self.new_clusters
         yield self._render_finished()
