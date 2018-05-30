@@ -26,9 +26,8 @@ def default_display_func(feature, n_samples=1):
     text.
     """
     n_samples = min(n_samples, feature.shape[0])
-    if isinstance(feature, np.ndarray) and not isinstance(
-        feature.dtype, np.number
-    ):
+    if isinstance(feature, np.ndarray) and not np.issubdtype(
+            feature.dtype, np.number):
         IPython.display.display(
             IPython.display.HTML(
                 "<br>\n&nbsp;\n<br>".join(
