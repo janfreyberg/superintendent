@@ -186,7 +186,7 @@ class SemiSupervisor(base.Labeller):
 
         self._current_annotation_iterator = self._annotation_iterator()
         # reset the progress bar
-        self.progressbar.max = relabel.sum()
+        self.progressbar.max = len(self._label_queue)
         self.progressbar.bar_style = ""
         self.progressbar.value = 0
 
