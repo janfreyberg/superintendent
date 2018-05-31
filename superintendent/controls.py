@@ -31,22 +31,10 @@ class Submitter(widgets.VBox):
     max_buttons = traitlets.Integer(12)
 
     def __init__(self, options=(), max_buttons=12, other_option=True):
-        """
-        Create a widget that will render submission options.
+        """Create a widget that will render submission options.
 
         Note that all parameters can also be changed through assignment after
         you create the widget.
-
-        Parameters
-        ----------
-        options : list, tuple, optional
-            The data submission options.
-        max_buttons : int
-            The number buttons you want to display. If len(options) >
-            max_buttons, the options will be displayed in a dropdown instead.
-        other_option : bool, optional
-            Whether the widget should contain a text box for users to type in
-            a value not in options.
 
         """
         super().__init__([])
@@ -78,10 +66,16 @@ class Submitter(widgets.VBox):
             The function to be called when the widget is submitted.
         """
         self.submission_functions.append(func)
+        self._compose()  # recompose to remove cursor from text field
+
+    def _sort_options(self, change=None):
+        self.options = list(sorted(self.options))
+        self._compose()
 
     @traitlets.observe("other_option", "options", "max_buttons")
     def _compose(self, change=None):
 
+        self.options = [str(option) for option in self.options]
         if len(self.options) <= self.max_buttons:
             control_elements = widgets.HBox(
                 [
@@ -110,7 +104,8 @@ class Submitter(widgets.VBox):
                 (control_elements.children[1], "description"),
             )
             control_elements.children[1].on_click(self._when_submitted)
-
+        sort_button = widgets.Button(description="Sort options", icon="sort")
+        sort_button.on_click(self._sort_options)
         if self.other_option:
             other_widget = widgets.Text(
                 value="",
@@ -118,9 +113,17 @@ class Submitter(widgets.VBox):
                 placeholder="Hit enter to submit.",
             )
             other_widget.on_submit(self._when_submitted)
-            self.children = [control_elements, other_widget]
+            self.children = [
+                control_elements,
+                widgets.HBox(
+                    [other_widget, sort_button],
+                    layout=widgets.Layout(
+                        justify_content="space-between"
+                    ),
+                ),
+            ]
         else:
-            self.children = [control_elements]
+            self.children = [control_elements, widgets.HBox([sort_button])]
 
 
 @total_ordering
@@ -133,6 +136,7 @@ class Timer:
 
     .. code-block:: python
 
+        from superintendent.controls import Timer
         timer = Timer()
         with timer: print('some quick computation')
         if timer < 1: print('quick computation took less than a second')

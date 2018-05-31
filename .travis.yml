@@ -1,10 +1,15 @@
 language: python
+notifications:
+  email: false
 python:
   - "3.5"
   - "3.6"
 script:
   - pip install flake8
   - pip install isort
+  - pip install git+https://github.com/janfreyberg/docargs.git
   - flake8 superintendent
   - isort -c superintendent/**/*.py
   - python setup.py test
+  - pip install .
+  - docargs superintendent

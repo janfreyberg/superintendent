@@ -1,14 +1,29 @@
 # -*- coding: utf-8 -*-
 """Tools to supervise your clustering."""
-from collections import OrderedDict
+from collections import OrderedDict, deque
 
 import numpy as np
 
-from . import iterating, validation
+from . import validation
 from .base import Labeller
+from .display import get_values
 
 
 class ClusterSupervisor(Labeller):
+    """
+    A labelling tool for clusters.
+
+    Parameters
+    ----------
+    features : np.ndarray, pd.Series. pd.DataFrame
+        Your features.
+    cluster_labels : np.ndarray, pd.Series
+        The cluster label for each data point.
+    representativeness : np.ndarray, pd.Series
+        How representative of a cluster your data points are. This can be the
+        probability of cluster membership (as in e.g. HDBSCAN), or cluster
+        centrality (e.g. K-Means).
+    """
 
     def __init__(
         self, features, cluster_labels, representativeness=None, **kwargs
@@ -52,62 +67,57 @@ class ClusterSupervisor(Labeller):
         self.new_labels = self.cluster_labels.copy().astype(float)
         self.new_labels[:] = np.nan
 
-        self._current_annotation_iterator = self._annotation_iterator(
-            shuffle=shuffle
-        )
+        self._label_queue = deque(self.new_clusters.keys())
+        self._already_labelled = deque([])
+        if shuffle:
+            np.random.shuffle(self._label_queue)
+
+        self._current_annotation_iterator = self._annotation_iterator()
         # reset the progress bar
-        self.progressbar.max = len(self.clusters)
+        self.progressbar.max = len(self._label_queue)
         self.progressbar.value = 0
 
         # start the iteration cycle
         return next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, shuffle=True):
+    def _annotation_iterator(self):
         """
         The method that iterates over the clusters and presents them for
         annotation.
         """
-        for cluster in self.new_clusters:
-
+        while len(self._label_queue) > 0:
+            cluster = self._label_queue.pop()
+            self._already_labelled.append(cluster)
             sorted_index = [
-                i
-                for i, (rep, label) in sorted(
+                i for i, (rep, label) in sorted(
                     enumerate(
-                        zip(self.representativeness, self.cluster_labels)
-                    ),
+                        zip(self.representativeness, self.cluster_labels)),
                     key=lambda triplet: triplet[1][0],
-                    reverse=True,
-                )
+                    reverse=True)
                 if label == cluster
             ]
-
-            features = iterating.get_values(self.features, sorted_index)
-
-            new_val = yield self._compose(features, [])
-            self.progressbar.value += 1
+            features = get_values(self.features, sorted_index)
+            new_val = yield self._compose(features)
 
             try:
-                self.new_labels[cluster] = float(new_val)
-            except ValueError:
-                self.new_clusters[cluster] = new_val
-
-            try:
+                self.new_clusters[cluster] = float(new_val)
                 self.new_labels[
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
             except ValueError:
+                self.new_clusters[cluster] = new_val
                 self.new_labels = self.new_labels.astype(np.object)
                 self.new_labels[
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
 
-            if new_val not in self.input_widget.options:
+            if (
+                new_val not in self.input_widget.options
+                and str(new_val) != 'nan'
+            ):
                 self.input_widget.options = self.input_widget.options + [
-                    new_val
+                    str(new_val)
                 ]
-            # self.input_widget.options = [
-            #     val for val in self.new_clusters.values() if val is not None
-            # ]
 
         self.cluster_names = self.new_clusters
         yield self._render_finished()

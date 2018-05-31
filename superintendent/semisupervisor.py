@@ -1,9 +1,15 @@
 """Tools to supervise classification."""
 
+from functools import partial
+from collections import deque
+
 import numpy as np
 import pandas as pd
+import ipywidgets as widgets
+import sklearn.model_selection
 
-from . import base
+from . import base, validation, prioritisation
+from .display import get_values
 
 
 class SemiSupervisor(base.Labeller):
@@ -23,16 +29,98 @@ class SemiSupervisor(base.Labeller):
     labels : list, np.ndarray, pd.Series, pd.DataFrame, optional
         If you already have some labels, but would like to re-label some, then
         you can pass these in as labels.
-    display_func : callable
+    classifier : sklearn.base.ClassifierMixin, optional
+        An object that implements the standard sklearn fit/predict methods. If
+        provided, a button for retraining the model is shown, and the model
+        performance under k-fold crossvalidation can be read as you go along.
+    display_func : callable, optional
         A function that will be used to display the data. This function should
         take in two arguments, first the data to display, and second the number
         of data points to display (set to 1 for this class).
+    eval_method : callable, optional
+        A function that accepts the classifier, features, and labels as input
+        and returns a dictionary of values that contain the key 'test_score'.
+        The default is sklearn.model_selection.cross_validate, with cv=3. Use
+        functools.partial to create a function with its parameters fixed.
+    reorder : str, callable, optional
+        One of the reordering algorithms specified in
+        :py:mod:`superintendent.prioritisation`. This describes a function that
+        receives input in the shape of n_samples, n_labels and calculates the
+        priority in terms of information value in labelling a data point.
+    keyboard_shortcuts : bool, optional
+        If you want to enable ipyevent-mediated keyboard capture to use the
+        keyboard rather than the mouse to submit data.
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        features,
+        labels=None,
+        classifier=None,
+        display_func=None,
+        eval_method=None,
+        reorder=None,
+        keyboard_shortcuts=False,
+        *args,
+        **kwargs
+    ):
+        """
+        A class for labelling your data.
+
+        This class is designed to label data for (semi-)supervised learning
+        algorithms. It allows you to label data, periodically re-train your
+        algorithm and assess its performance, and determine which data points
+        to label next based on your model's predictions.
+
+        """
+        super().__init__(
+            features,
+            labels=labels,
+            display_func=display_func,
+            keyboard_shortcuts=keyboard_shortcuts,
+            *args,
+            **kwargs
+        )
         self.chunk_size = 1
+        self.classifier = validation.valid_classifier(classifier)
+        if self.classifier is not None:
+            self.retrain_button = widgets.Button(
+                description="Retrain",
+                disabled=False,
+                button_style="",
+                tooltip="Click me",
+                icon="refresh",
+            )
+            self.retrain_button.on_click(self.retrain)
+            self.model_performance = widgets.HTML("")
+            self.top_bar.children = (
+                widgets.HBox(
+                    [*self.top_bar.children],
+                    layout=widgets.Layout(width="50%"),
+                ),
+                widgets.HBox(
+                    [self.retrain_button, self.model_performance],
+                    layout=widgets.Layout(width="50%"),
+                ),
+            )
+        if eval_method is None:
+            self.eval_method = partial(
+                sklearn.model_selection.cross_validate,
+                cv=3,
+                n_jobs=-1,
+                return_train_score=False,
+            )
+        if reorder is not None and isinstance(reorder, str):
+            if reorder not in prioritisation.functions:
+                raise NotImplemented(
+                    "Unknown reordering function {}.".format(reorder)
+                )
+            self.reorder = prioritisation.functions[reorder]
+        elif reorder is not None and callable(reorder):
+            self.reorder = reorder
+        else:
+            self.reorder = None
 
     def annotate(
         self, relabel=None, options=None, shuffle=True, shortcuts=None
@@ -42,17 +130,17 @@ class SemiSupervisor(base.Labeller):
 
         Parameters
         ----------
-        relabel : np.array | pd.Series | list
+        relabel : np.array, pd.Series, list, optional
             A boolean array-like that is true for each label you would like to
             re-label. Only one other special case is implemented - if you pass
-            a single value, all data with that label will be re-labelled.
-
-        options : np.array | pd.Series | list
-            the options for re-labelling. If None, all unique values in options
+            a single value, all data with that label will be re-labelled. If
+            None (default), all data is relabelled.
+        options : np.array, pd.Series, list, optional
+            the options for re-labelling. If None, all unique values in labels
             is offered.
-
         shuffle : bool
             Whether to randomise the order of relabelling (default True)
+
         """
         if relabel is None:
             relabel = np.full(self.labels.shape, True)
@@ -77,50 +165,92 @@ class SemiSupervisor(base.Labeller):
             raise ValueError("relabel should be a boolean array.")
 
         if options is None:
-            options = np.unique(self.labels)
+            options = np.unique(self.labels[~np.isnan(self.labels)])
+        options = list(options)
+        for i, option in enumerate(options):
+            try:
+                options[i] = float(option)
+            except ValueError:
+                pass
+        self.input_widget.options = options
 
-        self.input_widget.options = list(options)
+        relabel = np.nonzero(relabel)[0]
 
-        # if self.event_manager is not None:
-        #     # self.event_manager.open()
-        #     if shortcuts is None:
-        #         shortcuts = [str(a + 1) for a in range(len(options))]
-        #     self._key_option_mapping = {
-        #         key: option for key, option in zip(shortcuts, options)}
+        if shuffle:
+            np.random.shuffle(relabel)
 
-        self._current_annotation_iterator = self._annotation_iterator(
-            relabel, options, shuffle=shuffle
-        )
+        self._label_queue = deque(relabel)
+        self._already_labelled = deque([])
+
+        self._current_annotation_iterator = self._annotation_iterator()
         # reset the progress bar
-        self.progressbar.max = relabel.sum()
+        self.progressbar.max = len(self._label_queue)
         self.progressbar.bar_style = ""
         self.progressbar.value = 0
 
         # start the iteration cycle
         return next(self._current_annotation_iterator)
 
-    def _annotation_iterator(self, relabel, options, shuffle=True):
+    def _annotation_iterator(self):
+        """Relabel should be integer indices"""
 
-        for i, row in self._data_iterator(self.features, shuffle=shuffle):
-            if relabel[i]:
+        while len(self._label_queue) > 0:
+            idx = self._label_queue.pop()
+            self._already_labelled.append(idx)
+            row = get_values(self.features, [idx])
 
-                new_val = yield self._compose(row, options)
+            new_val = yield self._compose(row)
+            try:
+                new_val = float(new_val)
+            except ValueError:
+                # catching assignment of string to number array
+                self.new_labels = self.new_labels.astype(np.object)
 
-                self.progressbar.value += 1
-                if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
-                    self.new_labels.loc[i] = new_val
-                else:
-                    try:
-                        self.new_labels[i] = float(new_val)
-                    except ValueError:
-                        # catching assignment of string to number array
-                        self.new_labels = self.new_labels.astype(np.object)
-                        self.new_labels[i] = new_val
-            if new_val not in self.input_widget.options:
+            if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
+                self.new_labels.loc[idx] = new_val
+            else:
+                self.new_labels[idx] = new_val
+            if (str(new_val) not in self.input_widget.options
+                    and str(new_val).lower() != 'nan'):
                 self.input_widget.options = self.input_widget.options + [
-                    new_val
+                    str(new_val)
                 ]
 
         if self.event_manager is not None:
             self.event_manager.close()
         yield self._render_finished()
+
+    def retrain(self, *args):
+        """Retrain the classifier you passed when creating this widget.
+
+        This calls the fit method of your class with the data that you've
+        labelled. It will also score the classifier and display the
+        performance.
+        """
+        if self.classifier is None:
+            raise ValueError("No classifier to retrain.")
+        labelled = np.nonzero(~np.isnan(self.new_labels))[0]
+        X = get_values(self.features, labelled)
+        y = get_values(self.new_labels, labelled)
+        self._render_processing(message="Retraining... ")
+        self.classifier.fit(X, y)
+        try:
+            self.performance = self.eval_method(self.classifier, X, y)
+            self.model_performance.value = "Score: {:.2f}".format(
+                self.performance["test_score"].mean()
+            )
+        except ValueError:
+            self.performance = "not available (too few labelled points)"
+            self.model_performance.value = "Score: {}".format(self.performance)
+        if self.reorder is not None:
+            self._label_queue = deque(
+                np.array(self._label_queue)[
+                    self.reorder(
+                        self.classifier.predict_proba(
+                            get_values(self.features, list(self._label_queue))
+                        )
+                    )
+                ]
+            )
+
+        self._compose()

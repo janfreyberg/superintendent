@@ -7,7 +7,7 @@ import ipywidgets as widgets
 import numpy as np
 import pandas as pd
 
-from . import display, iterating, validation, controls
+from . import display, validation, controls
 
 
 class Labeller:
@@ -15,35 +15,33 @@ class Labeller:
     Data point labelling.
 
     This class allows you to label individual data points.
+
+    Parameters
+    ----------
+
+    features : np.array | pd.DataFrame
+        The input array for your model
+    labels : np.array, pd.Series, pd.DataFrame, optional
+        The labels for your data.
+    display_func : str, func, optional
+        Either a function that accepts one row of features and returns
+        what should be displayed with IPython's `display`, or a string
+        that is any of 'img', 'image'.
+    keyboard_shortcuts : bool, optional
+        If you want to enable ipyevent-mediated keyboard capture to use the
+        keyboard rather than the mouse to submit data.
+
     """
 
     def __init__(
         self,
         features,
         labels=None,
-        classifier=None,
         display_func=None,
-        data_iterator=None,
-        keyboard_shortcuts=True,
+        keyboard_shortcuts=False,
     ):
         """
         Make a class that allows you to label data points.
-
-        Parameters
-        ----------
-
-        features : np.array | pd.DataFrame
-            The input array for your model
-        labels : np.array | pd.Series | pd.DataFrame
-            The labels for your data.
-        classifier : object
-            An object that implements the standard sklearn fit/predict methods.
-        display_func : str | func
-            Either a function that accepts one row of features and returns
-            what should be displayed with IPython's `display`, or a string
-            that is any of 'img'.
-        confidence : np.array | pd.Series | pd.DataFrame
-            optionally, provide the confidence for your labels.
 
         """
         # the widget elements
@@ -73,16 +71,14 @@ class Labeller:
 
         self.progressbar = widgets.IntProgress(description="Progress:")
         self.top_bar.children = (self.progressbar,)
+        self.undo_button = widgets.Button(description="Undo", icon="undo")
+        self.undo_button.on_click(self._undo)
+        self.top_bar.children = (*self.top_bar.children, self.undo_button)
 
         if display_func is not None:
             self._display_func = display_func
         else:
             self._display_func = display.functions["default"]
-
-        if data_iterator is not None:
-            self._data_iterator = data_iterator
-        else:
-            self._data_iterator = iterating.functions["default"]
 
         self.event_manager = None
         self.timer = controls.Timer()
@@ -99,9 +95,6 @@ class Labeller:
         # set the default display func for this method
         kwargs["display_func"] = kwargs.get(
             "display_func", display.functions["default"]
-        )
-        kwargs["data_iterator"] = kwargs.get(
-            "data_iterator", iterating.functions["default"]
         )
         instance = cls(features, *args, **kwargs)
 
@@ -143,9 +136,6 @@ class Labeller:
             "display_func",
             partial(display.functions["image"], imsize=image_size),
         )
-        kwargs["data_iterator"] = kwargs.get(
-            "data_iterator", iterating.functions["default"]
-        )
         instance = cls(features, *args, **kwargs)
 
         return instance
@@ -154,9 +144,9 @@ class Labeller:
 
         if isinstance(sender, dict) and "value" in sender:
             value = sender["value"]
-            self._current_annotation_iterator.send(value)
         else:
-            self._current_annotation_iterator.send(sender)
+            value = sender
+        self._current_annotation_iterator.send(value)
 
     def _onkeydown(self, event):
 
@@ -169,22 +159,17 @@ class Labeller:
         elif event["type"] == "keydown":
             pass
 
-    def _compose(self, feature, options, other_option=True):
+    def _compose(self, feature=None):
 
-        if self.timer > 0.5:
-            with self.feature_output:
-                IPython.display.clear_output(wait=True)
-                IPython.display.display(
-                    widgets.HTML(
-                        "<h1>Rendering... "
-                        '<i class="fa fa-spinner fa-spin"'
-                        ' aria-hidden="true"></i>'
-                    )
-                )
-        with self.timer:
-            with self.feature_output:
-                IPython.display.clear_output(wait=True)
-                self._display_func(feature, n_samples=self.chunk_size)
+        self.progressbar.value = len(self._already_labelled) - 1
+        if feature is not None:
+            if self.timer > 0.5:
+                self._render_processing()
+
+            with self.timer:
+                with self.feature_output:
+                    IPython.display.clear_output(wait=True)
+                    self._display_func(feature, n_samples=self.chunk_size)
 
         self.layout.children = [
             self.top_bar,
@@ -193,11 +178,46 @@ class Labeller:
         ]
         return self
 
+    def _undo(self, change=None):
+        if len(self._already_labelled) > 1:
+            # pop the last two, since one has already been popped
+            curr = self._already_labelled.pop()
+            prev = self._already_labelled.pop()
+            # remove option if it existed only once:
+            if (self.new_labels == self.new_labels[prev]).sum() == 1:
+                self.input_widget.options = [
+                    option
+                    for option in self.input_widget.options
+                    if option != str(self.new_labels[prev])
+                ]
+            # set the previous, labelled one to nan:
+            if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
+                self.new_labels.loc[prev] = np.nan
+            else:
+                self.new_labels[prev] = np.nan
+            # append the previous and current one to queue:
+            self._label_queue.append(curr)
+            self._label_queue.append(prev)
+            # send a nan for the current one - this also advances it:
+            self._current_annotation_iterator.send(np.nan)
+
+    def _render_processing(self, message="Rendering..."):
+        self.layout.children = [
+            self.top_bar,
+            widgets.HTML(
+                "<h1>{}".format(message)
+                + '<i class="fa fa-spinner fa-spin"'
+                + ' aria-hidden="true"></i>'
+            ),
+        ]
+
     def _render_finished(self):
         self.progressbar.bar_style = "success"
+        self.progressbar.value = self.progressbar.max
         with self.feature_output:
             IPython.display.clear_output(wait=True)
             IPython.display.display(widgets.HTML(u"<h1>Finished labelling 🎉!"))
+        self.top_bar.children = self.top_bar.children[:-1]
         self.layout.children = [self.top_bar, self.feature_display]
         return self
 
