@@ -11,5 +11,3 @@ script:
   - flake8 superintendent
   - isort -c superintendent/**/*.py
   - python setup.py test
-  - pip install .
-  - docargs superintendent
