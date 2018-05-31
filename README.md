@@ -25,6 +25,16 @@ also have to enable the ipyevents jupyter extension:
 jupyter nbextension enable --py --sys-prefix ipyevents
 ```
 
+### Side note:
+
+For these examples, you will also need to install the following packages:
+
+```
+pip install requests bs4 wordcloud
+```
+
+These are not required for superintendent itself, so they won't be installed
+when you install superintendent.
 
 ## Use case 1: Labelling individual data points
 
