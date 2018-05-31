@@ -9,6 +9,20 @@ from .base import Labeller
 
 
 class ClusterSupervisor(Labeller):
+    """
+    A labelling tool for clusters.
+
+    Parameters
+    ----------
+    features : np.ndarray, pd.Series. pd.DataFrame
+        Your features.
+    cluster_labels : np.ndarray, pd.Series
+        The cluster label for each data point.
+    representativeness : np.ndarray, pd.Series
+        How representative of a cluster your data points are. This can be the
+        probability of cluster membership (as in e.g. HDBSCAN), or cluster
+        centrality (e.g. K-Means).
+    """
 
     def __init__(
         self, features, cluster_labels, representativeness=None, **kwargs
@@ -79,7 +93,6 @@ class ClusterSupervisor(Labeller):
                     reverse=True)
                 if label == cluster
             ]
-            features = iterating.get_values(self.features, sorted_index)
             new_val = yield self._compose(features)
 
             try:
@@ -94,7 +107,6 @@ class ClusterSupervisor(Labeller):
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
 
-            if new_val not in self.input_widget.options:
                 self.input_widget.options = self.input_widget.options + [
                     str(new_val)
                 ]

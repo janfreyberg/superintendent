@@ -9,7 +9,16 @@ from matplotlib import pyplot as plt
 
 
 def get_values(data, idxs):
-    """Helper function to index numpy arrays and pandas objects similarly."""
+    """
+    Helper function to index numpy arrays and pandas objects similarly.
+
+    Parameters
+    ----------
+    data : np.ndarray, pd.Series, pd.DataFrame
+        The features
+    idxs : np.ndarray, pd.Series, list
+        The indices to get. Should be integers.
+    """
     if isinstance(data, np.ndarray):
         return data[idxs, ...]
     elif isinstance(data, (pd.Series, pd.DataFrame)):
@@ -24,6 +33,13 @@ def default_display_func(feature, n_samples=1):
 
     If the data is not numerical, the function prints the data to screen as
     text.
+
+    Parameters
+    ----------
+    feature : np.ndarray, pd.Series, pd.DataFrame
+        The feature(s) you want to display
+    n_samples : int
+        How many you want to display.
     """
     n_samples = min(n_samples, feature.shape[0])
     if isinstance(feature, np.ndarray) and not np.issubdtype(
@@ -46,6 +62,15 @@ def image_display_func(feature, imsize=None, n_samples=1):
 
     Iterates over the rows in the array and uses matplotlib imshow to actually
     reveal the image.
+
+    Parameters
+    ----------
+    feature : np.ndarray
+        The data, in the shape of n_samples, n_pixels
+    imsize : tuple, optional
+        A tuple of width, height that gets passed to np.reshape
+    n_samples : int
+        number of images to show.
     """
     n_samples = min(n_samples, feature.shape[0])
     # grid layout for subplots

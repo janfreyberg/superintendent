@@ -47,6 +47,9 @@ class SemiSupervisor(base.Labeller):
         :py:mod:`superintendent.prioritisation`. This describes a function that
         receives input in the shape of n_samples, n_labels and calculates the
         priority in terms of information value in labelling a data point.
+    keyboard_shortcuts : bool, optional
+        If you want to enable ipyevent-mediated keyboard capture to use the
+        keyboard rather than the mouse to submit data.
 
     """
 
@@ -56,10 +59,9 @@ class SemiSupervisor(base.Labeller):
         labels=None,
         classifier=None,
         display_func=None,
-        data_iterator=None,
-        keyboard_shortcuts=True,
         eval_method=None,
         reorder=None,
+        keyboard_shortcuts=False,
         *args,
         **kwargs
     ):
@@ -76,16 +78,12 @@ class SemiSupervisor(base.Labeller):
             features,
             labels=labels,
             display_func=display_func,
-            data_iterator=data_iterator,
             keyboard_shortcuts=keyboard_shortcuts,
             *args,
             **kwargs
         )
         self.chunk_size = 1
         self.classifier = validation.valid_classifier(classifier)
-        self.undo_button = widgets.Button(description="Undo", icon="undo")
-        self.undo_button.on_click(self._undo)
-        self.top_bar.children = (*self.top_bar.children, self.undo_button)
         if self.classifier is not None:
             self.retrain_button = widgets.Button(
                 description="Retrain",
@@ -256,25 +254,3 @@ class SemiSupervisor(base.Labeller):
             )
 
         self._compose()
-
-    def _undo(self, change=None):
-        # pop the last two, since one has already been popped
-        curr = self._already_labelled.pop()
-        prev = self._already_labelled.pop()
-        # remove option if it existed only once:
-        if (self.new_labels == self.new_labels[prev]).sum() == 1:
-            self.input_widget.options = [
-                option
-                for option in self.input_widget.options
-                if option != str(self.new_labels[prev])
-            ]
-        # set the previous, labelled one to nan:
-        if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
-            self.new_labels.loc[prev] = np.nan
-        else:
-            self.new_labels[prev] = np.nan
-        # append the previous and current one to queue:
-        self._label_queue.append(curr)
-        self._label_queue.append(prev)
-        # send a nan for the current one - this also advances it:
-        self._current_annotation_iterator.send(np.nan)

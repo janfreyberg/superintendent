@@ -7,7 +7,7 @@ import ipywidgets as widgets
 import numpy as np
 import pandas as pd
 
-from . import display, iterating, validation, controls
+from . import display, validation, controls
 
 
 class Labeller:
@@ -27,6 +27,9 @@ class Labeller:
         Either a function that accepts one row of features and returns
         what should be displayed with IPython's `display`, or a string
         that is any of 'img', 'image'.
+    keyboard_shortcuts : bool, optional
+        If you want to enable ipyevent-mediated keyboard capture to use the
+        keyboard rather than the mouse to submit data.
 
     """
 
@@ -35,8 +38,7 @@ class Labeller:
         features,
         labels=None,
         display_func=None,
-        data_iterator=None,
-        keyboard_shortcuts=True,
+        keyboard_shortcuts=False,
     ):
         """
         Make a class that allows you to label data points.
@@ -75,11 +77,6 @@ class Labeller:
         else:
             self._display_func = display.functions["default"]
 
-        if data_iterator is not None:
-            self._data_iterator = data_iterator
-        else:
-            self._data_iterator = iterating.functions["default"]
-
         self.event_manager = None
         self.timer = controls.Timer()
 
@@ -95,9 +92,6 @@ class Labeller:
         # set the default display func for this method
         kwargs["display_func"] = kwargs.get(
             "display_func", display.functions["default"]
-        )
-        kwargs["data_iterator"] = kwargs.get(
-            "data_iterator", iterating.functions["default"]
         )
         instance = cls(features, *args, **kwargs)
 
@@ -139,16 +133,12 @@ class Labeller:
             "display_func",
             partial(display.functions["image"], imsize=image_size),
         )
-        kwargs["data_iterator"] = kwargs.get(
-            "data_iterator", iterating.functions["default"]
-        )
         instance = cls(features, *args, **kwargs)
 
         return instance
 
     def _apply_annotation(self, sender):
 
-        self.progressbar.value += 1
         if isinstance(sender, dict) and "value" in sender:
             value = sender["value"]
         else:

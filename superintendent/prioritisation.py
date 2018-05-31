@@ -10,12 +10,30 @@ import numpy as np
 
 
 def entropy(probabilities):
-    """Sort by the entropy of the probabilites (high to low)."""
+    """
+    Sort by the entropy of the probabilities (high to low).
+
+    Parameters
+    ----------
+    probabilities : np.ndarray
+        An array of probabilities, with the shape n_samples,
+        n_classes
+
+    """
     return np.argsort(-scipy.stats.entropy(probabilities.T))
 
 
 def margin(probabilities):
-    """Sort by the margin between the top two predictions (low to high)."""
+    """
+    Sort by the margin between the top two predictions (low to high).
+
+    Parameters
+    ----------
+    probabilities : np.ndarray
+        An array of probabilities, with the shape n_samples,
+        n_classes
+
+    """
     return np.argsort(
         np.sort(probabilities, axis=1)[:, -1]
         - np.sort(probabilities, axis=1)[:, -2]
