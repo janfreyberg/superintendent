@@ -71,6 +71,9 @@ class Labeller:
 
         self.progressbar = widgets.IntProgress(description="Progress:")
         self.top_bar.children = (self.progressbar,)
+        self.undo_button = widgets.Button(description="Undo", icon="undo")
+        self.undo_button.on_click(self._undo)
+        self.top_bar.children = (*self.top_bar.children, self.undo_button)
 
         if display_func is not None:
             self._display_func = display_func
@@ -158,6 +161,7 @@ class Labeller:
 
     def _compose(self, feature=None):
 
+        self.progressbar.value = len(self._already_labelled) - 1
         if feature is not None:
             if self.timer > 0.5:
                 self._render_processing()
@@ -174,6 +178,29 @@ class Labeller:
         ]
         return self
 
+    def _undo(self, change=None):
+        if len(self._already_labelled) > 1:
+            # pop the last two, since one has already been popped
+            curr = self._already_labelled.pop()
+            prev = self._already_labelled.pop()
+            # remove option if it existed only once:
+            if (self.new_labels == self.new_labels[prev]).sum() == 1:
+                self.input_widget.options = [
+                    option
+                    for option in self.input_widget.options
+                    if option != str(self.new_labels[prev])
+                ]
+            # set the previous, labelled one to nan:
+            if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
+                self.new_labels.loc[prev] = np.nan
+            else:
+                self.new_labels[prev] = np.nan
+            # append the previous and current one to queue:
+            self._label_queue.append(curr)
+            self._label_queue.append(prev)
+            # send a nan for the current one - this also advances it:
+            self._current_annotation_iterator.send(np.nan)
+
     def _render_processing(self, message="Rendering..."):
         self.layout.children = [
             self.top_bar,
@@ -186,9 +213,11 @@ class Labeller:
 
     def _render_finished(self):
         self.progressbar.bar_style = "success"
+        self.progressbar.value = self.progressbar.max
         with self.feature_output:
             IPython.display.clear_output(wait=True)
             IPython.display.display(widgets.HTML(u"<h1>Finished labelling 🎉!"))
+        self.top_bar.children = self.top_bar.children[:-1]
         self.layout.children = [self.top_bar, self.feature_display]
         return self
 

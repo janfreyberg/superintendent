@@ -4,8 +4,9 @@ from collections import OrderedDict, deque
 
 import numpy as np
 
-from . import iterating, validation
+from . import validation
 from .base import Labeller
+from .display import get_values
 
 
 class ClusterSupervisor(Labeller):
@@ -67,6 +68,7 @@ class ClusterSupervisor(Labeller):
         self.new_labels[:] = np.nan
 
         self._label_queue = deque(self.new_clusters.keys())
+        self._already_labelled = deque([])
         if shuffle:
             np.random.shuffle(self._label_queue)
 
@@ -85,6 +87,7 @@ class ClusterSupervisor(Labeller):
         """
         while len(self._label_queue) > 0:
             cluster = self._label_queue.pop()
+            self._already_labelled.append(cluster)
             sorted_index = [
                 i for i, (rep, label) in sorted(
                     enumerate(
@@ -93,6 +96,7 @@ class ClusterSupervisor(Labeller):
                     reverse=True)
                 if label == cluster
             ]
+            features = get_values(self.features, sorted_index)
             new_val = yield self._compose(features)
 
             try:
@@ -107,6 +111,10 @@ class ClusterSupervisor(Labeller):
                     self.cluster_labels == cluster
                 ] = self.new_clusters[cluster]
 
+            if (
+                new_val not in self.input_widget.options
+                and str(new_val) != 'nan'
+            ):
                 self.input_widget.options = self.input_widget.options + [
                     str(new_val)
                 ]
