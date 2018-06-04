@@ -72,13 +72,13 @@ class ClusterSupervisor(Labeller):
         if shuffle:
             np.random.shuffle(self._label_queue)
 
-        self._current_annotation_iterator = self._annotation_iterator()
+        self._annotation_loop = self._annotation_iterator()
         # reset the progress bar
         self.progressbar.max = len(self._label_queue)
         self.progressbar.value = 0
 
         # start the iteration cycle
-        return next(self._current_annotation_iterator)
+        return next(self._annotation_loop)
 
     def _annotation_iterator(self):
         """

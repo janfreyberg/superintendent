@@ -1,6 +1,7 @@
 """Base class to inherit from."""
 
 from functools import partial
+import abc
 
 import IPython.display
 import ipywidgets as widgets
@@ -10,7 +11,7 @@ import pandas as pd
 from . import display, validation, controls
 
 
-class Labeller:
+class Labeller(abc.ABC):
     """
     Data point labelling.
 
@@ -83,6 +84,14 @@ class Labeller:
         self.event_manager = None
         self.timer = controls.Timer()
 
+    @abc.abstractmethod
+    def annotate(self):
+        pass
+
+    @abc.abstractmethod
+    def _annotation_iterator(self):
+        pass
+
     @classmethod
     def from_dataframe(cls, features, *args, **kwargs):
         """Create a relabeller widget from a dataframe.
@@ -146,7 +155,7 @@ class Labeller:
             value = sender["value"]
         else:
             value = sender
-        self._current_annotation_iterator.send(value)
+        self._annotation_loop.send(value)
 
     def _onkeydown(self, event):
 
@@ -199,7 +208,7 @@ class Labeller:
             self._label_queue.append(curr)
             self._label_queue.append(prev)
             # send a nan for the current one - this also advances it:
-            self._current_annotation_iterator.send(np.nan)
+            self._annotation_loop.send(np.nan)
 
     def _render_processing(self, message="Rendering..."):
         self.layout.children = [
