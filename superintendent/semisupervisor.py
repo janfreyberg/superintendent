@@ -182,14 +182,14 @@ class SemiSupervisor(base.Labeller):
         self._label_queue = deque(relabel)
         self._already_labelled = deque([])
 
-        self._current_annotation_iterator = self._annotation_iterator()
+        self._annotation_loop = self._annotation_iterator()
         # reset the progress bar
         self.progressbar.max = len(self._label_queue)
         self.progressbar.bar_style = ""
         self.progressbar.value = 0
 
         # start the iteration cycle
-        return next(self._current_annotation_iterator)
+        return next(self._annotation_loop)
 
     def _annotation_iterator(self):
         """Relabel should be integer indices"""

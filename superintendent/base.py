@@ -146,7 +146,7 @@ class Labeller:
             value = sender["value"]
         else:
             value = sender
-        self._current_annotation_iterator.send(value)
+        self._annotation_loop.send(value)
 
     def _onkeydown(self, event):
 
@@ -199,7 +199,7 @@ class Labeller:
             self._label_queue.append(curr)
             self._label_queue.append(prev)
             # send a nan for the current one - this also advances it:
-            self._current_annotation_iterator.send(np.nan)
+            self._annotation_loop.send(np.nan)
 
     def _render_processing(self, message="Rendering..."):
         self.layout.children = [
