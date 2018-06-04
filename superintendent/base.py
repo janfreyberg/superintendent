@@ -1,6 +1,7 @@
 """Base class to inherit from."""
 
 from functools import partial
+import abc
 
 import IPython.display
 import ipywidgets as widgets
@@ -10,7 +11,7 @@ import pandas as pd
 from . import display, validation, controls
 
 
-class Labeller:
+class Labeller(abc.ABC):
     """
     Data point labelling.
 
@@ -82,6 +83,14 @@ class Labeller:
 
         self.event_manager = None
         self.timer = controls.Timer()
+
+    @abc.abstractmethod
+    def annotate(self):
+        pass
+
+    @abc.abstractmethod
+    def _annotation_iterator(self):
+        pass
 
     @classmethod
     def from_dataframe(cls, features, *args, **kwargs):
