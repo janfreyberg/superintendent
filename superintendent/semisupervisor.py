@@ -47,6 +47,12 @@ class SemiSupervisor(base.Labeller):
         :py:mod:`superintendent.prioritisation`. This describes a function that
         receives input in the shape of n_samples, n_labels and calculates the
         priority in terms of information value in labelling a data point.
+    shuffle_prop : float
+        The proportion of points that are shuffled when the data points are
+        re-ordered (see reorder keyword-argument). This controls the
+        "exploration vs exploitation" trade-off - the higher, the more you
+        explore the feature space randomly, the lower, the more you exploit
+        your current weak points.
     keyboard_shortcuts : bool, optional
         If you want to enable ipyevent-mediated keyboard capture to use the
         keyboard rather than the mouse to submit data.
@@ -61,6 +67,7 @@ class SemiSupervisor(base.Labeller):
         display_func=None,
         eval_method=None,
         reorder=None,
+        shuffle_prop=0.1,
         keyboard_shortcuts=False,
         *args,
         **kwargs
@@ -83,6 +90,7 @@ class SemiSupervisor(base.Labeller):
             **kwargs
         )
         self.chunk_size = 1
+        self.shuffle_prop = shuffle_prop
         self.classifier = validation.valid_classifier(classifier)
         if self.classifier is not None:
             self.retrain_button = widgets.Button(
@@ -248,7 +256,8 @@ class SemiSupervisor(base.Labeller):
                     self.reorder(
                         self.classifier.predict_proba(
                             get_values(self.features, list(self._label_queue))
-                        )
+                        ),
+                        shuffle_prop=self.shuffle_prop
                     )
                 ]
             )
