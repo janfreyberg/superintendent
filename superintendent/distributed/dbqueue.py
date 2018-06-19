@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from contextlib import contextmanager
 import uuid
 import sqlalchemy as sa
@@ -27,7 +27,7 @@ def make_table(storage_type='pickle', tablename=None):
             input = sa.Column(sa.Integer)
             output = sa.Column(sa.String, nullable=True)
             inserted_at = sa.Column(sa.DateTime)
-            order = sa.Column(sa.Integer)
+            priority = sa.Column(sa.Integer)
             popped_at = sa.Column(sa.DateTime, nullable=True)
             completed_at = sa.Column(sa.DateTime, nullable=True)
             worker_id = sa.Column(sa.String, nullable=True)
@@ -96,7 +96,7 @@ class Backend:
         self.data = make_table(storage_type=storage_type,
                                tablename=self.task_id)
         self.engine = sa.create_engine(
-            'sqlite:///:memory:', echo=True)
+            connection_string)
         self.data.metadata.create_all(self.engine)
 
     @contextmanager
@@ -117,19 +117,27 @@ class Backend:
                 self.data(input=value, inserted_at=datetime.now())
             )
 
-    def pop(self, pop_timeout=600):
+    def pop(self, timeout=600):
         with self.session() as session:
             row = session.query(
                 self.data
+            ).filter(
+                self.data.completed_at.is_(None)
+                & (self.data.popped_at.is_(None)
+                   | self.data.popped_at < (datetime.now()
+                                            - timedelta(seconds=timeout)))
             ).order_by(
                 self.data.priority
             ).first()
-            row.popped_at = datetime.now()
-            id_ = row.id
-            value = row.input
-        return id_, value
+            if row is None:
+                return None
+            else:
+                row.popped_at = datetime.now()
+                id_ = row.id
+                value = row.input
+                return id_, value
 
-    def mark_completed(self, id_, value):
+    def submit(self, id_, value):
         with self.session() as session:
             row = session.query(
                 self.data
