@@ -124,8 +124,8 @@ class Backend:
             ).filter(
                 self.data.completed_at.is_(None)
                 & (self.data.popped_at.is_(None)
-                   | self.data.popped_at < (datetime.now()
-                                            - timedelta(seconds=timeout)))
+                   | (self.data.popped_at
+                      < (datetime.now() - timedelta(seconds=timeout))))
             ).order_by(
                 self.data.priority
             ).first()
