@@ -1,11 +1,11 @@
 import json
 import pickle
-from datetime import datetime, timedelta
-from contextlib import contextmanager
 import uuid
+from contextlib import contextmanager
+from datetime import datetime, timedelta
+
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative  # noqa
-
 
 IndexBase = sa.ext.declarative.declarative_base()
 
