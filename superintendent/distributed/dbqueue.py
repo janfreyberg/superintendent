@@ -70,6 +70,12 @@ deserialisers = {
     'json': json.loads
 }
 
+serialisers = {
+    'index': lambda x: x,
+    'pickle': pickle.dumps,
+    'json': json.dumps
+}
+
 
 class Backend:
 
@@ -92,6 +98,7 @@ class Backend:
 
         self.data = tables[storage_type]
         self.deserialiser = deserialisers[storage_type]
+        self.serialiser = serialisers[storage_type]
 
         if task_id is not None:
             self.data.__tablename__ = (f'superintendent'
@@ -117,7 +124,8 @@ class Backend:
     def insert(self, value):
         with self.session() as session:
             session.add(
-                self.data(input=value, inserted_at=datetime.now())
+                self.data(input=self.serialiser(value),
+                          inserted_at=datetime.now())
             )
 
     def pop(self, timeout=600):
