@@ -1,10 +1,9 @@
+import configparser
 import json
 import pickle
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-
-import configparser
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative  # noqa
