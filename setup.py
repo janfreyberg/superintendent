@@ -40,7 +40,8 @@ setup(
         'matplotlib',
         'scikit-learn',
         'scipy',
-        'sqlalchemy'
+        'sqlalchemy',
+        'psycopg2-binary'
         ],
     tests_require=['pytest'],
     setup_requires=['pytest-runner']

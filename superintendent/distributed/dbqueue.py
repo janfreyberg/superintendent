@@ -4,6 +4,8 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
+import configparser
+
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative  # noqa
 
@@ -11,7 +13,7 @@ IndexBase = sa.ext.declarative.declarative_base()
 
 
 class IndexQueueItem(IndexBase):
-    __tablename__ = f'superintendent-index-queue-{uuid.uuid4()}'
+    __tablename__ = f'si-index-queue-{uuid.uuid4()}'
     id = sa.Column(sa.Integer, primary_key=True)
     input = sa.Column(sa.Integer)
     output = sa.Column(sa.String, nullable=True)
@@ -26,7 +28,7 @@ PickleBase = sa.ext.declarative.declarative_base()
 
 
 class PickleQueueItem(PickleBase):
-    __tablename__ = f'superintendent-pickle-queue-{uuid.uuid4()}'
+    __tablename__ = f'si-pickle-queue-{uuid.uuid4()}'
     id = sa.Column(sa.Integer, primary_key=True)
     input = sa.Column(sa.Integer)
     output = sa.Column(sa.String, nullable=True)
@@ -41,7 +43,7 @@ JsonBase = sa.ext.declarative.declarative_base()
 
 
 class JsonQueueItem(JsonBase):
-    __tablename__ = f'superintendent-json-queue-{uuid.uuid4()}'
+    __tablename__ = f'si-json-queue-{uuid.uuid4()}'
     id = sa.Column(sa.Integer, primary_key=True)
     input = sa.Column(sa.Integer)
     output = sa.Column(sa.String, nullable=True)
@@ -79,18 +81,12 @@ serialisers = {
 
 class Backend:
 
-    def __init__(self,
-                 connection_string='sqlite:///:memory:',
-                 # user='', password='',
-                 # host='localhost',
-                 # port='', database='',
-                 task_id=None, storage_type='pickle'):
-        # self.user = user
-        # self.password = password
-        # self.host = host
-        # self.port = port
-        # self.database = database
-
+    def __init__(
+        self,
+        connection_string='sqlite:///:memory:',
+        task_id=None,
+        storage_type='pickle'
+    ):
         if task_id is None:
             self.task_id = uuid.uuid4()
         else:
@@ -101,13 +97,51 @@ class Backend:
         self.serialiser = serialisers[storage_type]
 
         if task_id is not None:
-            self.data.__tablename__ = (f'superintendent'
+            self.data.__tablename__ = (f'si'
                                        f'-{storage_type}'
                                        f'-{task_id}'
                                        f'-{uuid.uuid4()}')
         self.engine = sa.create_engine(
             connection_string)
         self.data.metadata.create_all(self.engine)
+
+    @classmethod
+    def from_config_file(
+        cls, config_path, task_id=None, storage_type='pickle'
+    ):
+        """Instantiate with database credentials from a configuration file.
+
+        The config file should be an INI file with the following contents:
+
+        [database]
+        ; dialect+driver://username:password@host:port/database
+
+        dialect=xxx
+        driver=xxx
+        username=xxx
+        password=xxx
+        host=xxx
+        port=xxx
+        database=xxx
+
+        Parameters
+        ----------
+        config_path : str
+            Path to configuration file.
+        task_id : uuid or None
+            # TODO
+        storage_type : str
+            # TODO
+        """
+        config = configparser.ConfigParser()
+        config.read(config_path)
+
+        connection_string_template = "{dialect}+{driver}://" \
+            "{username}:{password}@{host}:{port}/{database}"
+        connection_string = connection_string_template.format(
+            **config['database']
+        )
+        return cls(connection_string, task_id, storage_type)
 
     @contextmanager
     def session(self):
