@@ -1,10 +1,55 @@
+import json
+import pickle
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 import uuid
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative  # noqa
 
-Base = sa.ext.declarative.declarative_base()
+
+IndexBase = sa.ext.declarative.declarative_base()
+
+
+class IndexQueueItem(IndexBase):
+    __tablename__ = f'superintendent-index-queue-{uuid.uuid4()}'
+    id = sa.Column(sa.Integer, primary_key=True)
+    input = sa.Column(sa.Integer)
+    output = sa.Column(sa.String, nullable=True)
+    inserted_at = sa.Column(sa.DateTime)
+    priority = sa.Column(sa.Integer)
+    popped_at = sa.Column(sa.DateTime, nullable=True)
+    completed_at = sa.Column(sa.DateTime, nullable=True)
+    worker_id = sa.Column(sa.String, nullable=True)
+
+
+PickleBase = sa.ext.declarative.declarative_base()
+
+
+class PickleQueueItem(PickleBase):
+    __tablename__ = f'superintendent-pickle-queue-{uuid.uuid4()}'
+    id = sa.Column(sa.Integer, primary_key=True)
+    input = sa.Column(sa.Integer)
+    output = sa.Column(sa.String, nullable=True)
+    inserted_at = sa.Column(sa.DateTime)
+    priority = sa.Column(sa.Integer)
+    popped_at = sa.Column(sa.DateTime, nullable=True)
+    completed_at = sa.Column(sa.DateTime, nullable=True)
+    worker_id = sa.Column(sa.String, nullable=True)
+
+
+JsonBase = sa.ext.declarative.declarative_base()
+
+
+class JsonQueueItem(JsonBase):
+    __tablename__ = f'superintendent-json-queue-{uuid.uuid4()}'
+    id = sa.Column(sa.Integer, primary_key=True)
+    input = sa.Column(sa.Integer)
+    output = sa.Column(sa.String, nullable=True)
+    inserted_at = sa.Column(sa.DateTime)
+    priority = sa.Column(sa.Integer)
+    popped_at = sa.Column(sa.DateTime, nullable=True)
+    completed_at = sa.Column(sa.DateTime, nullable=True)
+    worker_id = sa.Column(sa.String, nullable=True)
 
 
 def orm_to_dict(obj, parent):
@@ -13,65 +58,17 @@ def orm_to_dict(obj, parent):
             if hasattr(attr, 'key')}
 
 
-def make_table(storage_type='pickle', tablename=None):
-    Base = sa.ext.declarative.declarative_base()
+tables = {
+    'index': IndexQueueItem,
+    'pickle': PickleQueueItem,
+    'json': JsonQueueItem
+}
 
-    if storage_type == 'index':
-
-        class IndexQueueItem(Base):
-            if tablename is None:
-                __tablename__ = f'superintendent-{uuid.uuid4()}'
-            else:
-                __tablename__ = tablename
-            id = sa.Column(sa.Integer, primary_key=True)
-            input = sa.Column(sa.Integer)
-            output = sa.Column(sa.String, nullable=True)
-            inserted_at = sa.Column(sa.DateTime)
-            priority = sa.Column(sa.Integer)
-            popped_at = sa.Column(sa.DateTime, nullable=True)
-            completed_at = sa.Column(sa.DateTime, nullable=True)
-            worker_id = sa.Column(sa.String, nullable=True)
-
-        return IndexQueueItem
-
-    elif storage_type == 'pickle':
-
-        class PickleQueueItem(Base):
-            if tablename is None:
-                __tablename__ = f'superintendent-{uuid.uuid4()}'
-            else:
-                __tablename__ = tablename
-            id = sa.Column(sa.Integer, primary_key=True)
-            input = sa.Column(sa.LargeBinary)
-            output = sa.Column(sa.String, nullable=True)
-            inserted_at = sa.Column(sa.DateTime)
-            priority = sa.Column(sa.Integer)
-            popped_at = sa.Column(sa.DateTime, nullable=True)
-            completed_at = sa.Column(sa.DateTime, nullable=True)
-            worker_id = sa.Column(sa.String, nullable=True)
-
-        return PickleQueueItem
-
-    elif storage_type == 'json':
-
-        class JsonQueueItem(Base):
-            if tablename is None:
-                __tablename__ = f'superintendent-{uuid.uuid4()}'
-            else:
-                __tablename__ = tablename
-            id = sa.Column(sa.Integer, primary_key=True)
-            input = sa.Column(sa.String)
-            inserted_at = sa.Column(sa.DateTime)
-            output = sa.Column(sa.String, nullable=True)
-            priority = sa.Column(sa.Integer)
-            popped_at = sa.Column(sa.DateTime, nullable=True)
-            completed_at = sa.Column(sa.DateTime, nullable=True)
-            worker_id = sa.Column(sa.String, nullable=True)
-
-        return JsonQueueItem
-
-    else:
-        raise ValueError('Storage type not recognised.')
+deserialisers = {
+    'index': lambda x: x,
+    'pickle': pickle.loads,
+    'json': json.loads
+}
 
 
 class Backend:
@@ -93,8 +90,14 @@ class Backend:
         else:
             self.task_id = task_id
 
-        self.data = make_table(storage_type=storage_type,
-                               tablename=self.task_id)
+        self.data = tables[storage_type]
+        self.deserialiser = deserialisers[storage_type]
+
+        if task_id is not None:
+            self.data.__tablename__ = (f'superintendent'
+                                       f'-{storage_type}'
+                                       f'-{task_id}'
+                                       f'-{uuid.uuid4()}')
         self.engine = sa.create_engine(
             connection_string)
         self.data.metadata.create_all(self.engine)
@@ -135,7 +138,7 @@ class Backend:
                 row.popped_at = datetime.now()
                 id_ = row.id
                 value = row.input
-                return id_, value
+                return id_, self.deserialiser(value)
 
     def submit(self, id_, value):
         with self.session() as session:
