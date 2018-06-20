@@ -79,7 +79,19 @@ serialisers = {
 
 
 class Backend:
+    """Implements a queue for distributed labelling.
 
+    For example,
+
+    >>> from superintendent.distributed.dbqueue import Backend
+    >>> q  = Backend(storage_type='index')
+    >>> q.insert(1)
+    >>> id_, index = q.pop()
+
+    ...
+
+    >>> q.submit(id_, value)
+    """
     def __init__(
         self,
         connection_string='sqlite:///:memory:',
