@@ -81,16 +81,19 @@ serialisers = {
 class Backend:
     """Implements a queue for distributed labelling.
 
-    For example,
-
     >>> from superintendent.distributed.dbqueue import Backend
     >>> q  = Backend(storage_type='index')
     >>> q.insert(1)
     >>> id_, index = q.pop()
-
-    ...
-
+    >>> # ...
     >>> q.submit(id_, value)
+
+    Attributes
+    ----------
+    task_id : uuid.UUID
+    data : sqlalchemy.ext.declarative.api.DeclarativeMeta
+    deserialiser : builtin_function_or_method
+    serialiser : builtin_function_or_method
     """
     def __init__(
         self,
@@ -98,10 +101,22 @@ class Backend:
         task_id=None,
         storage_type='pickle'
     ):
+        """Instantiate queue for distributed labelling.
+
+        Parameters
+        ----------
+        connection_string : str, optional
+            dialect+driver://username:password@host:port/database. Default:
+            'sqlite:///:memory:'
+        task_id : str or None, optional
+            None (default) for new task.
+        storage_type : str, optional
+            One of 'index', 'pickle' (default) or 'json'.
+        """
         if task_id is None:
             self.task_id = uuid.uuid4()
         else:
-            self.task_id = task_id
+            self.task_id = uuid.UUID(task_id)
 
         self.data = tables[storage_type]
         self.deserialiser = deserialisers[storage_type]
@@ -139,10 +154,10 @@ class Backend:
         ----------
         config_path : str
             Path to configuration file.
-        task_id : uuid or None
-            # TODO
-        storage_type : str
-            # TODO
+        task_id : str or None, optional
+            None (default) for new task.
+        storage_type : str, optional
+            One of 'index', 'pickle' (default) or 'json'.
         """
         config = configparser.ConfigParser()
         config.read(config_path)
