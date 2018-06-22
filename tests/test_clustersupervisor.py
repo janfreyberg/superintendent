@@ -1,8 +1,10 @@
-import pandas as pd
-import numpy as np
-import pytest
-from superintendent import ClusterSupervisor
 import itertools
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from superintendent import ClusterSupervisor
 
 TEST_DF = pd.DataFrame(np.meshgrid(np.arange(20), np.arange(20))[0])
 TEST_SERIES = pd.Series(np.arange(20))
