@@ -41,7 +41,8 @@ setup(
         'scikit-learn',
         'scipy',
         'sqlalchemy',
-        'psycopg2-binary'
+        'psycopg2-binary',
+        'cython'
         ],
     tests_require=['pytest'],
     setup_requires=['pytest-runner']
