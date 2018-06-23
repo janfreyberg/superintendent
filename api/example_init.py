@@ -8,7 +8,9 @@ DATABASE_CONFIG_PATH = os.path.join(
 
 
 def main():
-    q = Backend.from_config_file(DATABASE_CONFIG_PATH, storage_type='integer')
+    q = Backend.from_config_file(
+        DATABASE_CONFIG_PATH, storage_type='integer_index'
+    )
     for i in range(10):
         q.insert(i)
 

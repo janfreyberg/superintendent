@@ -42,7 +42,9 @@ setup(
         'scipy',
         'sqlalchemy',
         'psycopg2-binary',
-        'cython'
+        'cython',
+        'flask',
+        'werkzeug'
         ],
     tests_require=['pytest'],
     setup_requires=['pytest-runner']
