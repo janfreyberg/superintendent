@@ -19,7 +19,9 @@ def test_backend():
 
 
 def test_backend_postgresql():
-    config_path = os.path.join(os.getcwd(), 'config.ini')
+    config_path = os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), 'config.ini'
+    )
     if not os.path.exists(config_path):
         warnings.warn(
             'postgresql config.ini not found in {}, skipping test ...'.format(
@@ -34,13 +36,6 @@ def test_backend_postgresql():
     q.insert(3)
     assert (q.pop()) == (1, 1)
     q.submit(1, 10)
-
-    # test access to already exisiting table
-    q1 = Backend.from_config_file(
-        config_path, task_id=str(q.task_id), storage_type='index'
-    )
-    assert (q1.pop()) == (2, 2)
-    assert (q1.pop()) == (3, 3)
-    q1.engine.execute(
-        'drop table "{}" cascade'.format(q1.data.__tablename__)
+    q.engine.execute(
+        'drop table "{}" cascade'.format(q.data.__tablename__)
     )
