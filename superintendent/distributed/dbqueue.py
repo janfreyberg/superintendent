@@ -29,13 +29,13 @@ def orm_to_dict(obj, parent):
 
 
 deserialisers = {
-    'integer': lambda x: x,
+    'integer_index': lambda x: x,
     'pickle': pickle.loads,
     'json': json.loads
 }
 
 serialisers = {
-    'integer': lambda x: x,
+    'integer_index': lambda x: x,
     'pickle': pickle.dumps,
     'json': json.dumps
 }
@@ -45,9 +45,9 @@ class Backend:
     """Implements a queue for distributed labelling.
 
     >>> from superintendent.distributed.dbqueue import Backend
-    >>> q = Backend(storage_type='integer')
+    >>> q = Backend(storage_type='integer_index')
     >>> q.insert(1)
-    >>> id_, integer = q.pop()
+    >>> id_, integer_index = q.pop()
     >>> # ...
     >>> q.submit(id_, value)
 
@@ -70,7 +70,7 @@ class Backend:
             dialect+driver://username:password@host:port/database. Default:
             'sqlite:///:memory:'
         storage_type : str, optional
-            One of 'integer', 'pickle' (default) or 'json'.
+            One of 'integer_index', 'pickle' (default) or 'json'.
         """
         self.data = Superintendent
 
@@ -103,7 +103,7 @@ class Backend:
         config_path : str
             Path to configuration file.
         storage_type : str, optional
-            One of 'integer', 'pickle' (default) or 'json'.
+            One of 'integer_index', 'pickle' (default) or 'json'.
         """
         config = configparser.ConfigParser()
         config.read(config_path)
