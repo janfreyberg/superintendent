@@ -4,7 +4,7 @@ import warnings
 from superintendent.distributed.dbqueue import Backend
 
 
-def test_backend():
+def test_backend_in_memory():
     q = Backend(storage_type='index')
     q.insert(10)
     q.insert(100)
@@ -36,6 +36,7 @@ def test_backend_postgresql():
     q.insert(3)
     assert (q.pop()) == (1, 1)
     q.submit(1, 10)
+    assert (q.pop()) == (2, 2)
     q.engine.execute(
         'drop table "{}" cascade'.format(q.data.__tablename__)
     )
