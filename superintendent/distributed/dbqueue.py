@@ -1,48 +1,17 @@
 import configparser
 import json
 import pickle
-import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative  # noqa
 
-IndexBase = sa.ext.declarative.declarative_base()
+DeclarativeBase = sa.ext.declarative.declarative_base()
 
 
-class IndexQueueItem(IndexBase):
-    __tablename__ = f'si-index-queue-{uuid.uuid4()}'
-    id = sa.Column(sa.Integer, primary_key=True)
-    input = sa.Column(sa.Integer)
-    output = sa.Column(sa.String, nullable=True)
-    inserted_at = sa.Column(sa.DateTime)
-    priority = sa.Column(sa.Integer)
-    popped_at = sa.Column(sa.DateTime, nullable=True)
-    completed_at = sa.Column(sa.DateTime, nullable=True)
-    worker_id = sa.Column(sa.String, nullable=True)
-
-
-PickleBase = sa.ext.declarative.declarative_base()
-
-
-class PickleQueueItem(PickleBase):
-    __tablename__ = f'si-pickle-queue-{uuid.uuid4()}'
-    id = sa.Column(sa.Integer, primary_key=True)
-    input = sa.Column(sa.Integer)
-    output = sa.Column(sa.String, nullable=True)
-    inserted_at = sa.Column(sa.DateTime)
-    priority = sa.Column(sa.Integer)
-    popped_at = sa.Column(sa.DateTime, nullable=True)
-    completed_at = sa.Column(sa.DateTime, nullable=True)
-    worker_id = sa.Column(sa.String, nullable=True)
-
-
-JsonBase = sa.ext.declarative.declarative_base()
-
-
-class JsonQueueItem(JsonBase):
-    __tablename__ = f'si-json-queue-{uuid.uuid4()}'
+class Superintendent(DeclarativeBase):
+    __tablename__ = 'superintendent'
     id = sa.Column(sa.Integer, primary_key=True)
     input = sa.Column(sa.Integer)
     output = sa.Column(sa.String, nullable=True)
@@ -58,12 +27,6 @@ def orm_to_dict(obj, parent):
             for attr in sa.inspect(parent).all_orm_descriptors
             if hasattr(attr, 'key')}
 
-
-tables = {
-    'index': IndexQueueItem,
-    'pickle': PickleQueueItem,
-    'json': JsonQueueItem
-}
 
 deserialisers = {
     'index': lambda x: x,
@@ -90,7 +53,6 @@ class Backend:
 
     Attributes
     ----------
-    task_id : str
     data : sqlalchemy.ext.declarative.api.DeclarativeMeta
     deserialiser : builtin_function_or_method
     serialiser : builtin_function_or_method
@@ -98,7 +60,6 @@ class Backend:
     def __init__(
         self,
         connection_string='sqlite:///:memory:',
-        task_id=None,
         storage_type='pickle'
     ):
         """Instantiate queue for distributed labelling.
@@ -108,27 +69,19 @@ class Backend:
         connection_string : str, optional
             dialect+driver://username:password@host:port/database. Default:
             'sqlite:///:memory:'
-        task_id : str or None, optional
-            None (default) for new task.
         storage_type : str, optional
             One of 'index', 'pickle' (default) or 'json'.
         """
+        self.data = Superintendent
 
-        self.data = tables[storage_type]
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
         self.engine = sa.create_engine(connection_string)
-
-        if task_id is None:
-            self.data.metadata.create_all(self.engine)
-            table_name = self.data.__tablename__
-            self.task_id = '-'.join(table_name.split('-')[3:])
-        else:
-            self.task_id = task_id
+        self.data.metadata.create_all(self.engine)
 
     @classmethod
     def from_config_file(
-        cls, config_path, task_id=None, storage_type='pickle'
+        cls, config_path, storage_type='pickle'
     ):
         """Instantiate with database credentials from a configuration file.
 
@@ -149,8 +102,6 @@ class Backend:
         ----------
         config_path : str
             Path to configuration file.
-        task_id : str or None, optional
-            None (default) for new task.
         storage_type : str, optional
             One of 'index', 'pickle' (default) or 'json'.
         """
@@ -162,7 +113,7 @@ class Backend:
         connection_string = connection_string_template.format(
             **config['database']
         )
-        return cls(connection_string, task_id, storage_type)
+        return cls(connection_string, storage_type)
 
     @contextmanager
     def session(self):
