@@ -90,7 +90,7 @@ class Backend:
 
     Attributes
     ----------
-    task_id : uuid.UUID
+    task_id : str
     data : sqlalchemy.ext.declarative.api.DeclarativeMeta
     deserialiser : builtin_function_or_method
     serialiser : builtin_function_or_method
@@ -117,16 +117,14 @@ class Backend:
         self.data = tables[storage_type]
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
-
-        self.engine = sa.create_engine(
-            connection_string)
+        self.engine = sa.create_engine(connection_string)
 
         if task_id is None:
             self.data.metadata.create_all(self.engine)
             table_name = self.data.__tablename__
-            self.task_id = uuid.UUID('-'.join(table_name.split('-')[3:]))
+            self.task_id = '-'.join(table_name.split('-')[3:])
         else:
-            self.task_id = uuid.UUID(task_id)
+            self.task_id = task_id
 
     @classmethod
     def from_config_file(
