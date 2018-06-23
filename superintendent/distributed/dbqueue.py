@@ -45,7 +45,7 @@ class Backend:
     """Implements a queue for distributed labelling.
 
     >>> from superintendent.distributed.dbqueue import Backend
-    >>> q  = Backend(storage_type='index')
+    >>> q = Backend(storage_type='index')
     >>> q.insert(1)
     >>> id_, index = q.pop()
     >>> # ...
