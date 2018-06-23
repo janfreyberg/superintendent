@@ -1,3 +1,6 @@
+import os
+import warnings
+
 from superintendent.distributed.dbqueue import Backend
 
 
@@ -13,3 +16,31 @@ def test_backend():
     assert completed[0]['output'] == '1000'
     assert completed[0]['input'] == 10
     assert completed[0]['id'] == 1
+
+
+def test_backend_postgresql():
+    config_path = os.path.join(os.getcwd(), 'config.ini')
+    if not os.path.exists(config_path):
+        warnings.warn(
+            'postgresql config.ini not found in {}, skipping test ...'.format(
+                os.path.dirname(config_path)
+            )
+        )
+        assert True
+        return
+    q = Backend.from_config_file(config_path, storage_type='index')
+    q.insert(1)
+    q.insert(2)
+    q.insert(3)
+    assert (q.pop()) == (1, 1)
+    q.submit(1, 10)
+
+    # test access to already exisiting table
+    q1 = Backend.from_config_file(
+        config_path, task_id=str(q.task_id), storage_type='index'
+    )
+    assert (q1.pop()) == (2, 2)
+    assert (q1.pop()) == (3, 3)
+    q1.engine.execute(
+        'drop table "{}" cascade'.format(q1.data.__tablename__)
+    )

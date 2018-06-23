@@ -113,23 +113,20 @@ class Backend:
         storage_type : str, optional
             One of 'index', 'pickle' (default) or 'json'.
         """
-        if task_id is None:
-            self.task_id = uuid.uuid4()
-        else:
-            self.task_id = uuid.UUID(task_id)
 
         self.data = tables[storage_type]
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
 
-        if task_id is not None:
-            self.data.__tablename__ = (f'si'
-                                       f'-{storage_type}'
-                                       f'-{task_id}'
-                                       f'-{uuid.uuid4()}')
         self.engine = sa.create_engine(
             connection_string)
-        self.data.metadata.create_all(self.engine)
+
+        if task_id is None:
+            self.data.metadata.create_all(self.engine)
+            table_name = self.data.__tablename__
+            self.task_id = uuid.UUID('-'.join(table_name.split('-')[3:]))
+        else:
+            self.task_id = uuid.UUID(task_id)
 
     @classmethod
     def from_config_file(
