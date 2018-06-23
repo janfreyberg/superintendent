@@ -1,8 +1,9 @@
 """Input and timing control widgets."""
 
 import time
-import ipywidgets as widgets
 from functools import total_ordering
+
+import ipywidgets as widgets
 import traitlets
 
 

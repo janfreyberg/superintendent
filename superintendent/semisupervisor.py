@@ -1,14 +1,14 @@
 """Tools to supervise classification."""
 
-from functools import partial
 from collections import deque
+from functools import partial
 
+import ipywidgets as widgets
 import numpy as np
 import pandas as pd
-import ipywidgets as widgets
 import sklearn.model_selection
 
-from . import base, validation, prioritisation
+from . import base, prioritisation, validation
 from .display import get_values
 
 

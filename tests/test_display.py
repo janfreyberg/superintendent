@@ -1,4 +1,4 @@
-from superintendent import SemiSupervisor
+from superintendent import SemiSupervisor  # noqa
 
 
 def test_output():

@@ -5,8 +5,8 @@ This module implements a range of functions that produce ordering of data based
 on class probabilities.
 """
 
-import scipy.stats
 import numpy as np
+import scipy.stats
 
 
 def _shuffle_subset(data, shuffle_prop):

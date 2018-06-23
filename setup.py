@@ -1,8 +1,9 @@
 """Installer."""
-from setuptools import setup
+import os.path
 # To use a consistent encoding
 from codecs import open
-import os.path
+
+from setuptools import setup
 
 here = os.path.dirname(os.path.abspath(__file__))
 
