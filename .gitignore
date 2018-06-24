@@ -10,4 +10,6 @@ build
 docs/_build
 _static
 messing_around.ipynb
-database.ini
+tests/database.ini
+api/config.ini
+
