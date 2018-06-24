@@ -101,7 +101,7 @@ class Backend:
         Parameters
         ----------
         config_path : str
-            Path to configuration file.
+            Path to database configuration file.
         storage_type : str, optional
             One of 'integer_index', 'pickle' (default) or 'json'.
         """

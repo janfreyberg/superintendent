@@ -20,11 +20,11 @@ def test_backend_in_memory():
 
 def test_backend_postgresql():
     config_path = os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), 'config.ini'
+        os.path.abspath(__file__)), 'database.ini'
     )
     if not os.path.exists(config_path):
         warnings.warn(
-            'postgresql config.ini not found in {}, skipping test ...'.format(
+            'PostgreSQL database.ini not in {}, skipping test ...'.format(
                 os.path.dirname(config_path)
             )
         )
