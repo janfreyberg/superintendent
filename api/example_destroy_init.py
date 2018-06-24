@@ -9,14 +9,19 @@ CONFIG_PATH = os.path.join(
 )
 
 
-def main():
-    q = Backend.from_config_file(
+def get_backend():
+    return Backend.from_config_file(
         CONFIG_PATH, storage_type='integer_index'
     )
+
+
+def main():
+    q = get_backend()
     q.engine.execute(
-        'drop table "{}" cascade'.format(q.data.__tablename__)
+        'drop table superintendent cascade'
     )
     print('Table destroyed')
+    q = get_backend()
     print('How many examples?')
     n = int(input())
     for i in range(n):
