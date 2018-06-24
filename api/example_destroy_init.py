@@ -13,6 +13,10 @@ def main():
     q = Backend.from_config_file(
         CONFIG_PATH, storage_type='integer_index'
     )
+    q.engine.execute(
+        'drop table "{}" cascade'.format(q.data.__tablename__)
+    )
+    print('Table destroyed')
     print('How many examples?')
     n = int(input())
     for i in range(n):
