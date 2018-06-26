@@ -25,15 +25,31 @@ import configparser
 import os
 
 from flask import Flask, jsonify
-from werkzeug.exceptions import default_exceptions
+from werkzeug.exceptions import (HTTPException, InternalServerError,
+                                 default_exceptions)
 
-from errors import json_errorhandler
 from superintendent.distributed.dbqueue import Backend
 
 # Config
 
 
 app = Flask(__name__)
+
+
+def json_errorhandler(exception):
+    """Create a JSON-encoded flask Response from an Exception."""
+
+    if not isinstance(exception, HTTPException):
+        exception = InternalServerError()
+
+    response = jsonify({
+        'error': exception.name,
+        'description': exception.description,
+        'code': exception.code
+    })
+    response.status_code = exception.code
+
+    return response
 
 
 for code in default_exceptions.keys():
