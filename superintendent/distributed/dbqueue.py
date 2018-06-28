@@ -154,7 +154,7 @@ class Backend:
                 value = row.input
                 return id_, self.deserialiser(value)
 
-    def submit(self, id_, value):
+    def submit(self, id_, value, worker_id=None):
         with self.session() as session:
             row = session.query(
                 self.data
@@ -162,6 +162,8 @@ class Backend:
                 id=id_
             ).first()
             row.output = value
+            if worker_id is not None:
+                row.worker_id = worker_id
             row.completed_at = datetime.now()
 
     def list_completed(self):
