@@ -24,7 +24,7 @@ port=8000
 import configparser
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from werkzeug.exceptions import (HTTPException, InternalServerError,
                                  default_exceptions)
 
@@ -91,8 +91,9 @@ def example():
 @app.route('/label/example/<example_id>/value/<value>', methods=['POST'])
 def label(example_id, value):
     """Queue a multiplication and return the task ID."""
+    worker = request.args.get('worker')
     q = get_backend()
-    q.submit(example_id, value)
+    q.submit(example_id, value, worker_id=worker)
     return jsonify({'example_id': example_id, 'value': value}), 200
 
 
