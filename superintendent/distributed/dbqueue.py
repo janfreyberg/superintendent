@@ -60,7 +60,7 @@ class Backend:
     def __init__(
         self,
         connection_string='sqlite:///:memory:',
-        storage_type='pickle'
+        storage_type='json'
     ):
         """Instantiate queue for distributed labelling.
 
