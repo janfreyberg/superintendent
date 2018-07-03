@@ -77,7 +77,11 @@ class Backend:
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
         self.engine = sa.create_engine(connection_string)
-        self.data.metadata.create_all(self.engine)
+
+        if not self.engine.dialect.has_table(
+            self.engine, self.data.__tablename__
+        ):
+            self.data.metadata.create_all(bind=self.engine)
 
     @classmethod
     def from_config_file(
