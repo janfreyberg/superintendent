@@ -13,7 +13,7 @@ DeclarativeBase = sa.ext.declarative.declarative_base()
 class Superintendent(DeclarativeBase):
     __tablename__ = 'superintendent'
     id = sa.Column(sa.Integer, primary_key=True)
-    input = sa.Column(sa.Integer)
+    input = sa.Column(sa.String)
     output = sa.Column(sa.String, nullable=True)
     inserted_at = sa.Column(sa.DateTime)
     priority = sa.Column(sa.Integer)
