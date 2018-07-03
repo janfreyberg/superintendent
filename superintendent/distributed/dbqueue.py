@@ -82,6 +82,9 @@ class Backend:
             self.engine, self.data.__tablename__
         ):
             self.data.metadata.create_all(bind=self.engine)
+        # create index for priority
+        ix_labelling = sa.Index('ix_labelling', self.data.priority)
+        ix_labelling.create(self.engine)
 
     @classmethod
     def from_config_file(
