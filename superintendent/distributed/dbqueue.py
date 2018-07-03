@@ -183,3 +183,12 @@ class Backend:
                 self.data.completed_at.isnot(None)
             ).all()
             return [orm_to_dict(obj, self.data) for obj in objects]
+
+    def list_uncompleted(self):
+        with self.session() as session:
+            objects = session.query(
+                self.data
+            ).filter(
+                self.data.output.is_(None)
+            ).all()
+            return [(obj.id, obj.input) for obj in objects]
