@@ -127,11 +127,12 @@ class Backend:
         finally:
             session.close()
 
-    def insert(self, value):
+    def insert(self, value, priority=None):
         with self.session() as session:
             session.add(
                 self.data(input=self.serialiser(value),
-                          inserted_at=datetime.now())
+                          inserted_at=datetime.now(),
+                          priority=priority)
             )
 
     def pop(self, timeout=600):
