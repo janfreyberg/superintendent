@@ -68,7 +68,7 @@ class Backend:
         ----------
         connection_string : str, optional
             dialect+driver://username:password@host:port/database. Default:
-            'sqlite:///:memory:'
+            'sqlite:///:memory:' (NB: Use only for debugging purposes)
         storage_type : str, optional
             One of 'integer_index', 'pickle' (default) or 'json'.
         """
