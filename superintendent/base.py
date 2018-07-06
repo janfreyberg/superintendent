@@ -40,6 +40,8 @@ class Labeller(abc.ABC):
         labels=None,
         display_func=None,
         keyboard_shortcuts=False,
+        hint_function=None,
+        hints=None
     ):
         """
         Make a class that allows you to label data points.
@@ -60,8 +62,12 @@ class Labeller(abc.ABC):
         )
 
         self.top_bar = widgets.HBox([])
-
-        self.input_widget = controls.Submitter()
+        hint_function = (
+            hint_function if hint_function is not None else display_func
+        )
+        self.input_widget = controls.Submitter(
+            hint_function=hint_function, hints=hints
+        )
         self.input_widget.on_submission(self._apply_annotation)
 
         self.features = validation.valid_data(features)
