@@ -69,6 +69,8 @@ class SemiSupervisor(base.Labeller):
         reorder=None,
         shuffle_prop=0.1,
         keyboard_shortcuts=False,
+        hint_function=None,
+        hints=None,
         *args,
         **kwargs
     ):
@@ -86,6 +88,8 @@ class SemiSupervisor(base.Labeller):
             labels=labels,
             display_func=display_func,
             keyboard_shortcuts=keyboard_shortcuts,
+            hint_function=hint_function,
+            hints=hints,
             *args,
             **kwargs
         )
