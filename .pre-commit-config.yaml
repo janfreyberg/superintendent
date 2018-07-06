@@ -1,4 +1,0 @@
-repos:
-- https://github.com/ambv/black
-  hooks:
-  - black superintendent
