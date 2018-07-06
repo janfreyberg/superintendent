@@ -1,10 +1,14 @@
 """Input and timing control widgets."""
 
+from typing import Tuple, Optional, Callable
+
 import time
 from functools import total_ordering
 
 import ipywidgets as widgets
 import traitlets
+
+import IPython.display
 
 
 class Submitter(widgets.VBox):
@@ -24,6 +28,15 @@ class Submitter(widgets.VBox):
     other_option : bool, optional
         Whether the widget should contain a text box for users to type in
         a value not in options.
+    hint_function : fun
+        A function that will be passed each label, that displays some output
+        that will be displayed under each label and can be considered a hint
+        or more in-depth description of a label. During image labelling tasks,
+        this might be a function that displays an example image.
+
+        This function gets re-applied everytime this widget renders, so if your
+        function call takes a long time to render, you should probably cache it
+        with e.g. functools.lru_cache
 
     """
 
@@ -31,8 +44,16 @@ class Submitter(widgets.VBox):
     options = traitlets.List(list())
     max_buttons = traitlets.Integer(12)
 
-    def __init__(self, options=(), max_buttons=12, other_option=True):
-        """Create a widget that will render submission options.
+    def __init__(
+        self,
+        options: Tuple=(),
+        max_buttons: int=12,
+        other_option: bool=True,
+        hint_function: Optional[Callable]=None,
+        hints=None
+    ):
+        """
+        Create a widget that will render submission options.
 
         Note that all parameters can also be changed through assignment after
         you create the widget.
@@ -41,6 +62,8 @@ class Submitter(widgets.VBox):
         super().__init__([])
         self.submission_functions = []
         self.max_buttons = max_buttons
+        self.hint_function = hint_function
+        self.hints = hints
         self.options = options
         self.other_option = other_option
         self._compose()
@@ -56,6 +79,7 @@ class Submitter(widgets.VBox):
 
         for func in self.submission_functions:
             func({"value": value, "source": source})
+        self._compose()
 
     def on_submission(self, func):
         """
@@ -77,15 +101,30 @@ class Submitter(widgets.VBox):
     def _compose(self, change=None):
 
         self.options = [str(option) for option in self.options]
+
+        if self.hint_function is not None and self.hints is not None:
+            self.hint_widgets = {
+                option: widgets.Output() for option in self.options
+            }
+
+            for option in self.options:
+                with self.hint_widgets[option]:
+                    IPython.display.clear_output(wait=True)
+                    self.hint_function(self.hints[option])
+
+        elif self.hint_function is None:
+            self.hint_widgets = {option: widgets.HBox() for option in self.options}
+
         if len(self.options) <= self.max_buttons:
+            # if we can display all options:
             control_elements = widgets.HBox(
-                [
-                    widgets.Button(description=str(option))
-                    for option in self.options
-                ]
+                [widgets.VBox([widgets.Button(description=str(option)),
+                               self.hint_widgets[option]])
+                 for option in self.options]
             )
-            for button in control_elements.children:
-                button.on_click(self._when_submitted)
+            for element in control_elements.children:
+                element.children[0].on_click(self._when_submitted)
+
         else:
             control_elements = widgets.HBox(
                 [
