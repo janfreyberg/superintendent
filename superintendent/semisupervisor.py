@@ -173,7 +173,8 @@ class SemiSupervisor(base.Labeller):
         self.new_labels = self.labels.copy()
         if self.new_labels.dtype == np.int64:
             self.new_labels = self.new_labels.astype(float)
-        # self.new_labels[:] = np.nan
+
+        self.new_labels[relabel] = np.nan
 
         if not any(relabel):
             raise ValueError("relabel should be a boolean array.")
