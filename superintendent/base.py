@@ -40,6 +40,7 @@ class Labeller(abc.ABC):
         labels=None,
         display_func=None,
         keyboard_shortcuts=False,
+        use_hints=False,
         hint_function=None,
         hints=None
     ):
@@ -65,6 +66,7 @@ class Labeller(abc.ABC):
         hint_function = (
             hint_function if hint_function is not None else display_func
         )
+        self.use_hints = use_hints
         self.input_widget = controls.Submitter(
             hint_function=hint_function, hints=hints
         )

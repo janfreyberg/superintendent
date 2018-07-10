@@ -58,5 +58,12 @@ def margin(probabilities, shuffle_prop=0.1):
     return _shuffle_subset(ordered, shuffle_prop)
 
 
+def certainty(probabilities, shuffle_prop=0.1):
+    ordered = np.argsort(
+        np.max(probabilities, axis=1)
+    )
+    return _shuffle_subset(ordered, shuffle_prop)
+
+
 functions = {"entropy": entropy, "margin": margin}
 """A dictionary of functions to prioritise data."""

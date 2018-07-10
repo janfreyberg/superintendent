@@ -29,14 +29,14 @@ class Submitter(widgets.VBox):
         Whether the widget should contain a text box for users to type in
         a value not in options.
     hint_function : fun
-        A function that will be passed each label, that displays some output
-        that will be displayed under each label and can be considered a hint
-        or more in-depth description of a label. During image labelling tasks,
-        this might be a function that displays an example image.
-
-        This function gets re-applied everytime this widget renders, so if your
-        function call takes a long time to render, you should probably cache it
-        with e.g. functools.lru_cache
+        A function that will be passed the hint for each label, that displays
+        some output that will be displayed under each label and can be
+        considered a hint or more in-depth description of a label. During image
+        labelling tasks, this might be a function that displays an example
+        image.
+    hints : dict
+        A dictionary with each element of options as a key, and the data that
+        gets passed to hint_function as input.
 
     """
 
@@ -63,7 +63,7 @@ class Submitter(widgets.VBox):
         self.submission_functions = []
         self.max_buttons = max_buttons
         self.hint_function = hint_function
-        self.hints = hints
+        self.hints = hints if hints is not None else dict()
         self.options = options
         self.other_option = other_option
         self._compose()
@@ -102,26 +102,40 @@ class Submitter(widgets.VBox):
 
         self.options = [str(option) for option in self.options]
 
-        if self.hint_function is not None and self.hints is not None:
-            self.hint_widgets = {
-                option: widgets.Output() for option in self.options
-            }
+        if self.hint_function is not None and len(self.hints) > 0:
+            self.hint_widgets = dict()
 
             for option in self.options:
-                with self.hint_widgets[option]:
-                    IPython.display.clear_output(wait=True)
-                    self.hint_function(self.hints[option])
+                if option in self.hints:
+                    self.hint_widgets[option] = widgets.Output()
+                    with self.hint_widgets[option]:
+                        IPython.display.clear_output(wait=True)
+                        self.hint_function(self.hints.get(option, None))
+                else:
+                    self.hint_widgets[option] = widgets.HBox()
 
-        elif self.hint_function is None:
-            self.hint_widgets = {option: widgets.HBox() for option in self.options}
+        elif self.hint_function is None or len(self.hints) == 0:
+            self.hint_widgets = {option: widgets.HBox()
+                                 for option in self.options}
 
         if len(self.options) <= self.max_buttons:
             # if we can display all options:
-            control_elements = widgets.HBox(
-                [widgets.VBox([widgets.Button(description=str(option)),
-                               self.hint_widgets[option]])
-                 for option in self.options]
-            )
+            # control_elements = widgets.HBox(
+            #     [widgets.Button(description=str(option))
+            #      for option in self.options]
+            # )
+            control_elements = widgets.HBox([
+                    widgets.VBox([
+                        widgets.Button(description=str(option),
+                                       layout=widgets.Layout(width='100%')),
+                        self.hint_widgets[option]
+                    ], layout=widgets.Layout(width='10%'))
+                    for option in self.options
+            ], layout=widgets.Layout(flex_flow='row wrap'))
+            #     [widgets.VBox([widgets.Button(description=str(option)),
+            #                    self.hint_widgets[option]])
+            #      for option in self.options]
+            # )
             for element in control_elements.children:
                 element.children[0].on_click(self._when_submitted)
 
@@ -155,6 +169,7 @@ class Submitter(widgets.VBox):
             other_widget.on_submit(self._when_submitted)
             self.children = [
                 control_elements,
+                # hint_elements,
                 widgets.HBox(
                     [other_widget, sort_button],
                     layout=widgets.Layout(
@@ -163,14 +178,18 @@ class Submitter(widgets.VBox):
                 ),
             ]
         else:
-            self.children = [control_elements, widgets.HBox([sort_button])]
+            self.children = [
+                control_elements,
+                # hint_elements,
+                widgets.HBox([sort_button])
+            ]
 
 
 @total_ordering
 class Timer:
     """
     A timer object. Use as a context manager to time operations, and compare to
-    numerical values to run conditional code.
+    numerical values (seconds) to run conditional code.
 
     Usage:
 

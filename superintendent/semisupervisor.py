@@ -69,6 +69,7 @@ class SemiSupervisor(base.Labeller):
         reorder=None,
         shuffle_prop=0.1,
         keyboard_shortcuts=False,
+        use_hints=False,
         hint_function=None,
         hints=None,
         *args,
@@ -88,6 +89,7 @@ class SemiSupervisor(base.Labeller):
             labels=labels,
             display_func=display_func,
             keyboard_shortcuts=keyboard_shortcuts,
+            use_hints=use_hints,
             hint_function=hint_function,
             hints=hints,
             *args,
@@ -227,6 +229,8 @@ class SemiSupervisor(base.Labeller):
                 self.input_widget.options = self.input_widget.options + [
                     str(new_val)
                 ]
+            if self.use_hints and str(new_val) not in self.input_widget.hints:
+                self.input_widget.hints[str(new_val)] = row
 
         if self.event_manager is not None:
             self.event_manager.close()
