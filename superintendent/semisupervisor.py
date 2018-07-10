@@ -253,7 +253,7 @@ class SemiSupervisor(base.Labeller):
         except TypeError:
             labelled = np.nonzero(self.new_labels != 'nan')
         X = get_values(self.features, labelled)
-        y = get_values(self.new_labels, labelled)
+        y = get_values(self.new_labels, labelled).reshape(-1)
         self._render_processing(message="Retraining... ")
         self.classifier.fit(X, y)
         try:
