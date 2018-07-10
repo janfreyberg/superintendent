@@ -46,11 +46,11 @@ class Submitter(widgets.VBox):
 
     def __init__(
         self,
-        options: Tuple=(),
-        max_buttons: int=12,
-        other_option: bool=True,
-        hint_function: Optional[Callable]=None,
-        hints=None
+        options: Tuple = (),
+        max_buttons: int = 12,
+        other_option: bool = True,
+        hint_function: Optional[Callable] = None,
+        hints: Optional[bool] = None
     ):
         """
         Create a widget that will render submission options.

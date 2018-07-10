@@ -127,7 +127,7 @@ class SemiSupervisor(base.Labeller):
             )
         if reorder is not None and isinstance(reorder, str):
             if reorder not in prioritisation.functions:
-                raise NotImplemented(
+                raise NotImplementedError(
                     "Unknown reordering function {}.".format(reorder)
                 )
             self.reorder = prioritisation.functions[reorder]
