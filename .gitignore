@@ -9,7 +9,7 @@ test.ipynb
 build
 docs/_build
 _static
-messing_around.ipynb
 tests/database.ini
 api/config.ini
+scratchpad.ipynb
 
