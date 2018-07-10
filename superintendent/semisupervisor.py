@@ -245,7 +245,10 @@ class SemiSupervisor(base.Labeller):
         """
         if self.classifier is None:
             raise ValueError("No classifier to retrain.")
-        labelled = np.nonzero(~np.isnan(self.new_labels))[0]
+        try:
+            labelled = np.nonzero(~np.isnan(self.new_labels))[0]
+        except TypeError:
+            labelled = self.new_labels != 'nan'
         X = get_values(self.features, labelled)
         y = get_values(self.new_labels, labelled)
         self._render_processing(message="Retraining... ")
