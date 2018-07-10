@@ -65,5 +65,5 @@ def certainty(probabilities, shuffle_prop=0.1):
     return _shuffle_subset(ordered, shuffle_prop)
 
 
-functions = {"entropy": entropy, "margin": margin}
+functions = {"entropy": entropy, "margin": margin, "certainty": certainty}
 """A dictionary of functions to prioritise data."""
