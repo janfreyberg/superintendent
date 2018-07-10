@@ -173,13 +173,16 @@ class SemiSupervisor(base.Labeller):
         self.new_labels = self.labels.copy()
         if self.new_labels.dtype == np.int64:
             self.new_labels = self.new_labels.astype(float)
-        self.new_labels[:] = np.nan
+        # self.new_labels[:] = np.nan
 
         if not any(relabel):
             raise ValueError("relabel should be a boolean array.")
 
         if options is None:
-            options = np.unique(self.labels[~np.isnan(self.labels)])
+            try:
+                options = np.unique(self.labels[~np.isnan(self.labels)])
+            except TypeError:
+                options = np.unique(self.labels != 'nan')
         options = list(options)
         for i, option in enumerate(options):
             try:
@@ -248,7 +251,7 @@ class SemiSupervisor(base.Labeller):
         try:
             labelled = np.nonzero(~np.isnan(self.new_labels))[0]
         except TypeError:
-            labelled = self.new_labels != 'nan'
+            labelled = np.nonzero(self.new_labels != 'nan')
         X = get_values(self.features, labelled)
         y = get_values(self.new_labels, labelled)
         self._render_processing(message="Retraining... ")
