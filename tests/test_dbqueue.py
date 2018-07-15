@@ -176,28 +176,3 @@ def test_popping_timeout():
     id_, inp = q.pop(timeout=1)
     assert id_ == 1
     assert inp == 'hi'
-
-
-def test_backend_postgresql():
-    config_path = os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), 'database.ini'
-    )
-    if not os.path.exists(config_path):
-        warnings.warn(
-            'PostgreSQL database.ini not in {}, skipping test ...'.format(
-                os.path.dirname(config_path)
-            )
-        )
-        assert True
-        return
-    q = Backend.from_config_file(config_path, storage_type='integer_index')
-    q.insert(1)
-    q.insert(2)
-    q.insert(3)
-    assert (q.pop()) == (1, 1)
-    q.submit(1, 10)
-    assert (q.pop()) == (2, 2)
-    q.drop_table(sure=True)
-    q.engine.execute(
-        'drop table "{}" cascade'.format(q.data.__tablename__)
-    )
