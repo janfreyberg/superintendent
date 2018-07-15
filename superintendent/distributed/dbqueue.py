@@ -1,11 +1,13 @@
 import configparser
-import json
-import pickle
+import warnings
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative  # noqa
+from sqlalchemy.exc import OperationalError
+
+from .serialization import data_dumps, data_loads
 
 DeclarativeBase = sa.ext.declarative.declarative_base()
 
@@ -22,22 +24,12 @@ class Superintendent(DeclarativeBase):
     worker_id = sa.Column(sa.String, nullable=True)
 
 
-def orm_to_dict(obj, parent):
-    return {attr.key: getattr(obj, attr.key)
-            for attr in sa.inspect(parent).all_orm_descriptors
-            if hasattr(attr, 'key')}
-
-
 deserialisers = {
-    'integer_index': lambda x: x,
-    'pickle': pickle.loads,
-    'json': json.loads
+    'json': data_loads
 }
 
 serialisers = {
-    'integer_index': lambda x: x,
-    'pickle': pickle.dumps,
-    'json': json.dumps
+    'json': data_dumps
 }
 
 
@@ -57,6 +49,7 @@ class Backend:
     deserialiser : builtin_function_or_method
     serialiser : builtin_function_or_method
     """
+
     def __init__(
         self,
         connection_string='sqlite:///:memory:',
@@ -84,7 +77,11 @@ class Backend:
             self.data.metadata.create_all(bind=self.engine)
         # create index for priority
         ix_labelling = sa.Index('ix_labelling', self.data.priority)
-        ix_labelling.create(self.engine)
+
+        try:
+            ix_labelling.create(self.engine)
+        except OperationalError:
+            pass
 
     @classmethod
     def from_config_file(
@@ -142,7 +139,18 @@ class Backend:
                           priority=priority)
             )
 
-    def pop(self, timeout=600):
+    def insert_many(self, values, priorities=None):
+        with self.session() as session:
+            if priorities is None:
+                priorities = [None] * len(values)
+            session.add([
+                self.data(input=self.serialiser(value),
+                          inserted_at=datetime.now(),
+                          priority=priority)
+                for value, priority in zip(values, priorities)
+            ])
+
+    def pop(self, timeout: int = 600):
         with self.session() as session:
             row = session.query(
                 self.data
@@ -155,7 +163,7 @@ class Backend:
                 self.data.priority
             ).first()
             if row is None:
-                return None
+                return None, None
             else:
                 row.popped_at = datetime.now()
                 id_ = row.id
@@ -179,10 +187,15 @@ class Backend:
             objects = session.query(
                 self.data
             ).filter(
-                self.data.output.isnot(None) &
-                self.data.completed_at.isnot(None)
+                self.data.output.isnot(None)
+                & self.data.completed_at.isnot(None)
             ).all()
-            return [orm_to_dict(obj, self.data) for obj in objects]
+            return [
+                {'id': obj.id, 'completed_at': obj.completed_at,
+                 'input': self.deserialiser(obj.input),
+                 'output': obj.output}
+                for obj in objects
+            ]
 
     def list_uncompleted(self):
         with self.session() as session:
@@ -191,4 +204,16 @@ class Backend:
             ).filter(
                 self.data.output.is_(None)
             ).all()
-            return [(obj.id, obj.input) for obj in objects]
+            return [{'id': obj.id, 'input': self.deserialiser(obj.input)}
+                    for obj in objects]
+
+    def clear_queue(self):
+        with self.session() as session:
+            session.query(self.data).delete()
+
+    def drop_table(self, sure=False):
+        if sure:
+            self.data.metadata.drop_all(bind=self.engine)
+            # self.data.__table__.drop(bind=self.engine)
+        else:
+            warnings.warn("To actually drop the table, pass sure=True")
