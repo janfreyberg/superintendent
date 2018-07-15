@@ -8,17 +8,22 @@ class DataEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return {
                 '__type__': '__np.ndarray__',
-                'content': obj.tolist()
+                '__content__': obj.tolist()
             }
         elif isinstance(obj, pd.DataFrame):
             return {
                 '__type__': '__pd.DataFrame__',
-                'content': obj.to_json()
+                '__content__': obj.to_dict(orient='split')
             }
         elif isinstance(obj, pd.Series):
             return {
                 '__type__': '__pd.Series__',
-                'content': obj.to_json()
+                '__content__': {
+                    'dtype': str(obj.dtype),
+                    'index': list(obj.index),
+                    'data': obj.tolist(),
+                    'name': obj.name
+                }
             }
         else:
             return json.JSONEncoder.default(self, obj)
@@ -27,11 +32,11 @@ class DataEncoder(json.JSONEncoder):
 def data_decoder(obj):
     if '__type__' in obj:
         if obj['__type__'] == '__np.ndarray__':
-            return np.array(obj['content'])
+            return np.array(obj['__content__'])
         elif obj['__type__'] == '__pd.DataFrame__':
-            return pd.read_json(obj['content'], typ='frame')
-        elif obj['__type__'] == '__pd.DataFrame__':
-            return pd.read_json(obj['content'], typ='series')
+            return pd.DataFrame(**obj['__content__'])
+        elif obj['__type__'] == '__pd.Series__':
+            return pd.Series(**obj['__content__'])
     return obj
 
 
