@@ -47,6 +47,6 @@ setup(
         'flask',
         'werkzeug'
         ],
-    tests_require=['pytest'],
+    tests_require=['pytest', 'hypothesis'],
     setup_requires=['pytest-runner']
 )
