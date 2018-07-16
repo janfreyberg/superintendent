@@ -1,5 +1,3 @@
-import os
-import warnings
 import datetime
 import time
 
@@ -33,17 +31,6 @@ primitive_strategy = (
 
 guaranteed_dtypes = (boolean_dtypes() | integer_dtypes()
                      | floating_dtypes() | unicode_string_dtypes())
-
-numpy_array_strategy = arrays(
-    guaranteed_dtypes, array_shapes()
-)
-
-pandas_columns = series()
-
-# pandas_strategy = one_of(
-#     column(text() | integers(), guaranteed_dtypes),
-#     data_frames(column(text() | integers(), guaranteed_dtypes))
-# )
 
 container_strategy = (
     dictionaries(text(), primitive_strategy) | lists(primitive_strategy)
@@ -82,7 +69,7 @@ def test_nested_inserts(inp):
     assert inp == db_inp
 
 
-@given(inp=numpy_array_strategy)
+@given(inp=arrays(guaranteed_dtypes, array_shapes()))
 def test_numpy_array_inserts(inp):
     """
     Tests if inserting numpy arrays works.
