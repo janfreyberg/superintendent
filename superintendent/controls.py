@@ -1,16 +1,13 @@
 """Input and timing control widgets."""
 
-from typing import Tuple, Optional, Callable
-
 import time
 from functools import total_ordering
-
-import ipywidgets as widgets
-import traitlets
-
-import numpy as np
+from typing import Callable, Optional, Tuple
 
 import IPython.display
+import ipywidgets as widgets
+import numpy as np
+import traitlets
 
 
 class Submitter(widgets.VBox):
@@ -75,6 +72,7 @@ class Submitter(widgets.VBox):
             description='Skip', icon='fast-forward')
         self.skip_button.on_click(self._when_submitted)
 
+        self.fixed_options = options
         self.options = options
         self.other_option = other_option
 

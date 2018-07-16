@@ -20,7 +20,6 @@ class Labeller(abc.ABC):
     Parameters
     ----------
 
-    features : np.array | pd.DataFrame
     features : np.array | pd.DataFrame | list
         The input array for your model
     labels : np.array, pd.Series, pd.DataFrame, optional
@@ -209,7 +208,11 @@ class Labeller(abc.ABC):
             curr = self._already_labelled.pop()
             prev = self._already_labelled.pop()
             # remove option if it existed only once:
-            if (self.new_labels == self.new_labels[prev]).sum() == 1:
+            if (
+                ((self.new_labels == self.new_labels[prev]).sum() == 1)
+                and not (self.new_labels[prev] in
+                         self.input_widget.fixed_options)
+            ):
                 self.input_widget.options = [
                     option
                     for option in self.input_widget.options
