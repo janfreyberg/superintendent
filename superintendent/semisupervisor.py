@@ -160,15 +160,14 @@ class SemiSupervisor(base.Labeller):
             relabel = np.full(self.labels.shape, True)
         else:
             relabel = np.array(relabel)
-
-        if relabel.size == 1:
-            # special case of relabelling one class
-            relabel = self.labels == relabel
-        elif relabel.size != self.labels.size:
-            raise ValueError(
-                "The size of the relabel array has to match "
-                "the size of the labels passed on creation."
-            )
+            if relabel.size == 1:
+                # special case of relabelling one class
+                relabel = self.labels == relabel
+            elif relabel.size != self.labels.size:
+                raise ValueError(
+                    "The size of the relabel array has to match "
+                    "the size of the labels passed on creation."
+                )
 
         self.new_labels = self.labels.copy()
         if self.new_labels.dtype == np.int64:
@@ -176,7 +175,7 @@ class SemiSupervisor(base.Labeller):
 
         self.new_labels[relabel] = np.nan
 
-        if not any(relabel):
+        if not (relabel.any() or relabel.all()):
             raise ValueError("relabel should be a boolean array.")
 
         if options is None:
