@@ -1,15 +1,14 @@
 """Tools to supervise classification."""
 
-from functools import partial
 from collections import deque
+from functools import partial
 
-import numpy as np
-import pandas as pd
 import ipywidgets as widgets
+import numpy as np
 import sklearn.model_selection
 
 from . import base
-from .. import validation, prioritisation
+from .. import prioritisation, validation
 from ..display import get_values
 
 
@@ -129,7 +128,7 @@ class SemiSupervisor(base.DistributedLabeller):
             )
         if reorder is not None and isinstance(reorder, str):
             if reorder not in prioritisation.functions:
-                raise NotImplemented(
+                raise NotImplementedError(
                     "Unknown reordering function {}.".format(reorder)
                 )
             self.reorder = prioritisation.functions[reorder]

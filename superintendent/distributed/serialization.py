@@ -1,10 +1,14 @@
 import json
+
 import numpy as np
 import pandas as pd
 
 
 class DataEncoder(json.JSONEncoder):
     def default(self, obj):
+        """
+        Serialize numpy or pandas objects to json.
+        """
         if isinstance(obj, np.ndarray):
             return {
                 '__type__': '__np.ndarray__',

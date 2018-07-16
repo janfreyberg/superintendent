@@ -1,14 +1,14 @@
 """Base class to inherit from."""
 
-from functools import partial
 import abc
+from functools import partial
 
 import IPython.display
 import ipywidgets as widgets
 import numpy as np
 import pandas as pd
 
-from .. import display, validation, controls
+from .. import controls, display, validation
 
 
 class DistributedLabeller(abc.ABC):
