@@ -21,6 +21,7 @@ class Labeller(abc.ABC):
     ----------
 
     features : np.array | pd.DataFrame
+    features : np.array | pd.DataFrame | list
         The input array for your model
     labels : np.array, pd.Series, pd.DataFrame, optional
         The labels for your data.
@@ -31,7 +32,14 @@ class Labeller(abc.ABC):
     keyboard_shortcuts : bool, optional
         If you want to enable ipyevent-mediated keyboard capture to use the
         keyboard rather than the mouse to submit data.
-
+    use_hints : bool
+        Whether you want to use "hints", small displays of your data underneath
+        or alongside your labelling options.
+    hint_function : func, optional
+        The function to display these hints. By default, the same function as
+        display_func is used.
+    hints : np.array | pd.DataFrame | list
+        The hints to start off with.
     """
 
     def __init__(
