@@ -216,7 +216,7 @@ class Labeller(abc.ABC):
                 self.input_widget.options = [
                     option
                     for option in self.input_widget.options
-                    if option != str(self.new_labels[prev])
+                    if option != self.new_labels[prev]
                 ]
             # set the previous, labelled one to nan:
             if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
@@ -227,7 +227,7 @@ class Labeller(abc.ABC):
             self._label_queue.append(curr)
             self._label_queue.append(prev)
             # send a nan for the current one - this also advances it:
-            self._annotation_loop.send(np.nan)
+            self._annotation_loop.send(str(np.nan))
 
     def _render_processing(self, message="Rendering..."):
         self.layout.children = [
