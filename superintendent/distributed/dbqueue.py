@@ -4,12 +4,12 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 
 import sqlalchemy as sa
-import sqlalchemy.ext.declarative  # noqa
+import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError
 
 from .serialization import data_dumps, data_loads
 
-DeclarativeBase = sa.ext.declarative.declarative_base()
+DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
 
 
 class Superintendent(DeclarativeBase):
@@ -182,6 +182,16 @@ class Backend:
                 row.worker_id = worker_id
             row.completed_at = datetime.now()
 
+    def reset(self, id_):
+        with self.session() as session:
+            row = session.query(
+                self.data
+            ).filter_by(
+                id=id_
+            ).first()
+            row.output = None
+            row.completed_at = None
+
     def list_completed(self):
         with self.session() as session:
             objects = session.query(
@@ -217,3 +227,6 @@ class Backend:
             # self.data.__table__.drop(bind=self.engine)
         else:
             warnings.warn("To actually drop the table, pass sure=True")
+
+    def __len__(self):
+        return len(self.list_uncompleted())
