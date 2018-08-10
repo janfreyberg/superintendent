@@ -2,11 +2,10 @@
 
 import time
 from functools import total_ordering
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import IPython.display
 import ipywidgets as widgets
-import numpy as np
 import traitlets
 
 
@@ -45,7 +44,7 @@ class Submitter(widgets.VBox):
 
     def __init__(
         self,
-        options: Tuple = (),
+        options: Union[List[str], Tuple[str]] = (),
         max_buttons: int = 12,
         other_option: bool = True,
         hint_function: Optional[Callable] = None,
@@ -71,9 +70,9 @@ class Submitter(widgets.VBox):
         self.skip_button = widgets.Button(
             description='Skip', icon='fast-forward')
         self.skip_button.on_click(self._when_submitted)
+        self.options = [str(option) for option in options]
+        self.fixed_options = self.options
 
-        self.fixed_options = options
-        self.options = options
         self.other_option = other_option
 
         self._compose()
@@ -81,7 +80,7 @@ class Submitter(widgets.VBox):
     def _when_submitted(self, sender):
 
         if sender is self.skip_button:
-            value = np.nan
+            value = 'nan'
             source = 'skip'
         elif isinstance(sender, widgets.Button):
             value = sender.description
