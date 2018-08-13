@@ -2,9 +2,8 @@
 
 import time
 from functools import total_ordering
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union, Dict, Any
 
-import IPython.display
 import ipywidgets as widgets
 import traitlets
 
@@ -47,8 +46,9 @@ class Submitter(widgets.VBox):
         options: Union[List[str], Tuple[str]] = (),
         max_buttons: int = 12,
         other_option: bool = True,
+        update: bool = True,
         hint_function: Optional[Callable] = None,
-        hints: Optional[bool] = None
+        hints: Optional[Dict[str, Any]] = None
     ):
         """
         Create a widget that will render submission options.
@@ -61,7 +61,12 @@ class Submitter(widgets.VBox):
         self.submission_functions = []
         self.max_buttons = max_buttons
         self.hint_function = hint_function
-        self.hints = hints if hints is not None else dict()
+        self.hints = dict()
+        if hint_function is not None:
+            for option, feature in hints.values():
+                self.hints[option] = widgets.Output()
+                with self.hints[option]:
+                    self.hint_function(feature)
 
         self.sort_button = widgets.Button(
             description="Sort options", icon="sort")
@@ -70,6 +75,9 @@ class Submitter(widgets.VBox):
         self.skip_button = widgets.Button(
             description='Skip', icon='fast-forward')
         self.skip_button.on_click(self._when_submitted)
+        self.undo_button = widgets.Button(
+            description='Undo', icon='undo')
+        self.undo_button.on_click(self._when_submitted)
         self.options = [str(option) for option in options]
         self.fixed_options = self.options
 
@@ -80,8 +88,11 @@ class Submitter(widgets.VBox):
     def _when_submitted(self, sender):
 
         if sender is self.skip_button:
-            value = 'nan'
-            source = 'skip'
+            value = None
+            source = '__skip__'
+        elif sender is self.undo_button:
+            value = None
+            source = '__undo__'
         elif isinstance(sender, widgets.Button):
             value = sender.description
             source = "button"
@@ -89,8 +100,27 @@ class Submitter(widgets.VBox):
             value = sender.value
             source = "textfield"
 
+        if value is not None and value not in self.options:
+            self.options = self.options + [value]
+
         for func in self.submission_functions:
             func({"value": value, "source": source})
+
+        self._compose()
+
+    def add_hint(self, value, hint):
+        if (self.hint_function is not None
+                and self.hints is not None
+                and value not in self.hints):
+            # self.hints[value] = hint
+            self.hints[value] = widgets.Output()
+            with self.hints[value]:
+                self.hint_function(hint)
+
+    def remove_options(self, values):
+        for value in values:
+            if value not in self.fixed_options:
+                self.options.remove(value)
         self._compose()
 
     def on_submission(self, func):
@@ -114,26 +144,13 @@ class Submitter(widgets.VBox):
 
         self.options = [str(option) for option in self.options]
 
-        self.hint_widgets = {
-            option: widgets.Output(layout=widgets.Layout(width='100%'))
-            for option in self.options
-        }
-
-        for option in self.options:
-            if (self.hint_function is not None
-                    and len(self.hints) > 0
-                    and option in self.hints):
-                with self.hint_widgets[option]:
-                    IPython.display.clear_output(wait=True)
-                    self.hint_function(self.hints.get(option, None))
-
         if len(self.options) <= self.max_buttons:
             # if we can display all options:
             control_elements = widgets.HBox([
                     widgets.VBox(
                         [widgets.Button(description=str(option),
-                                        layout=widgets.Layout(width='100%')),
-                         self.hint_widgets[option]],
+                                        layout=widgets.Layout(width='95%')),
+                         self.hints.get(option, widgets.HBox())],
                         layout=widgets.Layout(
                             width=f'{100/len(self.options)}%',
                             min_width='10%'
@@ -182,7 +199,9 @@ class Submitter(widgets.VBox):
                 # hint_elements,
                 widgets.HBox(
                     [other_widget,
-                     widgets.HBox([self.sort_button, self.skip_button])],
+                     widgets.HBox([
+                         self.sort_button, self.skip_button, self.undo_button
+                     ])],
                     layout=widgets.Layout(
                         justify_content="space-between"
                     ),
@@ -191,7 +210,9 @@ class Submitter(widgets.VBox):
         else:
             self.children = [
                 control_elements,
-                widgets.HBox([self.sort_button])
+                widgets.HBox([
+                    self.sort_button, self.skip_button, self.undo_button
+                ])
             ]
 
 

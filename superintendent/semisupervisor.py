@@ -1,15 +1,13 @@
 """Tools to supervise classification."""
 
-from collections import deque
 from functools import partial
 
 import ipywidgets as widgets
 import numpy as np
-import pandas as pd
 import sklearn.model_selection
 
 from . import base, prioritisation, validation
-from .display import get_values
+from .queueing import SimpleLabellingQueue
 
 
 class SemiSupervisor(base.Labeller):
@@ -95,7 +93,9 @@ class SemiSupervisor(base.Labeller):
             *args,
             **kwargs
         )
-        self.chunk_size = 1
+
+        self.queue = SimpleLabellingQueue(features)
+
         self.shuffle_prop = shuffle_prop
         self.classifier = validation.valid_classifier(classifier)
         if self.classifier is not None:
@@ -156,88 +156,57 @@ class SemiSupervisor(base.Labeller):
             Whether to randomise the order of relabelling (default True)
 
         """
-        if relabel is None:
-            relabel = np.full(self.labels.shape, True)
-        else:
-            relabel = np.array(relabel)
-            if relabel.size == 1:
-                # special case of relabelling one class
-                relabel = self.labels == relabel
-            elif relabel.size != self.labels.size:
-                raise ValueError(
-                    "The size of the relabel array has to match "
-                    "the size of the labels passed on creation."
-                )
+        if options is not None:
+            options = list(options)
+            for i, option in enumerate(options):
+                options[i] = str(option)
 
-        self.new_labels = self.labels.copy()
-        if self.new_labels.dtype == np.int64:
-            self.new_labels = self.new_labels.astype(float)
-
-        self.new_labels[relabel] = np.nan
-
-        if not (relabel.any() or relabel.all()):
-            raise ValueError("relabel should be a boolean array.")
-
-        if options is None:
-            try:
-                options = np.unique(self.labels[~np.isnan(self.labels)])
-            except TypeError:
-                options = np.unique(self.labels != 'nan')
-        options = list(options)
-        for i, option in enumerate(options):
-            try:
-                options[i] = float(option)
-            except ValueError:
-                pass
         self.input_widget.options = options
-
-        relabel = np.nonzero(relabel)[0]
+        self.input_widget.fixed_options = options
 
         if shuffle:
-            np.random.shuffle(relabel)
-
-        self._label_queue = deque(relabel)
-        self._already_labelled = deque([])
+            self.queue.shuffle()
 
         self._annotation_loop = self._annotation_iterator()
         # reset the progress bar
-        self.progressbar.max = len(self._label_queue)
         self.progressbar.bar_style = ""
-        self.progressbar.value = 0
-
         # start the iteration cycle
         return next(self._annotation_loop)
 
     def _annotation_iterator(self):
         """Relabel should be integer indices"""
 
-        while len(self._label_queue) > 0:
-            idx = self._label_queue.pop()
-            self._already_labelled.append(idx)
-            row = get_values(self.features, [idx])
+        for id_, datapoint in self.queue:
 
-            new_val = yield self._compose(row)
-            try:
-                new_val = float(new_val)
-            except ValueError:
-                # catching assignment of string to number array
-                self.new_labels = self.new_labels.astype(np.object)
+            sender = yield self._compose(np.array([datapoint]))
 
-            if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
-                self.new_labels.loc[idx] = new_val
+            if sender['source'] == '__undo__':
+                # unpop the current item:
+                self.queue.undo()
+                # unpop and unlabel the previous item:
+                self.queue.undo()
+                # try to remove any labels not in the assigned labels:
+                self.input_widget.remove_options(
+                    set(self.input_widget.options)
+                    - self.queue.list_labels()
+                )
+            elif sender['source'] == '__skip__':
+                pass
             else:
-                self.new_labels[idx] = new_val
-            if (str(new_val) not in self.input_widget.options
-                    and str(new_val).lower() != 'nan'):
-                self.input_widget.options = self.input_widget.options + [
-                    str(new_val)
-                ]
-            if self.use_hints and str(new_val) not in self.input_widget.hints:
-                self.input_widget.hints[str(new_val)] = row
+                new_label = sender['value']
+                self.queue.submit(id_, new_label)
+                self.input_widget.add_hint(new_label, np.array([datapoint]))
 
         if self.event_manager is not None:
             self.event_manager.close()
+
         yield self._render_finished()
+
+    @property
+    def new_labels(self):
+        return np.array([
+            item.label for item in self.queue.list_all()
+        ])
 
     def retrain(self, *args):
         """Retrain the classifier you passed when creating this widget.
@@ -252,28 +221,37 @@ class SemiSupervisor(base.Labeller):
             labelled = np.nonzero(~np.isnan(self.new_labels))[0]
         except TypeError:
             labelled = np.nonzero(self.new_labels != 'nan')
-        X = get_values(self.features, labelled)
-        y = get_values(self.new_labels, labelled).reshape(-1)
+
+        labelled = self.queue.list_completed()
+        labelled_X = np.array([item.data for item in labelled])
+        labelled_y = np.array([item.label for item in labelled])
+
         self._render_processing(message="Retraining... ")
-        self.classifier.fit(X, y)
+        self.classifier.fit(labelled_X, labelled_y)
         try:
-            self.performance = self.eval_method(self.classifier, X, y)
+            self.performance = self.eval_method(
+                self.classifier, labelled_X, labelled_y
+            )
             self.model_performance.value = "Score: {:.2f}".format(
                 self.performance["test_score"].mean()
             )
         except ValueError:
             self.performance = "not available (too few labelled points)"
             self.model_performance.value = "Score: {}".format(self.performance)
+
         if self.reorder is not None:
-            self._label_queue = deque(
-                np.array(self._label_queue)[
-                    self.reorder(
-                        self.classifier.predict_proba(
-                            get_values(self.features, list(self._label_queue))
-                        ),
-                        shuffle_prop=self.shuffle_prop
-                    )
-                ]
-            )
+            unlabelled = self.queue.list_uncompleted()
+            unlabelled_X = np.array([item.data for item in unlabelled])
+
+            reordering = list(self.reorder(
+                self.classifier.predict_proba(
+                    unlabelled_X
+                ),
+                shuffle_prop=self.shuffle_prop
+            ))
+
+            new_order = [unlabelled[idx].id for idx in reordering]
+
+            self.queue.reorder(new_order)
 
         self._compose()
