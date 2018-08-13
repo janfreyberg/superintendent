@@ -25,10 +25,9 @@ import configparser
 import os
 
 from flask import Flask, jsonify, request
+from superintendent.distributed.dbqueue import Backend
 from werkzeug.exceptions import (HTTPException, InternalServerError,
                                  default_exceptions)
-
-from superintendent.distributed.dbqueue import Backend
 
 # Config
 
