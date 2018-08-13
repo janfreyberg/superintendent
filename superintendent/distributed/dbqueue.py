@@ -1,13 +1,19 @@
 import configparser
+import itertools
 import warnings
+from collections import deque
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from typing import Any, Dict, Sequence
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError
 
+import cachetools
+
 from .serialization import data_dumps, data_loads
+from ..queueing import BaseLabellingQueue
 
 DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
 
@@ -33,7 +39,7 @@ serialisers = {
 }
 
 
-class Backend:
+class DatabaseQueue(BaseLabellingQueue):
     """Implements a queue for distributed labelling.
 
     >>> from superintendent.distributed.dbqueue import Backend
@@ -70,22 +76,23 @@ class Backend:
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
         self.engine = sa.create_engine(connection_string)
+        self._popped = deque([])
 
         if not self.engine.dialect.has_table(
             self.engine, self.data.__tablename__
         ):
             self.data.metadata.create_all(bind=self.engine)
-        # create index for priority
-        ix_labelling = sa.Index('ix_labelling', self.data.priority)
 
         try:
+            # create index for priority
+            ix_labelling = sa.Index('ix_labelling', self.data.priority)
             ix_labelling.create(self.engine)
         except OperationalError:
             pass
 
     @classmethod
     def from_config_file(
-        cls, config_path, storage_type='pickle'
+        cls, config_path
     ):
         """Instantiate with database credentials from a configuration file.
 
@@ -117,7 +124,7 @@ class Backend:
         connection_string = connection_string_template.format(
             **config['database']
         )
-        return cls(connection_string, storage_type)
+        return cls(connection_string)
 
     @contextmanager
     def session(self):
@@ -131,26 +138,50 @@ class Backend:
         finally:
             session.close()
 
-    def insert(self, value, priority=None):
+    def enqueue(self, feature, priority=None):
         with self.session() as session:
             session.add(
-                self.data(input=self.serialiser(value),
+                self.data(input=self.serialiser(feature),
                           inserted_at=datetime.now(),
                           priority=priority)
             )
 
-    def insert_many(self, values, priorities=None):
+    def enqueue_many(self, features, priorities=None):
         with self.session() as session:
             if priorities is None:
-                priorities = [None] * len(values)
-            session.add([
-                self.data(input=self.serialiser(value),
-                          inserted_at=datetime.now(),
-                          priority=priority)
-                for value, priority in zip(values, priorities)
-            ])
+                priorities = itertools.cycle([None])
+            for feature, priority in zip(features, priorities):
+                session.add(self.data(
+                    input=self.serialiser(feature),
+                    inserted_at=datetime.now(),
+                    priority=priority
+                ))
 
-    def pop(self, timeout: int = 600):
+    def reorder(self, priorities: Dict[int, int]) -> None:
+        self.set_priorities(
+            list(priorities.keys()), list(priorities.values())
+        )
+
+    def set_priority(self, id_: int, priority: int):
+        with self.session() as session:
+            row = session.query(
+                self.data
+            ).filter_by(
+                id=id_
+            ).first()
+            row.priority = priority
+
+    def set_priorities(self, ids: Sequence[int], priorities: Sequence[int]):
+        with self.session() as session:
+            rows = session.query(
+                self.data
+            ).filter_by(
+                self.data.id.in_(ids)
+            ).all()
+            for row in rows:
+                row.priority = priorities[ids.index(row.id)]
+
+    def pop(self, timeout: int = 600) -> (int, Any):
         with self.session() as session:
             row = session.query(
                 self.data
@@ -163,26 +194,32 @@ class Backend:
                 self.data.priority
             ).first()
             if row is None:
-                return None, None
+                raise IndexError('Trying to pop off an empty queue.')
             else:
                 row.popped_at = datetime.now()
                 id_ = row.id
                 value = row.input
+                self._popped.append(id_)
                 return id_, self.deserialiser(value)
 
-    def submit(self, id_, value, worker_id=None):
+    def submit(self, id_: int, label: str, worker_id=None) -> None:
         with self.session() as session:
             row = session.query(
                 self.data
             ).filter_by(
                 id=id_
             ).first()
-            row.output = value
+            row.output = label
             if worker_id is not None:
                 row.worker_id = worker_id
             row.completed_at = datetime.now()
 
-    def reset(self, id_):
+    def undo(self) -> None:
+        if len(self._popped) > 0:
+            id_ = self._popped.pop()
+            self._reset(id_)
+
+    def _reset(self, id_: int) -> None:
         with self.session() as session:
             row = session.query(
                 self.data
@@ -191,6 +228,7 @@ class Backend:
             ).first()
             row.output = None
             row.completed_at = None
+            row.popped_at = None
 
     def list_completed(self):
         with self.session() as session:
@@ -203,9 +241,18 @@ class Backend:
             return [
                 {'id': obj.id, 'completed_at': obj.completed_at,
                  'input': self.deserialiser(obj.input),
-                 'output': obj.output}
+                 'label': obj.output}
                 for obj in objects
             ]
+
+    def list_labels(self):
+        with self.session() as session:
+            rows = session.query(
+                self.data.output
+            ).filter(
+                self.data.output.isnot(None)
+            ).distinct()
+            return [row.output for row in rows]
 
     def list_uncompleted(self):
         with self.session() as session:
@@ -214,8 +261,10 @@ class Backend:
             ).filter(
                 self.data.output.is_(None)
             ).all()
-            return [{'id': obj.id, 'input': self.deserialiser(obj.input)}
-                    for obj in objects]
+            return [
+                {'id': obj.id, 'input': self.deserialiser(obj.input)}
+                for obj in objects
+            ]
 
     def clear_queue(self):
         with self.session() as session:
@@ -224,9 +273,44 @@ class Backend:
     def drop_table(self, sure=False):
         if sure:
             self.data.metadata.drop_all(bind=self.engine)
-            # self.data.__table__.drop(bind=self.engine)
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
+    @cachetools.cached(cachetools.TTLCache(1, 15))
+    def _unlabelled_count(self, timeout: int = 600):
+        with self.session() as session:
+            return session.query(
+                self.data
+            ).filter(
+                self.data.completed_at.is_(None)
+                & (self.data.popped_at.is_(None)
+                   | (self.data.popped_at
+                      < (datetime.now() - timedelta(seconds=timeout))))
+            ).count()
+
+    def _labelled_count(self):
+        with self.session() as session:
+            return session.query(
+                self.data
+            ).filter(
+                self.data.completed_at.isnot(None)
+                & self.data.output.isnot(None)
+            ).count()
+
+    @property
+    def progress(self) -> float:
+        return self._labelled_count() / len(self)
+
+    @cachetools.cached(cachetools.TTLCache(1, 15))
     def __len__(self):
-        return len(self.list_uncompleted())
+        with self.session() as session:
+            return session.query(self.data).count()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return self.pop()
+        except IndexError:
+            raise StopIteration

@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -44,9 +45,9 @@ def data_decoder(obj):
     return obj
 
 
-def data_dumps(obj):
+def data_dumps(obj: Any) -> str:
     return json.dumps(obj, cls=DataEncoder)
 
 
-def data_loads(obj):
+def data_loads(obj: str) -> Any:
     return json.loads(obj, object_hook=data_decoder)

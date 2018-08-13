@@ -6,9 +6,9 @@ from functools import partial
 import IPython.display
 import ipywidgets as widgets
 import numpy as np
-import pandas as pd
 
-from .. import controls, display, validation
+from .. import controls, display
+from .dbqueue import DatabaseQueue
 
 
 class DistributedLabeller(abc.ABC):
@@ -36,9 +36,7 @@ class DistributedLabeller(abc.ABC):
 
     def __init__(
         self,
-        queue,
-        features=None,
-        labels=None,
+        connection_string='sqlite:///:memory:',
         display_func=None,
         keyboard_shortcuts=False,
     ):
@@ -60,27 +58,18 @@ class DistributedLabeller(abc.ABC):
             ),
         )
 
+        self.queue = DatabaseQueue(connection_string)
+
         self.top_bar = widgets.HBox([])
 
         self.input_widget = controls.Submitter()
         self.input_widget.on_submission(self._apply_annotation)
-        self.queue = queue
-        if features is not None:
-            self.features = validation.valid_data(features)
-        else:
-            self.features = None
-        if labels is not None:
-            self.labels = validation.valid_data(labels)
-        else:
-            self.labels = None
-            # self.labels = np.full(self.features.shape[0],
-            #                       np.nan, dtype=float)
 
-        self.progressbar = widgets.IntProgress(description="Progress:")
+        self.progressbar = widgets.FloatProgress(
+            max=1, description="Progress:"
+        )
+
         self.top_bar.children = (self.progressbar,)
-        self.undo_button = widgets.Button(description="Undo", icon="undo")
-        self.undo_button.on_click(self._undo)
-        self.top_bar.children = (*self.top_bar.children, self.undo_button)
 
         if display_func is not None:
             self._display_func = display_func
@@ -90,6 +79,15 @@ class DistributedLabeller(abc.ABC):
         self.event_manager = None
         self.timer = controls.Timer()
 
+    def add_features(self, features):
+        """
+        Add features to the database.
+
+        This inserts the data into the database, ready to be labelled by the
+        workers.
+        """
+        self.queue.enqueue_many(features)
+
     @abc.abstractmethod
     def annotate(self):
         pass
@@ -98,27 +96,26 @@ class DistributedLabeller(abc.ABC):
     def _annotation_iterator(self):
         pass
 
-    @classmethod
-    def from_dataframe(cls, features, *args, **kwargs):
-        """Create a relabeller widget from a dataframe."""
-        if not isinstance(features, pd.DataFrame):
-            raise ValueError(
-                "When using from_dataframe, input features "
-                "needs to be a dataframe."
-            )
-        # set the default display func for this method
-        kwargs["display_func"] = kwargs.get(
-            "display_func", display.functions["default"]
-        )
-        instance = cls(features, *args, **kwargs)
-
-        return instance
+    # @classmethod
+    # def from_dataframe(cls, *args, **kwargs):
+    #     """Create a relabeller widget from a dataframe."""
+    #     if not isinstance(features, pd.DataFrame):
+    #         raise ValueError(
+    #             "When using from_dataframe, input features "
+    #             "needs to be a dataframe."
+    #         )
+    #     # set the default display func for this method
+    #     kwargs["display_func"] = kwargs.get(
+    #         "display_func", display.functions["default"]
+    #     )
+    #     instance = cls(features, *args, **kwargs)
+    #     return instance
 
     @classmethod
     def from_images(
         cls,
-        features=None,
         *args,
+        features=None,
         image_size=None,
         **kwargs
     ):
@@ -137,6 +134,7 @@ class DistributedLabeller(abc.ABC):
             Description of returned object.
 
         """
+
         if features is not None:
             if not isinstance(features, np.ndarray):
                 raise ValueError(
@@ -161,18 +159,15 @@ class DistributedLabeller(abc.ABC):
             partial(display.functions["image"], imsize=image_size),
         )
 
-        instance = cls(features, *args, **kwargs)
+        instance = cls(*args, **kwargs)
+
+        if features is not None:
+            instance.add_features(features)
 
         return instance
 
     def _apply_annotation(self, sender):
-
-        if isinstance(sender, dict) and "value" in sender:
-            value = sender["value"]
-        else:
-            value = sender
-
-        self._annotation_loop.send(value)
+        self._annotation_loop.send(sender)
 
     def _onkeydown(self, event):
 
@@ -187,7 +182,8 @@ class DistributedLabeller(abc.ABC):
 
     def _compose(self, feature=None):
 
-        self.progressbar.value = len(self._already_labelled) - 1
+        self.progressbar.value = self.queue.progress
+
         if feature is not None:
             if self.timer > 0.5:
                 self._render_processing()
@@ -195,7 +191,7 @@ class DistributedLabeller(abc.ABC):
             with self.timer:
                 with self.feature_output:
                     IPython.display.clear_output(wait=True)
-                    self._display_func(feature, n_samples=self.chunk_size)
+                    self._display_func(feature)
 
         self.layout.children = [
             self.top_bar,
@@ -203,29 +199,6 @@ class DistributedLabeller(abc.ABC):
             self.input_widget,
         ]
         return self
-
-    def _undo(self, change=None):
-        if len(self._already_labelled) > 1:
-            # pop the last two, since one has already been popped
-            curr = self._already_labelled.pop()
-            prev = self._already_labelled.pop()
-            # remove option if it existed only once:
-            if (self.new_labels == self.new_labels[prev]).sum() == 1:
-                self.input_widget.options = [
-                    option
-                    for option in self.input_widget.options
-                    if option != str(self.new_labels[prev])
-                ]
-            # set the previous, labelled one to nan:
-            if isinstance(self.new_labels, (pd.Series, pd.DataFrame)):
-                self.new_labels.loc[prev] = np.nan
-            else:
-                self.new_labels[prev] = np.nan
-            # append the previous and current one to queue:
-            self._label_queue.append(curr)
-            self._label_queue.append(prev)
-            # send a nan for the current one - this also advances it:
-            self._annotation_loop.send(np.nan)
 
     def _render_processing(self, message="Rendering..."):
         self.layout.children = [
