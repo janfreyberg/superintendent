@@ -1,15 +1,13 @@
-import pandas as pd
 import numpy as np
-from superintendent import SemiSupervisor
-
+import pandas as pd
 from hypothesis import given, settings
-from hypothesis.strategies import (
-    text, integers, floats, booleans, dictionaries, lists, recursive, one_of)
-from hypothesis.extra.numpy import (
-    arrays, array_shapes, boolean_dtypes, integer_dtypes, floating_dtypes,
-    unicode_string_dtypes)
-from hypothesis.extra.pandas import (
-    columns, column, data_frames, series)
+from hypothesis.extra.numpy import (array_shapes, arrays, boolean_dtypes,
+                                    floating_dtypes, integer_dtypes,
+                                    unicode_string_dtypes)
+from hypothesis.extra.pandas import column, columns, data_frames, series
+from hypothesis.strategies import (booleans, dictionaries, floats, integers,
+                                   lists, one_of, recursive, text)
+from superintendent import SemiSupervisor
 
 primitive_strategy = (
     text() | integers() | floats(allow_nan=False) | booleans()

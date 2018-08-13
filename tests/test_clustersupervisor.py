@@ -1,9 +1,9 @@
 import itertools
 
-import numpy as np
-import pandas as pd
 import pytest
 
+import numpy as np
+import pandas as pd
 from superintendent import ClusterSupervisor
 
 TEST_DF = pd.DataFrame(np.meshgrid(np.arange(20), np.arange(20))[0])

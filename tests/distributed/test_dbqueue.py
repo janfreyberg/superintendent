@@ -1,26 +1,27 @@
 import datetime
 import time
 
-# the following is to make tests pass on macOS
-import matplotlib as mpl
-mpl.use('TkAgg')  # noqa
-
-import numpy as np
-import pandas as pd
-
 import pytest
 
+# the following is to make tests pass on macOS
+import matplotlib as mpl
+import numpy as np
+import pandas as pd
 from hypothesis import given
-from hypothesis.strategies import (
-    text, integers, floats, booleans, dictionaries, lists, recursive, one_of)
-from hypothesis.extra.numpy import (
-    arrays, array_shapes, boolean_dtypes, integer_dtypes, floating_dtypes,
-    unicode_string_dtypes)
-from hypothesis.extra.pandas import (
-    columns, column, data_frames, series)
-
-
+from hypothesis.extra.numpy import (array_shapes, arrays, boolean_dtypes,
+                                    floating_dtypes, integer_dtypes,
+                                    unicode_string_dtypes)
+from hypothesis.extra.pandas import column, columns, data_frames, series
+from hypothesis.strategies import (booleans, dictionaries, floats, integers,
+                                   lists, one_of, recursive, text)
 from superintendent.distributed.dbqueue import Backend
+
+mpl.use('TkAgg')  # noqa
+
+
+
+
+
 
 
 q_object = Backend()
@@ -158,7 +159,7 @@ def test_popping_timeout():
     id_, inp = q.pop(timeout=6000)
     assert id_ is None
     assert inp is None
-    # test popping works if popped before timeout:
+    # test popping works if popped after timeout:
     time.sleep(1)
     id_, inp = q.pop(timeout=1)
     assert id_ == 1
