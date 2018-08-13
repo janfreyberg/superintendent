@@ -217,10 +217,6 @@ class SemiSupervisor(base.Labeller):
         """
         if self.classifier is None:
             raise ValueError("No classifier to retrain.")
-        try:
-            labelled = np.nonzero(~np.isnan(self.new_labels))[0]
-        except TypeError:
-            labelled = np.nonzero(self.new_labels != 'nan')
 
         labelled = self.queue.list_completed()
         labelled_X = np.array([item.data for item in labelled])

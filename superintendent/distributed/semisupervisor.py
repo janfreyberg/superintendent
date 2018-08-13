@@ -160,7 +160,7 @@ class SemiSupervisor(base.DistributedLabeller):
         if options is None:
             options = self.queue.list_labels()
         else:
-            options = list(options)
+            options = [str(option) for option in options]
 
         self.input_widget.options = options
         self.input_widget.fixed_options = options
@@ -214,10 +214,6 @@ class SemiSupervisor(base.DistributedLabeller):
         """
         if self.classifier is None:
             raise ValueError("No classifier to retrain.")
-        try:
-            labelled = np.nonzero(~np.isnan(self.new_labels))[0]
-        except TypeError:
-            labelled = np.nonzero(self.new_labels != 'nan')
 
         labelled = self.queue.list_completed()
 
@@ -255,8 +251,7 @@ class SemiSupervisor(base.DistributedLabeller):
 
             self.queue.reorder(new_order)
 
-        print(f'Labelled datapoints: {len(labelled)}; '
-              f'Model performance: {self.performance}')
+        self._compose()
 
     @property
     def new_labels(self):
@@ -269,4 +264,6 @@ class SemiSupervisor(base.DistributedLabeller):
         schedule.every(interval).seconds.do(self.retrain)
         while True:
             schedule.run_pending()
+            print(f'Labelled datapoints: {len(self.queue.list_completed())}; '
+                  f'Model performance: {self.performance}')
             time.sleep(1)

@@ -1,10 +1,10 @@
 import configparser
 import itertools
 import warnings
-from collections import deque
+from collections import deque, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Set
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative
@@ -55,6 +55,8 @@ class DatabaseQueue(BaseLabellingQueue):
     deserialiser : builtin_function_or_method
     serialiser : builtin_function_or_method
     """
+
+    item = namedtuple('QueueItem', ['id', 'data', 'label'])
 
     def __init__(
         self,
@@ -175,7 +177,7 @@ class DatabaseQueue(BaseLabellingQueue):
         with self.session() as session:
             rows = session.query(
                 self.data
-            ).filter_by(
+            ).filter(
                 self.data.id.in_(ids)
             ).all()
             for row in rows:
@@ -230,6 +232,17 @@ class DatabaseQueue(BaseLabellingQueue):
             row.completed_at = None
             row.popped_at = None
 
+    def list_all(self):
+        with self.session() as session:
+            objects = session.query(
+                self.data
+            ).all()
+            return [
+                self.item(id=obj.id, data=self.deserialiser(obj.input),
+                          label=obj.output)
+                for obj in objects
+            ]
+
     def list_completed(self):
         with self.session() as session:
             objects = session.query(
@@ -239,20 +252,19 @@ class DatabaseQueue(BaseLabellingQueue):
                 & self.data.completed_at.isnot(None)
             ).all()
             return [
-                {'id': obj.id, 'completed_at': obj.completed_at,
-                 'input': self.deserialiser(obj.input),
-                 'label': obj.output}
+                self.item(id=obj.id, data=self.deserialiser(obj.input),
+                          label=obj.output)
                 for obj in objects
             ]
 
-    def list_labels(self):
+    def list_labels(self) -> Set[str]:
         with self.session() as session:
             rows = session.query(
                 self.data.output
             ).filter(
                 self.data.output.isnot(None)
             ).distinct()
-            return [row.output for row in rows]
+            return set([row.output for row in rows])
 
     def list_uncompleted(self):
         with self.session() as session:
@@ -262,7 +274,8 @@ class DatabaseQueue(BaseLabellingQueue):
                 self.data.output.is_(None)
             ).all()
             return [
-                {'id': obj.id, 'input': self.deserialiser(obj.input)}
+                self.item(id=obj.id, data=self.deserialiser(obj.input),
+                          label=obj.output)
                 for obj in objects
             ]
 
