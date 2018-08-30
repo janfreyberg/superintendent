@@ -84,8 +84,11 @@ class SimpleLabellingQueue(BaseLabellingQueue):
             )
         self.labels[id_] = label
 
-    def reorder(self, new_order: Sequence[int]) -> None:
-        self.order = deque(new_order)
+    def reorder(self, new_order: Dict[int, int]) -> None:
+        self.order = deque([
+            idx for idx, _ in
+            sorted(new_order.items(), key=lambda item: item[1])
+        ])
 
     def shuffle(self) -> None:
         shuffle(self.order)

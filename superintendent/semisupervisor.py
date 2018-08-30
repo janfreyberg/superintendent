@@ -1,6 +1,7 @@
 """Tools to supervise classification."""
 
 from functools import partial
+from collections import OrderedDict
 
 import ipywidgets as widgets
 import numpy as np
@@ -59,7 +60,7 @@ class SemiSupervisor(base.Labeller):
 
     def __init__(
         self,
-        features,
+        features=None,
         labels=None,
         classifier=None,
         display_func=None,
@@ -83,7 +84,7 @@ class SemiSupervisor(base.Labeller):
 
         """
         super().__init__(
-            features,
+            features=features,
             labels=labels,
             display_func=display_func,
             keyboard_shortcuts=keyboard_shortcuts,
@@ -246,7 +247,10 @@ class SemiSupervisor(base.Labeller):
                 shuffle_prop=self.shuffle_prop
             ))
 
-            new_order = [unlabelled[idx].id for idx in reordering]
+            new_order = OrderedDict([
+                (item.id, index) for item, index
+                in zip(unlabelled, list(reordering))
+            ])
 
             self.queue.reorder(new_order)
 

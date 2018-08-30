@@ -1,9 +1,11 @@
 """Functions to validate arguments."""
+from typing import Optional, Any
+
 import numpy as np
 import pandas as pd
 
 
-def valid_classifier(classifier):
+def valid_classifier(classifier: Any):
     """
     Check if an object conforms to sklearns fit / predict interface.
 
@@ -27,7 +29,7 @@ def valid_classifier(classifier):
         )
 
 
-def valid_data(features):
+def valid_data(features: Optional[Any]):
     """
     Check if an object is an array or can be turned into one.
 
@@ -36,6 +38,8 @@ def valid_data(features):
     features : pd.DataFrame, pd.Series, np.ndarray
         the data to double-check.
     """
+    if features is None:
+        return None
     if isinstance(features, (pd.DataFrame, pd.Series, np.ndarray)):
         return features
     elif isinstance(features, (list, tuple)):

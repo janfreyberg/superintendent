@@ -48,7 +48,8 @@ class Submitter(widgets.VBox):
         other_option: bool = True,
         update: bool = True,
         hint_function: Optional[Callable] = None,
-        hints: Optional[Dict[str, Any]] = None
+        hints: Optional[Dict[str, Any]] = None,
+        update_hints: bool = True
     ):
         """
         Create a widget that will render submission options.
@@ -61,9 +62,9 @@ class Submitter(widgets.VBox):
         self.submission_functions = []
         self.max_buttons = max_buttons
         self.hint_function = hint_function
-        self.hints = dict()
+        self.hints = dict() if hints is None else hints
         if hint_function is not None:
-            for option, feature in hints.values():
+            for option, feature in self.hints.values():
                 self.hints[option] = widgets.Output()
                 with self.hints[option]:
                     self.hint_function(feature)

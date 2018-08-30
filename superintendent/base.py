@@ -2,6 +2,7 @@
 
 import abc
 from functools import partial
+from typing import Optional, Any, Callable, Dict
 
 import IPython.display
 import ipywidgets as widgets
@@ -47,13 +48,13 @@ class Labeller(abc.ABC):
 
     def __init__(
         self,
-        features,
-        labels=None,
-        display_func=None,
-        keyboard_shortcuts=False,
-        use_hints=False,
-        hint_function=None,
-        hints=None
+        features: Optional[Any] = None,
+        labels: Optional[Any] = None,
+        display_func: Callable = None,
+        keyboard_shortcuts: bool = False,
+        use_hints: bool = False,
+        hint_function: Optional[Callable] = None,
+        hints: Optional[Dict[str, Any]] = None
     ):
         """
         Make a class that allows you to label data points.
@@ -88,7 +89,7 @@ class Labeller(abc.ABC):
         self.features = validation.valid_data(features)
         if labels is not None:
             self.labels = validation.valid_data(labels)
-        else:
+        elif self.features is not None:
             self.labels = np.full(self.features.shape[0], np.nan, dtype=float)
 
         self.progressbar = widgets.FloatProgress(
@@ -170,6 +171,14 @@ class Labeller(abc.ABC):
 
     def _apply_annotation(self, sender):
         self._annotation_loop.send(sender)
+
+    def add_features(self, features) -> None:
+        """Add features to the database.
+
+        This inserts the data into the database, ready to be labelled by the
+        workers.
+        """
+        self.queue.enqueue_many(features)
 
     def _onkeydown(self, event):
 
