@@ -162,8 +162,11 @@ class SemiSupervisor(base.Labeller):
             for i, option in enumerate(options):
                 options[i] = str(option)
 
-        self.input_widget.options = options
-        self.input_widget.fixed_options = options
+            self.input_widget.options = options
+            self.input_widget.fixed_options = options
+        else:
+            self.input_widget.options = []
+            self.input_widget.fixed_options = []
 
         if shuffle:
             self.queue.shuffle()

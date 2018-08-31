@@ -38,12 +38,12 @@ class Submitter(widgets.VBox):
     """
 
     other_option = traitlets.Bool(True)
-    options = traitlets.List(list())
+    options = traitlets.List(list(), allow_none=True)
     max_buttons = traitlets.Integer(12)
 
     def __init__(
         self,
-        options: Union[List[str], Tuple[str]] = (),
+        options: Optional[Union[List[str], Tuple[str]]] = (),
         max_buttons: int = 12,
         other_option: bool = True,
         update: bool = True,
@@ -79,7 +79,10 @@ class Submitter(widgets.VBox):
         self.undo_button = widgets.Button(
             description='Undo', icon='undo')
         self.undo_button.on_click(self._when_submitted)
-        self.options = [str(option) for option in options]
+        if options is None:
+            self.options = []
+        else:
+            self.options = [str(option) for option in options]
         self.fixed_options = self.options
 
         self.other_option = other_option
