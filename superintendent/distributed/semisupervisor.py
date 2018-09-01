@@ -43,6 +43,15 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
     def annotate(self, options=None):
         return self._annotate(options=options, shuffle=False)
 
+    def orchestrate(self, interval: int = 30, shuffle_prop: float = 0.1):
+        self.shuffle_prop = shuffle_prop
+        schedule.every(interval).seconds.do(self.retrain)
+        while True:
+            schedule.run_pending()
+            # print(f'Labelled datapoints: {len(self.queue.list_completed())}; '
+            #       f'Model performance: {self.performance}')
+            time.sleep(1)
+
 
 # class SemiSupervisor(base.DistributedLabeller):
 #     """
