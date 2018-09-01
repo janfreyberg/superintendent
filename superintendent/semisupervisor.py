@@ -1,5 +1,6 @@
 """Tools to supervise classification."""
 
+import warnings
 from functools import partial
 from collections import OrderedDict
 
@@ -229,12 +230,14 @@ class SemiSupervisor(base.Labeller):
         self._render_processing(message="Retraining... ")
         self.classifier.fit(labelled_X, labelled_y)
         try:
-            self.performance = self.eval_method(
-                self.classifier, labelled_X, labelled_y
-            )
-            self.model_performance.value = "Score: {:.2f}".format(
-                self.performance["test_score"].mean()
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                self.performance = self.eval_method(
+                    self.classifier, labelled_X, labelled_y
+                )
+                self.model_performance.value = "Score: {:.2f}".format(
+                    self.performance["test_score"].mean()
+                )
         except ValueError:
             self.performance = "not available (too few labelled points)"
             self.model_performance.value = "Score: {}".format(self.performance)
