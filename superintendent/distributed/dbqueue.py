@@ -8,7 +8,7 @@ from typing import Any, Dict, Sequence, Set
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
 
@@ -90,6 +90,8 @@ class DatabaseQueue(BaseLabellingQueue):
             ix_labelling = sa.Index('ix_labelling', self.data.priority)
             ix_labelling.create(self.engine)
         except OperationalError:
+            pass
+        except ProgrammingError:
             pass
 
     @classmethod
