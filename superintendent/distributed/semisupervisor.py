@@ -48,8 +48,6 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
         schedule.every(interval).seconds.do(self.retrain)
         while True:
             schedule.run_pending()
-            # print(f'Labelled datapoints: {len(self.queue.list_completed())}; '
-            #       f'Model performance: {self.performance}')
             time.sleep(1)
 
 

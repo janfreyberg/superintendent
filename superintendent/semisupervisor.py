@@ -228,7 +228,6 @@ class SemiSupervisor(base.Labeller):
         labelled_y = np.array([item.label for item in labelled])
 
         self._render_processing(message="Retraining... ")
-        self.classifier.fit(labelled_X, labelled_y)
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
@@ -241,6 +240,8 @@ class SemiSupervisor(base.Labeller):
         except ValueError:
             self.performance = "not available (too few labelled points)"
             self.model_performance.value = "Score: {}".format(self.performance)
+
+        self.classifier.fit(labelled_X, labelled_y)
 
         if self.reorder is not None:
             unlabelled = self.queue.list_uncompleted()

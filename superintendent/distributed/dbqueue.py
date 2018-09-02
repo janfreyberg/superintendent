@@ -163,7 +163,8 @@ class DatabaseQueue(BaseLabellingQueue):
 
     def reorder(self, priorities: Dict[int, int]) -> None:
         self.set_priorities(
-            list(priorities.keys()), list(priorities.values())
+            [int(id_) for id_ in priorities.keys()],
+            [int(priority) for priority in priorities.values()]
         )
 
     def set_priority(self, id_: int, priority: int):
