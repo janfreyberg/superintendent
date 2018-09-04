@@ -14,7 +14,6 @@ from hypothesis.extra.numpy import (array_shapes, arrays, boolean_dtypes,
 from hypothesis.extra.pandas import column, columns, data_frames, series
 from hypothesis.strategies import (booleans, dictionaries, floats, integers,
                                    lists, one_of, recursive, text)
-
 from superintendent.distributed.dbqueue import DatabaseQueue
 
 mpl.use('TkAgg')  # noqa

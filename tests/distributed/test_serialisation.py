@@ -1,13 +1,10 @@
-from hypothesis import given
-
 import hypothesis.extra.numpy as np_strategies
-
+import numpy as np
+import pandas as pd
+from hypothesis import given
 from hypothesis.extra.pandas import column, columns, data_frames, series
 from hypothesis.strategies import (booleans, dictionaries, floats, integers,
                                    lists, one_of, recursive, text)
-
-import numpy as np
-import pandas as pd
 from superintendent.distributed.serialization import data_dumps, data_loads
 
 guaranteed_dtypes = (

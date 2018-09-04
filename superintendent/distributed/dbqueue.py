@@ -12,8 +12,8 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
 
-from .serialization import data_dumps, data_loads
 from ..queueing import BaseLabellingQueue
+from .serialization import data_dumps, data_loads
 
 DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
 

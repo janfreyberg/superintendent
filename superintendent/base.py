@@ -2,7 +2,7 @@
 
 import abc
 from functools import partial
-from typing import Optional, Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import IPython.display
 import ipywidgets as widgets

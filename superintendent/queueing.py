@@ -1,7 +1,7 @@
 import abc
-from random import shuffle
 from collections import deque, namedtuple
-from typing import Deque, Dict, Any, Sequence, Set
+from random import shuffle
+from typing import Any, Deque, Dict, Set
 
 
 class BaseLabellingQueue(abc.ABC):

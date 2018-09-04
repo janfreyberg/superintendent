@@ -1,8 +1,8 @@
 """Tools to supervise classification."""
 
 import warnings
-from functools import partial
 from collections import OrderedDict
+from functools import partial
 
 import ipywidgets as widgets
 import numpy as np

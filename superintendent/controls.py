@@ -2,7 +2,7 @@
 
 import time
 from functools import total_ordering
-from typing import Callable, List, Optional, Tuple, Union, Dict, Any
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import ipywidgets as widgets
 import traitlets
@@ -156,7 +156,7 @@ class Submitter(widgets.VBox):
                                         layout=widgets.Layout(width='95%')),
                          self.hints.get(option, widgets.HBox())],
                         layout=widgets.Layout(
-                            width=f'{100/len(self.options)}%',
+                            width='{}%'.format(100/len(self.options)),
                             min_width='10%'
                         )
                     )
