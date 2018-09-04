@@ -46,7 +46,9 @@ pandas_dfs = (
 
 possible_input_data = one_of(
     lists(primitive_strategy),
-    numpy_strategy, pandas_series, pandas_dfs
+    numpy_strategy,
+    pandas_series,
+    # pandas_dfs
 )
 
 
@@ -79,7 +81,7 @@ def test_creation(input_data):
 @settings(deadline=None)
 @given(
     input_data=possible_input_data, shuffle=booleans(),
-    label=(text() | floats(allow_nan=False) | integers())
+    label=(text())
 )
 def test_apply_annotation(input_data, shuffle, label):
     widget = SemiSupervisor(
@@ -87,8 +89,13 @@ def test_apply_annotation(input_data, shuffle, label):
     )
     widget.annotate(shuffle=shuffle)
     for _ in range(len(input_data)):
-        widget._apply_annotation(str(label))
+        widget._apply_annotation({'source': 'test', 'value': label})
 
-    assert ((len(input_data) == 0)
-            or (set(widget.new_labels) == {label})
-            or (set(widget.new_labels) == {float(label)}))
+    assert (
+        (len(input_data) == 0)
+        or (set(widget.new_labels) - {None} == {str(label)})
+    )
+
+
+def test_skipping():
+    pass

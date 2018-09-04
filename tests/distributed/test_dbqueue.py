@@ -14,17 +14,12 @@ from hypothesis.extra.numpy import (array_shapes, arrays, boolean_dtypes,
 from hypothesis.extra.pandas import column, columns, data_frames, series
 from hypothesis.strategies import (booleans, dictionaries, floats, integers,
                                    lists, one_of, recursive, text)
-from superintendent.distributed.dbqueue import Backend
+
+from superintendent.distributed.dbqueue import DatabaseQueue
 
 mpl.use('TkAgg')  # noqa
 
-
-
-
-
-
-
-q_object = Backend()
+q_object = DatabaseQueue()
 
 primitive_strategy = (
     text() | integers() | floats(allow_nan=False) | booleans()
@@ -57,7 +52,7 @@ def get_q():
 @given(inp=primitive_strategy)
 def test_primitive_inserts(inp):
     q = get_q()
-    q.insert(inp)
+    q.enqueue(inp)
     id_, db_inp = q.pop()
     assert inp == db_inp
 
@@ -65,7 +60,7 @@ def test_primitive_inserts(inp):
 @given(inp=nested_strategy)
 def test_nested_inserts(inp):
     q = get_q()
-    q.insert(inp)
+    q.enqueue(inp)
     id_, db_inp = q.pop()
     assert inp == db_inp
 
@@ -78,7 +73,7 @@ def test_numpy_array_inserts(inp):
     Guarantees: floats, integers, strings
     """
     q = get_q()
-    q.insert(inp)
+    q.enqueue(inp)
     id_, db_inp = q.pop()
     try:
         assert ((inp == db_inp) | np.isnan(inp)).all()
@@ -92,7 +87,7 @@ def test_numpy_array_inserts(inp):
 def test_pandas_series(inp):
     """Tests if inserting pandas stuff works"""
     q = get_q()
-    q.insert(inp)
+    q.enqueue(inp)
     id_, db_inp = q.pop()
     try:
         assert ((inp == db_inp) | pd.isnull(inp)).all()
@@ -109,7 +104,7 @@ def test_pandas_series(inp):
 def test_pandas_frames(inp):
     """Tests if inserting pandas stuff works"""
     q = get_q()
-    q.insert(inp)
+    q.enqueue(inp)
     id_, db_inp = q.pop()
     try:
         assert ((inp == db_inp) | pd.isnull(inp)).all().all()
@@ -122,43 +117,44 @@ def test_pandas_frames(inp):
 def test_priority_inserts(inp, priority):
     """Tests if inserting data with priority values works."""
     q = get_q()
-    q.insert(inp, priority)
+    q.enqueue(inp, priority)
 
 
-@given(inp1=(nested_strategy | primitive_strategy),
-       inp2=(nested_strategy | primitive_strategy))
-def test_insert_and_list(inp1, inp2):
+def test_insert_and_list():
     """Tests if listing items from the database works."""
     q = get_q()
-    q.insert(inp1)
-    q.insert(inp2)
+    q.enqueue('test data 1')
+    q.enqueue('test data 2')
     # pop a task and submit answer
     id_, inp = q.pop()
     q.submit(id_, 'test_label')
+
     # check it is listed as completed
     completed = q.list_completed()
-    assert completed[0]['output'] == 'test_label'
-    assert completed[0]['input'] in (inp1, inp2)
-    assert completed[0]['id'] == id_
-    assert isinstance(completed[0]['completed_at'], datetime.datetime)
-    assert (datetime.datetime.now() - completed[0]['completed_at']
-            < datetime.timedelta(minutes=1))
+    assert completed[0].label == 'test_label'
+    assert completed[0].data in ('test data 1', 'test data 2')
+    assert completed[0].id == id_
+
+    # assert isinstance(completed[0]['completed_at'], datetime.datetime)
+    # assert (datetime.datetime.now() - completed[0]['completed_at']
+    #         < datetime.timedelta(minutes=1))
+
     # check the other task is listed as uncompleted
     uncompleted = q.list_uncompleted()
-    assert uncompleted[0]['input'] in (inp1, inp2)
-    assert uncompleted[0]['id'] != id_
+    assert uncompleted[0].data in ('test data 1', 'test data 2')
+    assert uncompleted[0].id != id_
 
 
 def test_popping_timeout():
     """Tests if the poping works."""
     q = get_q()
-    q.insert('hi')
+    q.enqueue('hi')
     q.pop()
 
     # test popping doesn't work if popped within timeout:
-    id_, inp = q.pop(timeout=6000)
-    assert id_ is None
-    assert inp is None
+    with pytest.raises(IndexError):
+        id_, inp = q.pop(timeout=6000)
+
     # test popping works if popped after timeout:
     time.sleep(1)
     id_, inp = q.pop(timeout=1)
