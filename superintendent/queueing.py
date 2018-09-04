@@ -52,25 +52,21 @@ class SimpleLabellingQueue(BaseLabellingQueue):
 
         self.order: Deque[int] = deque([])
         self._popped: Deque[int] = deque([])
-        self._max_id = 0
 
         if features is not None:
             self.enqueue_many(features)
 
     def enqueue(self, feature) -> None:
-        self.order.appendleft(self._max_id)
-        self.data[self._max_id] = feature
-        self._max_id += 1
+        if len(self.data) > 0:
+            idx = max(self.data.keys()) + 1
+        else:
+            idx = 0
+        self.data[idx] = feature
+        self.order.appendleft(idx)
 
     def enqueue_many(self, features) -> None:
-        self.order.extendleft(
-            range(self._max_id, self._max_id + len(features))
-        )
-        self.data.update(
-            {id_: datapoint for id_, datapoint in
-             zip(range(self._max_id, self._max_id + len(features)), features)}
-        )
-        self._max_id += len(features)
+        for feature in features:
+            self.enqueue(feature)
 
     def pop(self) -> (int, Any):
         id_ = self.order.pop()
@@ -124,7 +120,7 @@ class SimpleLabellingQueue(BaseLabellingQueue):
 
     @property
     def progress(self) -> float:
-        return (len(self.data) - len(self.order) - 1) / len(self.data)
+        return 1 - (len(self.data) - len(self.labels)) / len(self.data)
 
     def __len__(self):
         return len(self.order)

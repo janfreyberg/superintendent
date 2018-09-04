@@ -209,9 +209,9 @@ class SemiSupervisor(base.Labeller):
 
     @property
     def new_labels(self):
-        return np.array([
+        return [
             item.label for item in self.queue.list_all()
-        ])
+        ]
 
     def retrain(self, *args):
         """Retrain the classifier you passed when creating this widget.
