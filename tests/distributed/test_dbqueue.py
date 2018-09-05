@@ -18,7 +18,6 @@ from superintendent.distributed.dbqueue import DatabaseQueue
 
 mpl.use('TkAgg')  # noqa
 
-os.remove('testing.db')
 q_object = DatabaseQueue(connection_string='sqlite:///testing.db')
 
 primitive_strategy = (
