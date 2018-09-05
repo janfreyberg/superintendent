@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
 [![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
 
 
 ---
@@ -35,6 +36,10 @@ pip install requests bs4 wordcloud
 
 These are not required for superintendent itself, so they won't be installed
 when you install superintendent.
+
+### Run on Binder
+
+You can run the use cases interactively online using mybinder.org [here](https://mybinder.org/v2/gh/janfreyberg/superintendent/master?filepath=examples.ipynb)
 
 ## Use case 1: Labelling individual data points
 

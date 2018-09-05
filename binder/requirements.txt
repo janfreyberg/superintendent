@@ -1,0 +1,6 @@
+requests
+bs4
+wordcloud
+matplotlib
+pandas
+ipyevents
