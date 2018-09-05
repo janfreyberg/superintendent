@@ -8,6 +8,7 @@ import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import hypothesis
+import hypothesis.database
 from hypothesis import given
 from hypothesis.extra.numpy import (array_shapes, arrays, boolean_dtypes,
                                     floating_dtypes, integer_dtypes,
@@ -19,9 +20,12 @@ from superintendent.distributed.dbqueue import DatabaseQueue
 
 mpl.use('TkAgg')  # noqa
 
-hypothesis.settings(database='.hypothesis', use_coverage=False)
+hypothesis.settings(
+    database=hypothesis.database.ExampleDatabase('.hypothesis'),
+    use_coverage=False
+)
 
-q_object = DatabaseQueue(connection_string='sqlite:///testing.db')
+q_object = DatabaseQueue()
 
 primitive_strategy = (
     text() | integers() | floats(allow_nan=False) | booleans()
