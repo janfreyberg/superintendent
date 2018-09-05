@@ -1,5 +1,5 @@
-import datetime
 import time
+import os
 
 import pytest
 
@@ -18,7 +18,8 @@ from superintendent.distributed.dbqueue import DatabaseQueue
 
 mpl.use('TkAgg')  # noqa
 
-q_object = DatabaseQueue()
+os.remove('testing.db')
+q_object = DatabaseQueue(connection_string='sqlite:///testing.db')
 
 primitive_strategy = (
     text() | integers() | floats(allow_nan=False) | booleans()
@@ -159,3 +160,6 @@ def test_popping_timeout():
     id_, inp = q.pop(timeout=1)
     assert id_ == 1
     assert inp == 'hi'
+
+
+os.remove('testing.db')
