@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import configparser
 import itertools
 import warnings
@@ -254,9 +255,18 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 for obj in objects
             ]
+            if len(items) == 0:
+                return [], []
+
             if isinstance(items[0].data, pd.Series):
                 x = pd.DataFrame([item.data.to_dict() for item in items])
-                y = [item.label for item in items]
+            elif isinstance(items[0].data, np.array):
+                x = np.stack([item.data for item in items])
+            else:
+                x = [item.data for item in items]
+
+            y = [item.label for item in items]
+
             return x, y
 
     def list_labels(self) -> Set[str]:
@@ -275,7 +285,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 .filter(self.data.output.is_(None))
                 .all()
             )
-            return [
+            items = [
                 self.item(
                     id=obj.id,
                     data=self.deserialiser(obj.input),
@@ -283,6 +293,15 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 for obj in objects
             ]
+            ids = [obj.id for obj in objects]
+            if isinstance(items[0].data, pd.Series):
+                x = pd.DataFrame([item.data.to_dict() for item in items])
+            elif isinstance(items[0].data, np.array):
+                x = np.stack([item.data for item in items])
+            else:
+                x = [item.data for item in items]
+
+            return ids, x
 
     def clear_queue(self):
         with self.session() as session:

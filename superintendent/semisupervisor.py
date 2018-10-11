@@ -183,7 +183,7 @@ class SemiSupervisor(base.Labeller):
 
         for id_, datapoint in self.queue:
 
-            sender = yield self._compose(np.array([datapoint]))
+            sender = yield self._compose(datapoint)
 
             if sender["source"] == "__undo__":
                 # unpop the current item:
@@ -199,7 +199,7 @@ class SemiSupervisor(base.Labeller):
             else:
                 new_label = sender["value"]
                 self.queue.submit(id_, new_label)
-                self.input_widget.add_hint(new_label, np.array([datapoint]))
+                self.input_widget.add_hint(new_label, datapoint)
 
         if self.event_manager is not None:
             self.event_manager.close()
@@ -224,40 +224,42 @@ class SemiSupervisor(base.Labeller):
         # labelled_X = np.array([item.data for item in labelled])
         # labelled_y = np.array([item.label for item in labelled])
 
-        self._render_processing(message="Retraining... ")
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self.performance = self.eval_method(
-                    self.classifier, labelled_X, labelled_y
+        if len(labelled_X) > 1:
+
+            self._render_processing(message="Retraining... ")
+
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self.performance = self.eval_method(
+                        self.classifier, labelled_X, labelled_y
+                    )
+                    self.model_performance.value = "Score: {:.2f}".format(
+                        self.performance["test_score"].mean()
+                    )
+
+            except ValueError:
+                self.performance = "not available (too few labelled points)"
+                self.model_performance.value = "Score: {}".format(
+                    self.performance
                 )
-                self.model_performance.value = "Score: {:.2f}".format(
-                    self.performance["test_score"].mean()
+
+            self.classifier.fit(labelled_X, labelled_y)
+
+            if self.reorder is not None:
+                ids, unlabelled_X = self.queue.list_uncompleted()
+
+                reordering = list(
+                    self.reorder(
+                        self.classifier.predict_proba(unlabelled_X),
+                        shuffle_prop=self.shuffle_prop,
+                    )
                 )
-        except ValueError:
-            self.performance = "not available (too few labelled points)"
-            self.model_performance.value = "Score: {}".format(self.performance)
 
-        self.classifier.fit(labelled_X, labelled_y)
-
-        if self.reorder is not None:
-            unlabelled = self.queue.list_uncompleted()
-            unlabelled_X = np.array([item.data for item in unlabelled])
-
-            reordering = list(
-                self.reorder(
-                    self.classifier.predict_proba(unlabelled_X),
-                    shuffle_prop=self.shuffle_prop,
+                new_order = OrderedDict(
+                    [(id_, index) for id_, index in zip(ids, list(reordering))]
                 )
-            )
 
-            new_order = OrderedDict(
-                [
-                    (item.id, index)
-                    for item, index in zip(unlabelled, list(reordering))
-                ]
-            )
-
-            self.queue.reorder(new_order)
+                self.queue.reorder(new_order)
 
         self._compose()
