@@ -1,3 +1,4 @@
+import pandas as pd
 import configparser
 import itertools
 import warnings
@@ -19,7 +20,7 @@ DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
 
 
 class Superintendent(DeclarativeBase):
-    __tablename__ = 'superintendent'
+    __tablename__ = "superintendent"
     id = sa.Column(sa.Integer, primary_key=True)
     input = sa.Column(sa.String)
     output = sa.Column(sa.String, nullable=True)
@@ -30,13 +31,9 @@ class Superintendent(DeclarativeBase):
     worker_id = sa.Column(sa.String, nullable=True)
 
 
-deserialisers = {
-    'json': data_loads
-}
+deserialisers = {"json": data_loads}
 
-serialisers = {
-    'json': data_dumps
-}
+serialisers = {"json": data_dumps}
 
 
 class DatabaseQueue(BaseLabellingQueue):
@@ -56,12 +53,10 @@ class DatabaseQueue(BaseLabellingQueue):
     serialiser : builtin_function_or_method
     """
 
-    item = namedtuple('QueueItem', ['id', 'data', 'label'])
+    item = namedtuple("QueueItem", ["id", "data", "label"])
 
     def __init__(
-        self,
-        connection_string='sqlite:///:memory:',
-        storage_type='json'
+        self, connection_string="sqlite:///:memory:", storage_type="json"
     ):
         """Instantiate queue for distributed labelling.
 
@@ -87,7 +82,7 @@ class DatabaseQueue(BaseLabellingQueue):
 
         try:
             # create index for priority
-            ix_labelling = sa.Index('ix_labelling', self.data.priority)
+            ix_labelling = sa.Index("ix_labelling", self.data.priority)
             ix_labelling.create(self.engine)
         except OperationalError:
             pass
@@ -95,9 +90,7 @@ class DatabaseQueue(BaseLabellingQueue):
             pass
 
     @classmethod
-    def from_config_file(
-        cls, config_path
-    ):
+    def from_config_file(cls, config_path):
         """Instantiate with database credentials from a configuration file.
 
         The config file should be an INI file with the following contents:
@@ -123,10 +116,9 @@ class DatabaseQueue(BaseLabellingQueue):
         config = configparser.ConfigParser()
         config.read(config_path)
 
-        connection_string_template = "{dialect}+{driver}://" \
-            "{username}:{password}@{host}:{port}/{database}"
+        connection_string_template = "{dialect}+{driver}://" "{username}:{password}@{host}:{port}/{database}"
         connection_string = connection_string_template.format(
-            **config['database']
+            **config["database"]
         )
         return cls(connection_string)
 
@@ -145,61 +137,66 @@ class DatabaseQueue(BaseLabellingQueue):
     def enqueue(self, feature, priority=None):
         with self.session() as session:
             session.add(
-                self.data(input=self.serialiser(feature),
-                          inserted_at=datetime.now(),
-                          priority=priority)
+                self.data(
+                    input=self.serialiser(feature),
+                    inserted_at=datetime.now(),
+                    priority=priority,
+                )
             )
 
     def enqueue_many(self, features, priorities=None):
+        if isinstance(features, pd.DataFrame):
+            features = [row for _, row in features.iterrows()]
+
         with self.session() as session:
             if priorities is None:
                 priorities = itertools.cycle([None])
+
             for feature, priority in zip(features, priorities):
-                session.add(self.data(
-                    input=self.serialiser(feature),
-                    inserted_at=datetime.now(),
-                    priority=priority
-                ))
+                session.add(
+                    self.data(
+                        input=self.serialiser(feature),
+                        inserted_at=datetime.now(),
+                        priority=priority,
+                    )
+                )
 
     def reorder(self, priorities: Dict[int, int]) -> None:
         self.set_priorities(
             [int(id_) for id_ in priorities.keys()],
-            [int(priority) for priority in priorities.values()]
+            [int(priority) for priority in priorities.values()],
         )
 
     def set_priority(self, id_: int, priority: int):
         with self.session() as session:
-            row = session.query(
-                self.data
-            ).filter_by(
-                id=id_
-            ).first()
+            row = session.query(self.data).filter_by(id=id_).first()
             row.priority = priority
 
     def set_priorities(self, ids: Sequence[int], priorities: Sequence[int]):
         with self.session() as session:
-            rows = session.query(
-                self.data
-            ).filter(
-                self.data.id.in_(ids)
-            ).all()
+            rows = session.query(self.data).filter(self.data.id.in_(ids)).all()
             for row in rows:
                 row.priority = priorities[ids.index(row.id)]
 
     def pop(self, timeout: int = 600) -> (int, Any):
         with self.session() as session:
-            row = session.query(
-                self.data
-            ).filter(
-                self.data.completed_at.is_(None)
-                & (self.data.popped_at.is_(None)
-                   | (self.data.popped_at
-                      < (datetime.now() - timedelta(seconds=timeout))))
-            ).order_by(
-                self.data.priority
-            ).first()
+            row = (
+                session.query(self.data)
+                .filter(
+                    self.data.completed_at.is_(None)
+                    & (
+                        self.data.popped_at.is_(None)
+                        | (
+                            self.data.popped_at
+                            < (datetime.now() - timedelta(seconds=timeout))
+                        )
+                    )
+                )
+                .order_by(self.data.priority)
+                .first()
+            )
             if row is None:
-                raise IndexError('Trying to pop off an empty queue.')
+                raise IndexError("Trying to pop off an empty queue.")
             else:
                 row.popped_at = datetime.now()
                 id_ = row.id
@@ -209,11 +206,7 @@ class DatabaseQueue(BaseLabellingQueue):
 
     def submit(self, id_: int, label: str, worker_id=None) -> None:
         with self.session() as session:
-            row = session.query(
-                self.data
-            ).filter_by(
-                id=id_
-            ).first()
+            row = session.query(self.data).filter_by(id=id_).first()
             row.output = label
             if worker_id is not None:
                 row.worker_id = worker_id
@@ -226,59 +219,68 @@ class DatabaseQueue(BaseLabellingQueue):
 
     def _reset(self, id_: int) -> None:
         with self.session() as session:
-            row = session.query(
-                self.data
-            ).filter_by(
-                id=id_
-            ).first()
+            row = session.query(self.data).filter_by(id=id_).first()
             row.output = None
             row.completed_at = None
             row.popped_at = None
 
     def list_all(self):
         with self.session() as session:
-            objects = session.query(
-                self.data
-            ).all()
+            objects = session.query(self.data).all()
             return [
-                self.item(id=obj.id, data=self.deserialiser(obj.input),
-                          label=obj.output)
+                self.item(
+                    id=obj.id,
+                    data=self.deserialiser(obj.input),
+                    label=obj.output,
+                )
                 for obj in objects
             ]
 
     def list_completed(self):
         with self.session() as session:
-            objects = session.query(
-                self.data
-            ).filter(
-                self.data.output.isnot(None)
-                & self.data.completed_at.isnot(None)
-            ).all()
-            return [
-                self.item(id=obj.id, data=self.deserialiser(obj.input),
-                          label=obj.output)
+            objects = (
+                session.query(self.data)
+                .filter(
+                    self.data.output.isnot(None)
+                    & self.data.completed_at.isnot(None)
+                )
+                .all()
+            )
+            items = [
+                self.item(
+                    id=obj.id,
+                    data=self.deserialiser(obj.input),
+                    label=obj.output,
+                )
                 for obj in objects
             ]
+            if isinstance(items[0].data, pd.Series):
+                x = pd.DataFrame([item.data.to_dict() for item in items])
+                y = [item.label for item in items]
+            return x, y
 
     def list_labels(self) -> Set[str]:
         with self.session() as session:
-            rows = session.query(
-                self.data.output
-            ).filter(
-                self.data.output.isnot(None)
-            ).distinct()
+            rows = (
+                session.query(self.data.output)
+                .filter(self.data.output.isnot(None))
+                .distinct()
+            )
             return set([row.output for row in rows])
 
     def list_uncompleted(self):
         with self.session() as session:
-            objects = session.query(
-                self.data
-            ).filter(
-                self.data.output.is_(None)
-            ).all()
+            objects = (
+                session.query(self.data)
+                .filter(self.data.output.is_(None))
+                .all()
+            )
             return [
-                self.item(id=obj.id, data=self.deserialiser(obj.input),
-                          label=obj.output)
+                self.item(
+                    id=obj.id,
+                    data=self.deserialiser(obj.input),
+                    label=obj.output,
+                )
                 for obj in objects
             ]
 
@@ -295,23 +297,31 @@ class DatabaseQueue(BaseLabellingQueue):
     @cachetools.cached(cachetools.TTLCache(1, 15))
     def _unlabelled_count(self, timeout: int = 600):
         with self.session() as session:
-            return session.query(
-                self.data
-            ).filter(
-                self.data.completed_at.is_(None)
-                & (self.data.popped_at.is_(None)
-                   | (self.data.popped_at
-                      < (datetime.now() - timedelta(seconds=timeout))))
-            ).count()
+            return (
+                session.query(self.data)
+                .filter(
+                    self.data.completed_at.is_(None)
+                    & (
+                        self.data.popped_at.is_(None)
+                        | (
+                            self.data.popped_at
+                            < (datetime.now() - timedelta(seconds=timeout))
+                        )
+                    )
+                )
+                .count()
+            )
 
     def _labelled_count(self):
         with self.session() as session:
-            return session.query(
-                self.data
-            ).filter(
-                self.data.completed_at.isnot(None)
-                & self.data.output.isnot(None)
-            ).count()
+            return (
+                session.query(self.data)
+                .filter(
+                    self.data.completed_at.isnot(None)
+                    & self.data.output.isnot(None)
+                )
+                .count()
+            )
 
     @property
     def progress(self) -> float:

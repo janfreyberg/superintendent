@@ -185,20 +185,19 @@ class SemiSupervisor(base.Labeller):
 
             sender = yield self._compose(np.array([datapoint]))
 
-            if sender['source'] == '__undo__':
+            if sender["source"] == "__undo__":
                 # unpop the current item:
                 self.queue.undo()
                 # unpop and unlabel the previous item:
                 self.queue.undo()
                 # try to remove any labels not in the assigned labels:
                 self.input_widget.remove_options(
-                    set(self.input_widget.options)
-                    - self.queue.list_labels()
+                    set(self.input_widget.options) - self.queue.list_labels()
                 )
-            elif sender['source'] == '__skip__':
+            elif sender["source"] == "__skip__":
                 pass
             else:
-                new_label = sender['value']
+                new_label = sender["value"]
                 self.queue.submit(id_, new_label)
                 self.input_widget.add_hint(new_label, np.array([datapoint]))
 
@@ -209,9 +208,7 @@ class SemiSupervisor(base.Labeller):
 
     @property
     def new_labels(self):
-        return [
-            item.label for item in self.queue.list_all()
-        ]
+        return [item.label for item in self.queue.list_all()]
 
     def retrain(self, *args):
         """Retrain the classifier you passed when creating this widget.
@@ -223,14 +220,14 @@ class SemiSupervisor(base.Labeller):
         if self.classifier is None:
             raise ValueError("No classifier to retrain.")
 
-        labelled = self.queue.list_completed()
-        labelled_X = np.array([item.data for item in labelled])
-        labelled_y = np.array([item.label for item in labelled])
+        labelled_X, labelled_y = self.queue.list_completed()
+        # labelled_X = np.array([item.data for item in labelled])
+        # labelled_y = np.array([item.label for item in labelled])
 
         self._render_processing(message="Retraining... ")
         try:
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
+                warnings.simplefilter("ignore")
                 self.performance = self.eval_method(
                     self.classifier, labelled_X, labelled_y
                 )
@@ -247,17 +244,19 @@ class SemiSupervisor(base.Labeller):
             unlabelled = self.queue.list_uncompleted()
             unlabelled_X = np.array([item.data for item in unlabelled])
 
-            reordering = list(self.reorder(
-                self.classifier.predict_proba(
-                    unlabelled_X
-                ),
-                shuffle_prop=self.shuffle_prop
-            ))
+            reordering = list(
+                self.reorder(
+                    self.classifier.predict_proba(unlabelled_X),
+                    shuffle_prop=self.shuffle_prop,
+                )
+            )
 
-            new_order = OrderedDict([
-                (item.id, index) for item, index
-                in zip(unlabelled, list(reordering))
-            ])
+            new_order = OrderedDict(
+                [
+                    (item.id, index)
+                    for item, index in zip(unlabelled, list(reordering))
+                ]
+            )
 
             self.queue.reorder(new_order)
 
