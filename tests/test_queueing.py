@@ -3,8 +3,16 @@ import pytest
 
 import numpy as np
 from hypothesis import given
-from hypothesis.strategies import (booleans, dictionaries, floats, integers,
-                                   lists, one_of, recursive, text)
+from hypothesis.strategies import (
+    booleans,
+    dictionaries,
+    floats,
+    integers,
+    lists,
+    one_of,
+    recursive,
+    text,
+)
 from superintendent.queueing import SimpleLabellingQueue
 
 

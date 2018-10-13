@@ -46,7 +46,9 @@ def default_display_func(feature):
         feature.dtype, np.number
     ):
         IPython.display.display(
-            IPython.display.HTML("<br>\n&nbsp;\n<br>".join(feature))
+            IPython.display.HTML(
+                "<br>\n&nbsp;\n<br>".join([str(item) for item in feature])
+            )
         )
 
     else:

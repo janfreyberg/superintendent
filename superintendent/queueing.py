@@ -2,7 +2,7 @@ import abc
 import itertools
 from collections import deque, namedtuple
 from random import shuffle
-from typing import Any, Deque, Dict, Set
+from typing import Any, Dict, Set
 
 import numpy as np
 import pandas as pd
