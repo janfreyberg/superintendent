@@ -14,7 +14,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
 
-from ..queueing import BaseLabellingQueue
+from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads
 
 DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
@@ -54,6 +54,7 @@ class DatabaseQueue(BaseLabellingQueue):
     serialiser : builtin_function_or_method
     """
 
+    worker_id = None
     item = namedtuple("QueueItem", ["id", "data", "label"])
 
     def __init__(
@@ -117,7 +118,10 @@ class DatabaseQueue(BaseLabellingQueue):
         config = configparser.ConfigParser()
         config.read(config_path)
 
-        connection_string_template = "{dialect}+{driver}://" "{username}:{password}@{host}:{port}/{database}"
+        connection_string_template = (
+            "{dialect}+{driver}://"
+            "{username}:{password}@{host}:{port}/{database}"
+        )
         connection_string = connection_string_template.format(
             **config["database"]
         )
@@ -135,30 +139,42 @@ class DatabaseQueue(BaseLabellingQueue):
         finally:
             session.close()
 
-    def enqueue(self, feature, priority=None):
+    def enqueue(self, feature, label=None, priority=None):
+        now = datetime.now()
         with self.session() as session:
             session.add(
                 self.data(
                     input=self.serialiser(feature),
-                    inserted_at=datetime.now(),
+                    inserted_at=now,
                     priority=priority,
+                    output=label,
+                    completed_at=None if label is None else now,
                 )
             )
 
-    def enqueue_many(self, features, priorities=None):
+    def enqueue_many(self, features, labels=None, priorities=None):
+        """
+        Add items to the queue.
+
+        """
+        now = datetime.now()
         if isinstance(features, pd.DataFrame):
             features = [row for _, row in features.iterrows()]
 
         with self.session() as session:
             if priorities is None:
                 priorities = itertools.cycle([None])
+            if labels is None:
+                labels = itertools.cycle([None])
 
-            for feature, priority in zip(features, priorities):
+            for feature, label, priority in zip(features, labels, priorities):
                 session.add(
                     self.data(
                         input=self.serialiser(feature),
-                        inserted_at=datetime.now(),
+                        inserted_at=now,
                         priority=priority,
+                        output=label,
+                        completed_at=None if label is None else now,
                     )
                 )
 
@@ -205,12 +221,11 @@ class DatabaseQueue(BaseLabellingQueue):
                 self._popped.append(id_)
                 return id_, self.deserialiser(value)
 
-    def submit(self, id_: int, label: str, worker_id=None) -> None:
+    def submit(self, id_: int, label: str) -> None:
         with self.session() as session:
             row = session.query(self.data).filter_by(id=id_).first()
             row.output = label
-            if worker_id is not None:
-                row.worker_id = worker_id
+            row.worker_id = self.worker_id
             row.completed_at = datetime.now()
 
     def undo(self) -> None:
@@ -255,19 +270,12 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 for obj in objects
             ]
-            if len(items) == 0:
-                return [], []
 
-            if isinstance(items[0].data, pd.Series):
-                x = pd.DataFrame([item.data.to_dict() for item in items])
-            elif isinstance(items[0].data, np.array):
-                x = np.stack([item.data for item in items])
-            else:
-                x = [item.data for item in items]
-
+            ids = [item.id for item in items]
+            x = _features_to_array([item.data for item in items])
             y = [item.label for item in items]
 
-            return x, y
+            return ids, x, y
 
     def list_labels(self) -> Set[str]:
         with self.session() as session:
@@ -293,13 +301,9 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 for obj in objects
             ]
+
             ids = [obj.id for obj in objects]
-            if isinstance(items[0].data, pd.Series):
-                x = pd.DataFrame([item.data.to_dict() for item in items])
-            elif isinstance(items[0].data, np.array):
-                x = np.stack([item.data for item in items])
-            else:
-                x = [item.data for item in items]
+            x = _features_to_array([item.data for item in items])
 
             return ids, x
 
@@ -313,20 +317,14 @@ class DatabaseQueue(BaseLabellingQueue):
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
-    @cachetools.cached(cachetools.TTLCache(1, 15))
+    @cachetools.cached(cachetools.TTLCache(1, 0.1))
     def _unlabelled_count(self, timeout: int = 600):
         with self.session() as session:
             return (
                 session.query(self.data)
                 .filter(
                     self.data.completed_at.is_(None)
-                    & (
-                        self.data.popped_at.is_(None)
-                        | (
-                            self.data.popped_at
-                            < (datetime.now() - timedelta(seconds=timeout))
-                        )
-                    )
+                    & self.data.output.is_(None)
                 )
                 .count()
             )
@@ -344,12 +342,20 @@ class DatabaseQueue(BaseLabellingQueue):
 
     @property
     def progress(self) -> float:
-        return self._labelled_count() / len(self)
+        n_labelled = self._labelled_count()
+        n_unlabelled = self._unlabelled_count()
+        if n_labelled + n_unlabelled == 0:
+            return 0
+        else:
+            return n_labelled / (n_unlabelled + n_labelled)
 
-    @cachetools.cached(cachetools.TTLCache(1, 15))
     def __len__(self):
         with self.session() as session:
-            return session.query(self.data).count()
+            return (
+                session.query(self.data)
+                .filter(self.data.completed_at.is_(None))
+                .count()
+            )
 
     def __iter__(self):
         return self

@@ -5,7 +5,8 @@ from collections import OrderedDict
 from functools import partial
 
 import ipywidgets as widgets
-import numpy as np
+
+# import numpy as np
 import sklearn.model_selection
 
 from . import base, prioritisation, validation
@@ -63,6 +64,7 @@ class SemiSupervisor(base.Labeller):
         self,
         features=None,
         labels=None,
+        options=(),
         classifier=None,
         display_func=None,
         eval_method=None,
@@ -88,6 +90,7 @@ class SemiSupervisor(base.Labeller):
             features=features,
             labels=labels,
             display_func=display_func,
+            options=options,
             keyboard_shortcuts=keyboard_shortcuts,
             use_hints=use_hints,
             hint_function=hint_function,
@@ -96,9 +99,10 @@ class SemiSupervisor(base.Labeller):
             **kwargs
         )
 
-        self.queue = SimpleLabellingQueue(features)
+        self.queue = SimpleLabellingQueue(features, labels)
 
         self.shuffle_prop = shuffle_prop
+
         self.classifier = validation.valid_classifier(classifier)
         if self.classifier is not None:
             self.retrain_button = widgets.Button(
@@ -120,6 +124,7 @@ class SemiSupervisor(base.Labeller):
                     layout=widgets.Layout(width="50%"),
                 ),
             )
+
         if eval_method is None:
             self.eval_method = partial(
                 sklearn.model_selection.cross_validate,
@@ -127,10 +132,11 @@ class SemiSupervisor(base.Labeller):
                 n_jobs=-1,
                 return_train_score=False,
             )
+
         if reorder is not None and isinstance(reorder, str):
             if reorder not in prioritisation.functions:
                 raise NotImplementedError(
-                    "Unknown reordering function {}.".format(reorder)
+                    "Unknown reordering function '{}'.".format(reorder)
                 )
             self.reorder = prioritisation.functions[reorder]
         elif reorder is not None and callable(reorder):
@@ -138,52 +144,18 @@ class SemiSupervisor(base.Labeller):
         else:
             self.reorder = None
 
-    def annotate(
-        self, relabel=None, options=None, shuffle=True, shortcuts=None
-    ):
-        """
-        Provide labels for items that don't have any labels.
-
-        Parameters
-        ----------
-        relabel : np.array, pd.Series, list, optional
-            A boolean array-like that is true for each label you would like to
-            re-label. Only one other special case is implemented - if you pass
-            a single value, all data with that label will be re-labelled. If
-            None (default), all data is relabelled.
-        options : np.array, pd.Series, list, optional
-            the options for re-labelling. If None, all unique values in labels
-            is offered.
-        shuffle : bool
-            Whether to randomise the order of relabelling (default True)
-
-        """
-        if options is not None:
-            options = list(options)
-            for i, option in enumerate(options):
-                options[i] = str(option)
-
-            self.input_widget.options = options
-            self.input_widget.fixed_options = options
-        else:
-            self.input_widget.options = []
-            self.input_widget.fixed_options = []
-
-        if shuffle:
-            self.queue.shuffle()
-
         self._annotation_loop = self._annotation_iterator()
-        # reset the progress bar
-        self.progressbar.bar_style = ""
-        # start the iteration cycle
-        return next(self._annotation_loop)
+        next(self._annotation_loop)
+        self._compose()
 
     def _annotation_iterator(self):
         """Relabel should be integer indices"""
 
+        self.progressbar.bar_style = ""
         for id_, datapoint in self.queue:
 
-            sender = yield self._compose(datapoint)
+            self._display(datapoint)
+            sender = yield
 
             if sender["source"] == "__undo__":
                 # unpop the current item:
@@ -201,6 +173,8 @@ class SemiSupervisor(base.Labeller):
                 self.queue.submit(id_, new_label)
                 self.input_widget.add_hint(new_label, datapoint)
 
+            self.progressbar.value = self.queue.progress
+
         if self.event_manager is not None:
             self.event_manager.close()
 
@@ -208,7 +182,8 @@ class SemiSupervisor(base.Labeller):
 
     @property
     def new_labels(self):
-        return [item.label for item in self.queue.list_all()]
+        _, _, labels = self.queue.list_all()
+        return labels
 
     def retrain(self, *args):
         """Retrain the classifier you passed when creating this widget.
@@ -220,46 +195,46 @@ class SemiSupervisor(base.Labeller):
         if self.classifier is None:
             raise ValueError("No classifier to retrain.")
 
-        labelled_X, labelled_y = self.queue.list_completed()
-        # labelled_X = np.array([item.data for item in labelled])
-        # labelled_y = np.array([item.label for item in labelled])
+        if len(self.queue.list_labels()) < 2:
+            self.model_performance.value = (
+                "Score: Not enough labels to retrain."
+            )
+            return
 
-        if len(labelled_X) > 1:
+        _, labelled_X, labelled_y = self.queue.list_completed()
 
-            self._render_processing(message="Retraining... ")
+        self._render_processing(message="Retraining... ")
 
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    self.performance = self.eval_method(
-                        self.classifier, labelled_X, labelled_y
-                    )
-                    self.model_performance.value = "Score: {:.2f}".format(
-                        self.performance["test_score"].mean()
-                    )
-
-            except ValueError:
-                self.performance = "not available (too few labelled points)"
-                self.model_performance.value = "Score: {}".format(
-                    self.performance
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.performance = self.eval_method(
+                    self.classifier, labelled_X, labelled_y
+                )
+                self.model_performance.value = "Score: {:.2f}".format(
+                    self.performance["test_score"].mean()
                 )
 
-            self.classifier.fit(labelled_X, labelled_y)
+        except ValueError:
+            self.performance = "Could not evaluate"
+            self.model_performance.value = "Score: {}".format(self.performance)
 
-            if self.reorder is not None:
-                ids, unlabelled_X = self.queue.list_uncompleted()
+        self.classifier.fit(labelled_X, labelled_y)
 
-                reordering = list(
-                    self.reorder(
-                        self.classifier.predict_proba(unlabelled_X),
-                        shuffle_prop=self.shuffle_prop,
-                    )
+        if self.reorder is not None:
+            ids, unlabelled_X = self.queue.list_uncompleted()
+
+            reordering = list(
+                self.reorder(
+                    self.classifier.predict_proba(unlabelled_X),
+                    shuffle_prop=self.shuffle_prop,
                 )
+            )
 
-                new_order = OrderedDict(
-                    [(id_, index) for id_, index in zip(ids, list(reordering))]
-                )
+            new_order = OrderedDict(
+                [(id_, index) for id_, index in zip(ids, list(reordering))]
+            )
 
-                self.queue.reorder(new_order)
+            self.queue.reorder(new_order)
 
         self._compose()

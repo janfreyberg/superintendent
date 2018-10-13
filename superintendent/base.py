@@ -2,7 +2,7 @@
 
 import abc
 from functools import partial
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import IPython.display
 import ipywidgets as widgets
@@ -50,11 +50,12 @@ class Labeller(abc.ABC):
         self,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
+        options: Tuple[str] = (),
         display_func: Callable = None,
         keyboard_shortcuts: bool = False,
         use_hints: bool = False,
         hint_function: Optional[Callable] = None,
-        hints: Optional[Dict[str, Any]] = None
+        hints: Optional[Dict[str, Any]] = None,
     ):
         """
         Make a class that allows you to label data points.
@@ -74,7 +75,6 @@ class Labeller(abc.ABC):
             ),
         )
 
-        self.top_bar = widgets.HBox([])
         if use_hints:
             hint_function = (
                 hint_function if hint_function is not None else display_func
@@ -82,7 +82,7 @@ class Labeller(abc.ABC):
         else:
             hint_function = hints = None
         self.input_widget = controls.Submitter(
-            hint_function=hint_function, hints=hints
+            hint_function=hint_function, hints=hints, options=options
         )
         self.input_widget.on_submission(self._apply_annotation)
 
@@ -93,8 +93,10 @@ class Labeller(abc.ABC):
             self.labels = np.full(self.features.shape[0], np.nan, dtype=float)
 
         self.progressbar = widgets.FloatProgress(
-            max=1, description="Progress:")
-        self.top_bar.children = (self.progressbar,)
+            max=1, description="Progress:"
+        )
+        self.top_bar = widgets.HBox([])
+        self.top_bar.children = [self.progressbar]
 
         if display_func is not None:
             self._display_func = display_func
@@ -103,10 +105,6 @@ class Labeller(abc.ABC):
 
         self.event_manager = None
         self.timer = controls.Timer()
-
-    @abc.abstractmethod
-    def annotate(self):
-        pass
 
     @abc.abstractmethod
     def _annotation_iterator(self):
@@ -172,13 +170,19 @@ class Labeller(abc.ABC):
     def _apply_annotation(self, sender):
         self._annotation_loop.send(sender)
 
-    def add_features(self, features) -> None:
-        """Add features to the database.
+    def add_features(self, features, labels=None):
+        """
+        Add features to the database.
 
         This inserts the data into the database, ready to be labelled by the
         workers.
         """
-        self.queue.enqueue_many(features)
+        self.queue.enqueue_many(features, labels=labels)
+        # reset the iterator
+        self._annotation_loop = self._annotation_iterator()
+        self.queue.undo()
+        next(self._annotation_loop)
+        self._compose()
 
     def _onkeydown(self, event):
 
@@ -191,9 +195,7 @@ class Labeller(abc.ABC):
         elif event["type"] == "keydown":
             pass
 
-    def _compose(self, feature=None):
-
-        self.progressbar.value = self.queue.progress
+    def _display(self, feature):
         if feature is not None:
             if self.timer > 0.5:
                 self._render_processing()
@@ -203,6 +205,7 @@ class Labeller(abc.ABC):
                     IPython.display.clear_output(wait=True)
                     self._display_func(feature)
 
+    def _compose(self):
         self.layout.children = [
             self.top_bar,
             self.feature_display,
@@ -221,13 +224,14 @@ class Labeller(abc.ABC):
         ]
 
     def _render_finished(self):
+
         self.progressbar.bar_style = "success"
-        self.progressbar.value = 1
+
         with self.feature_output:
             IPython.display.clear_output(wait=True)
             IPython.display.display(widgets.HTML(u"<h1>Finished labelling 🎉!"))
-        self.top_bar.children = self.top_bar.children[:-1]
-        self.layout.children = [self.top_bar, self.feature_display]
+
+        self.layout.children = [self.progressbar, self.feature_display]
         return self
 
     def _ipython_display_(self):
