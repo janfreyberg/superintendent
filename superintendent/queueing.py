@@ -1,6 +1,6 @@
 import abc
 import itertools
-from collections import deque, namedtuple
+from collections import deque, namedtuple, defaultdict
 from random import shuffle
 from typing import Any, Dict, Set
 
@@ -160,6 +160,140 @@ class SimpleLabellingQueue(BaseLabellingQueue):
 
     def __len__(self):
         return len(self.order)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return self.pop()
+        except IndexError:
+            raise StopIteration
+
+
+class ClusterLabellingQueue(BaseLabellingQueue):
+    def __init__(
+        self,
+        features: Any = None,
+        cluster_indices: Any = None,
+        representativeness=None,
+    ):
+
+        self.data = defaultdict(list)
+        self.representativeness = defaultdict(list)
+        self.cluster_labels = dict()
+
+        self.order = deque([])
+        self._popped = deque([])
+
+        if features is not None:
+            self.enqueue_many(features, cluster_indices, representativeness)
+
+    def enqueue_many(self, features, cluster_indices, representativeness=None):
+        if isinstance(features, pd.DataFrame):
+            features = [row for _, row in features.iterrows()]
+
+        if representativeness is None:
+            representativeness = np.ones(len(features))
+
+        for cluster_index, feature, represents in zip(
+            cluster_indices, features, representativeness
+        ):
+            self.enqueue(cluster_index, feature, represents)
+
+    def enqueue(self, cluster_index, feature, representativeness):
+
+        self.data[cluster_index].append(feature)
+        self.representativeness[cluster_index].append(feature)
+
+        if cluster_index not in self.order:
+            self.order.appendleft(cluster_index)
+
+    def pop(self):
+        id_ = self.order.pop()
+        self._popped.append(id_)
+        features = [
+            x
+            for _, x in sorted(
+                zip(self.representativeness[id_], self.data[id_]),
+                key=lambda pair: pair[0],
+            )
+        ]
+        return id_, _features_to_array(features)
+
+    def submit(self, cluster_index, cluster_label):
+        self.cluster_labels[cluster_index] = cluster_label
+
+    def reorder(self):
+        pass
+
+    def undo(self):
+        if len(self._popped) > 0:
+            cluster_index = self._popped.pop()
+            self.labels.pop(cluster_index, None)
+            self.order.append(cluster_index)
+
+    def list_completed(self):
+
+        features = [
+            data
+            for idx, values in self.data.items()
+            for data in values
+            if idx in self.cluster_labels
+        ]
+        cluster_indices = [
+            idx
+            for idx, values in self.data.items()
+            for data in values
+            if idx in self.cluster_labels
+        ]
+        cluster_labels = [
+            self.cluster_labels[idx]
+            for idx, values in self.data.items()
+            for data in values
+            if idx in self.cluster_labels
+        ]
+
+        return cluster_indices, _features_to_array(features), cluster_labels
+
+    def list_uncompleted(self):
+
+        features = [
+            data
+            for idx, values in self.data.items()
+            for data in values
+            if idx not in self.cluster_labels
+        ]
+        cluster_indices = [
+            idx
+            for idx, values in self.data.items()
+            for data in values
+            if idx not in self.cluster_labels
+        ]
+
+        return cluster_indices, _features_to_array(features)
+
+    def list_all(self):
+        features = [
+            data for idx, values in self.data.items() for data in values
+        ]
+        cluster_indices = [
+            idx for idx, values in self.data.items() for data in values
+        ]
+        cluster_labels = [
+            self.cluster_labels.get(idx)
+            for idx, values in self.data.items()
+            for data in values
+        ]
+
+        return cluster_indices, _features_to_array(features), cluster_labels
+
+    @property
+    def progress(self):
+        return len(self.cluster_labels) / len(self.data)
+
+    def list_labels(self):
+        return set(self.cluster_labels.values())
 
     def __iter__(self):
         return self

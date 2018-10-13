@@ -234,5 +234,10 @@ class Labeller(abc.ABC):
         self.layout.children = [self.progressbar, self.feature_display]
         return self
 
+    @property
+    def new_labels(self):
+        _, _, labels = self.queue.list_all()
+        return labels
+
     def _ipython_display_(self):
         IPython.display.display(self.layout)
