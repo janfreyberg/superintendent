@@ -36,7 +36,7 @@ class DistributedLabeller(abc.ABC):
 
     def __init__(
         self,
-        connection_string='sqlite:///:memory:',
+        connection_string="sqlite:///:memory:",
         display_func=None,
         keyboard_shortcuts=False,
     ):
@@ -112,13 +112,7 @@ class DistributedLabeller(abc.ABC):
     #     return instance
 
     @classmethod
-    def from_images(
-        cls,
-        *args,
-        features=None,
-        image_size=None,
-        **kwargs
-    ):
+    def from_images(cls, *args, features=None, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
         Params
@@ -140,7 +134,8 @@ class DistributedLabeller(abc.ABC):
                 raise ValueError(
                     "When using from_images, input features "
                     "needs to be a numpy array with shape "
-                    "(n_features, n_pixel).")
+                    "(n_features, n_pixel)."
+                )
 
             if image_size is None:
                 # check if image is square
@@ -150,7 +145,9 @@ class DistributedLabeller(abc.ABC):
                     raise ValueError(
                         "If image_size is None, the image "
                         "needs to be square, but yours has "
-                        + str(args[0].shape[1]) + " pixels.")
+                        + str(args[0].shape[1])
+                        + " pixels."
+                    )
         elif features is None and image_size is None:
             image_size = "square"
 

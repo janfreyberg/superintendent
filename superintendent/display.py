@@ -43,11 +43,10 @@ def default_display_func(feature):
     """
     # n_samples = min(n_samples, feature.shape[0])
     if isinstance(feature, np.ndarray) and not np.issubdtype(
-            feature.dtype, np.number):
+        feature.dtype, np.number
+    ):
         IPython.display.display(
-            IPython.display.HTML(
-                "<br>\n&nbsp;\n<br>".join(feature)
-            )
+            IPython.display.HTML("<br>\n&nbsp;\n<br>".join(feature))
         )
 
     else:

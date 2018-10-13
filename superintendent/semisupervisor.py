@@ -5,7 +5,6 @@ from collections import OrderedDict
 from functools import partial
 
 import ipywidgets as widgets
-
 # import numpy as np
 import sklearn.model_selection
 

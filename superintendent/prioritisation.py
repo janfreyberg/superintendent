@@ -61,9 +61,7 @@ def margin(probabilities, shuffle_prop=0.1):
 
 
 def certainty(probabilities, shuffle_prop=0.1):
-    ordered = np.argsort(
-        np.max(probabilities, axis=1)
-    )
+    ordered = np.argsort(np.max(probabilities, axis=1))
     return _shuffle_subset(ordered, shuffle_prop)
 
 

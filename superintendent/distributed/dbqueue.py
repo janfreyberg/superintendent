@@ -1,5 +1,3 @@
-import pandas as pd
-import numpy as np
 import configparser
 import itertools
 import warnings
@@ -13,6 +11,7 @@ import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
+import pandas as pd
 
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads

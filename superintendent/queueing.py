@@ -4,8 +4,8 @@ from collections import deque, namedtuple
 from random import shuffle
 from typing import Any, Deque, Dict, Set
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class BaseLabellingQueue(abc.ABC):
@@ -55,11 +55,11 @@ class SimpleLabellingQueue(BaseLabellingQueue):
     item = namedtuple("QueueItem", ["id", "data", "label"])
 
     def __init__(self, features: Any = None, labels: Any = None):
-        self.data: Dict[int, Any] = dict()
-        self.labels: Dict[int, str] = dict()
+        self.data = dict()
+        self.labels = dict()
 
-        self.order: Deque[int] = deque([])
-        self._popped: Deque[int] = deque([])
+        self.order = deque([])
+        self._popped = deque([])
 
         if features is not None:
             self.enqueue_many(features, labels)
