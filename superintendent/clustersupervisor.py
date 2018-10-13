@@ -89,11 +89,14 @@ class ClusterSupervisor(Labeller):
             cluster = self._label_queue.pop()
             self._already_labelled.append(cluster)
             sorted_index = [
-                i for i, (rep, label) in sorted(
+                i
+                for i, (rep, label) in sorted(
                     enumerate(
-                        zip(self.representativeness, self.cluster_labels)),
+                        zip(self.representativeness, self.cluster_labels)
+                    ),
                     key=lambda triplet: triplet[1][0],
-                    reverse=True)
+                    reverse=True,
+                )
                 if label == cluster
             ]
             features = get_values(self.features, sorted_index)
@@ -113,7 +116,7 @@ class ClusterSupervisor(Labeller):
 
             if (
                 new_val not in self.input_widget.options
-                and str(new_val) != 'nan'
+                and str(new_val) != "nan"
             ):
                 self.input_widget.options = self.input_widget.options + [
                     str(new_val)

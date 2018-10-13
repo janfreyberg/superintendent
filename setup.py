@@ -1,8 +1,9 @@
 """Installer."""
-from setuptools import setup
+import os.path
 # To use a consistent encoding
 from codecs import open
-import os.path
+
+from setuptools import setup
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,8 +40,15 @@ setup(
         'pandas',
         'matplotlib',
         'scikit-learn',
-        'scipy'
+        'scipy',
+        'schedule',
+        'sqlalchemy',
+        'cachetools',
+        'psycopg2-binary',
+        'cython',
+        'flask',
+        'werkzeug'
         ],
-    tests_require=['pytest'],
+    tests_require=['pytest', 'hypothesis'],
     setup_requires=['pytest-runner']
 )

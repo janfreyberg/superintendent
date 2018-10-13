@@ -1,8 +1,10 @@
 """Input and timing control widgets."""
 
 import time
-import ipywidgets as widgets
 from functools import total_ordering
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import ipywidgets as widgets
 import traitlets
 
 
@@ -23,15 +25,34 @@ class Submitter(widgets.VBox):
     other_option : bool, optional
         Whether the widget should contain a text box for users to type in
         a value not in options.
+    hint_function : fun
+        A function that will be passed the hint for each label, that displays
+        some output that will be displayed under each label and can be
+        considered a hint or more in-depth description of a label. During image
+        labelling tasks, this might be a function that displays an example
+        image.
+    hints : dict
+        A dictionary with each element of options as a key, and the data that
+        gets passed to hint_function as input.
 
     """
 
     other_option = traitlets.Bool(True)
-    options = traitlets.List(list())
+    options = traitlets.List(list(), allow_none=True)
     max_buttons = traitlets.Integer(12)
 
-    def __init__(self, options=(), max_buttons=12, other_option=True):
-        """Create a widget that will render submission options.
+    def __init__(
+        self,
+        options: Optional[Union[List[str], Tuple[str]]] = (),
+        max_buttons: int = 12,
+        other_option: bool = True,
+        update: bool = True,
+        hint_function: Optional[Callable] = None,
+        hints: Optional[Dict[str, Any]] = None,
+        update_hints: bool = True,
+    ):
+        """
+        Create a widget that will render submission options.
 
         Note that all parameters can also be changed through assignment after
         you create the widget.
@@ -40,21 +61,74 @@ class Submitter(widgets.VBox):
         super().__init__([])
         self.submission_functions = []
         self.max_buttons = max_buttons
-        self.options = options
+        self.hint_function = hint_function
+        self.hints = dict() if hints is None else hints
+        if hint_function is not None:
+            for option, feature in self.hints.values():
+                self.hints[option] = widgets.Output()
+                with self.hints[option]:
+                    self.hint_function(feature)
+
+        self.sort_button = widgets.Button(
+            description="Sort options", icon="sort"
+        )
+        self.sort_button.on_click(self._sort_options)
+
+        self.skip_button = widgets.Button(
+            description="Skip", icon="fast-forward"
+        )
+        self.skip_button.on_click(self._when_submitted)
+        self.undo_button = widgets.Button(description="Undo", icon="undo")
+        self.undo_button.on_click(self._when_submitted)
+        if options is None:
+            self.options = []
+        else:
+            self.options = [str(option) for option in options]
+        self.fixed_options = self.options
+
         self.other_option = other_option
+
         self._compose()
 
     def _when_submitted(self, sender):
 
-        if isinstance(sender, widgets.Button):
+        if sender is self.skip_button:
+            value = None
+            source = "__skip__"
+        elif sender is self.undo_button:
+            value = None
+            source = "__undo__"
+        elif isinstance(sender, widgets.Button):
             value = sender.description
             source = "button"
         elif isinstance(sender, widgets.Text):
             value = sender.value
             source = "textfield"
 
+        if value is not None and value not in self.options:
+            self.options = self.options + [value]
+
         for func in self.submission_functions:
             func({"value": value, "source": source})
+
+        self._compose()
+
+    def add_hint(self, value, hint):
+        if (
+            self.hint_function is not None
+            and self.hints is not None
+            and value not in self.hints
+        ):
+            # self.hints[value] = hint
+            self.hints[value] = widgets.Output()
+            with self.hints[value]:
+                self.hint_function(hint)
+
+    def remove_options(self, values):
+        for value in values:
+            if value not in self.fixed_options:
+                self.options.remove(value)
+        self._compose()
 
     def on_submission(self, func):
         """
@@ -76,36 +150,62 @@ class Submitter(widgets.VBox):
     def _compose(self, change=None):
 
         self.options = [str(option) for option in self.options]
+
         if len(self.options) <= self.max_buttons:
+            # if we can display all options:
             control_elements = widgets.HBox(
                 [
-                    widgets.Button(description=str(option))
+                    widgets.VBox(
+                        [
+                            widgets.Button(
+                                description=str(option),
+                                layout=widgets.Layout(width="95%"),
+                            ),
+                            self.hints.get(option, widgets.HBox()),
+                        ],
+                        layout=widgets.Layout(
+                            width="{}%".format(100 / len(self.options)),
+                            min_width="10%",
+                        ),
+                    )
                     for option in self.options
-                ]
+                ],
+                layout=widgets.Layout(flex_flow="row wrap"),
             )
-            for button in control_elements.children:
-                button.on_click(self._when_submitted)
+
+            for element in control_elements.children:
+                element.children[0].on_click(self._when_submitted)
+
         else:
-            control_elements = widgets.HBox(
+
+            dropdown = widgets.Dropdown(
+                options=[str(option) for option in self.options],
+                description="Label:",
+            )
+            button = widgets.Button(
+                description="Submit.",
+                tooltip="Submit label.",
+                button_style="success",
+            )
+            hint = widgets.interactive_output(
+                lambda s: (
+                    self.hint_function(self.hints[s])
+                    if s in self.hints
+                    else None
+                ),
+                {"s": dropdown},
+            )
+
+            control_elements = widgets.VBox(
                 [
-                    widgets.Dropdown(
-                        options=[str(option) for option in self.options],
-                        description="Label:",
-                    ),
-                    widgets.Button(
-                        description="Submit.",
-                        tooltip="Submit label.",
-                        button_style="success",
-                    ),
+                    widgets.HBox([dropdown, button]),
+                    widgets.HBox([hint], layout=widgets.Layout(width="15%")),
                 ]
             )
-            widgets.link(
-                (control_elements.children[0], "value"),
-                (control_elements.children[1], "description"),
-            )
-            control_elements.children[1].on_click(self._when_submitted)
-        sort_button = widgets.Button(description="Sort options", icon="sort")
-        sort_button.on_click(self._sort_options)
+
+            widgets.link((dropdown, "value"), (button, "description"))
+            button.on_click(self._when_submitted)
+
         if self.other_option:
             other_widget = widgets.Text(
                 value="",
@@ -115,22 +215,35 @@ class Submitter(widgets.VBox):
             other_widget.on_submit(self._when_submitted)
             self.children = [
                 control_elements,
+                # hint_elements,
                 widgets.HBox(
-                    [other_widget, sort_button],
-                    layout=widgets.Layout(
-                        justify_content="space-between"
-                    ),
+                    [
+                        other_widget,
+                        widgets.HBox(
+                            [
+                                self.sort_button,
+                                self.skip_button,
+                                self.undo_button,
+                            ]
+                        ),
+                    ],
+                    layout=widgets.Layout(justify_content="space-between"),
                 ),
             ]
         else:
-            self.children = [control_elements, widgets.HBox([sort_button])]
+            self.children = [
+                control_elements,
+                widgets.HBox(
+                    [self.sort_button, self.skip_button, self.undo_button]
+                ),
+            ]
 
 
 @total_ordering
 class Timer:
     """
     A timer object. Use as a context manager to time operations, and compare to
-    numerical values to run conditional code.
+    numerical values (seconds) to run conditional code.
 
     Usage:
 

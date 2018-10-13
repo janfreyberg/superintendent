@@ -6,10 +6,8 @@ python:
   - "3.6"
 script:
   - pip install flake8
-  - pip install isort
-  - pip install git+https://github.com/janfreyberg/docargs.git
+  # - pip install git+https://github.com/janfreyberg/docargs.git
   - flake8 superintendent
-  - isort -c superintendent/**/*.py
   - python setup.py test
-  - pip install .
-  - docargs superintendent
+  # - pip install .
+  # - docargs superintendent

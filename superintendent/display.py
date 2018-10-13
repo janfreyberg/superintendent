@@ -27,7 +27,7 @@ def get_values(data, idxs):
         return [operator.itemgetter(idx)(data) for idx in idxs]
 
 
-def default_display_func(feature, n_samples=1):
+def default_display_func(feature):
     """
     A default function that prints the object.
 
@@ -41,22 +41,21 @@ def default_display_func(feature, n_samples=1):
     n_samples : int
         How many you want to display.
     """
-    n_samples = min(n_samples, feature.shape[0])
+    # n_samples = min(n_samples, feature.shape[0])
     if isinstance(feature, np.ndarray) and not np.issubdtype(
-            feature.dtype, np.number):
+        feature.dtype, np.number
+    ):
         IPython.display.display(
             IPython.display.HTML(
-                "<br>\n&nbsp;\n<br>".join(
-                    get_values(feature, np.arange(n_samples))
-                )
+                "<br>\n&nbsp;\n<br>".join([str(item) for item in feature])
             )
         )
 
     else:
-        IPython.display.display(get_values(feature, np.arange(n_samples)))
+        IPython.display.display(feature)
 
 
-def image_display_func(feature, imsize=None, n_samples=1):
+def image_display_func(feature, imsize=None):
     """
     Image display function.
 
@@ -72,29 +71,16 @@ def image_display_func(feature, imsize=None, n_samples=1):
     n_samples : int
         number of images to show.
     """
-    n_samples = min(n_samples, feature.shape[0])
-    # grid layout for subplots
-    plot_cols, plot_rows = (
-        int(np.ceil(n_samples ** 0.5)),
-        int(n_samples // (n_samples ** 0.5)),
-    )
-    fig, axes = plt.subplots(plot_cols, plot_rows)
 
-    axes = [axes] if n_samples == 1 else list(axes.ravel())
+    fig, ax = plt.subplots(1, 1)
 
-    for image, ax in zip(get_values(feature, np.arange(n_samples)), axes):
-        if imsize == "square":
-            image = image.reshape(2 * [int(np.sqrt(image.size))])
-        elif imsize is not None:
-            image = image.reshape(imsize)
+    if imsize == "square":
+        image = feature.reshape(2 * [int(np.sqrt(feature.size))])
+    elif imsize is not None:
+        image = image.reshape(imsize)
 
-        ax.imshow(image, cmap="binary")
-        ax.axis("off")
-
-    if plot_cols * plot_rows != n_samples:
-        # display empty axes
-        for ax in axes[n_samples:]:
-            ax.axis("off")
+    ax.imshow(image, cmap="binary")
+    ax.axis("off")
 
     plt.show()
 

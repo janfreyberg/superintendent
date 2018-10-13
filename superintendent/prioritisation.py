@@ -5,17 +5,19 @@ This module implements a range of functions that produce ordering of data based
 on class probabilities.
 """
 
-import scipy.stats
 import numpy as np
+import scipy.stats
 
 
-def _shuffle_subset(data, shuffle_prop):
+def _shuffle_subset(data: np.ndarray, shuffle_prop: float) -> np.ndarray:
     to_shuffle = np.nonzero(np.random.rand(data.shape[0]) < shuffle_prop)[0]
     data[to_shuffle, ...] = data[np.random.permutation(to_shuffle), ...]
     return data
 
 
-def entropy(probabilities, shuffle_prop=0.1):
+def entropy(
+    probabilities: np.ndarray, shuffle_prop: float = 0.1
+) -> np.ndarray:
     """
     Sort by the entropy of the probabilities (high to low).
 
@@ -58,5 +60,10 @@ def margin(probabilities, shuffle_prop=0.1):
     return _shuffle_subset(ordered, shuffle_prop)
 
 
-functions = {"entropy": entropy, "margin": margin}
+def certainty(probabilities, shuffle_prop=0.1):
+    ordered = np.argsort(np.max(probabilities, axis=1))
+    return _shuffle_subset(ordered, shuffle_prop)
+
+
+functions = {"entropy": entropy, "margin": margin, "certainty": certainty}
 """A dictionary of functions to prioritise data."""

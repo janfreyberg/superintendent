@@ -2,21 +2,16 @@
 
 import abc
 from functools import partial
-from typing import Any, Callable, Dict, Optional, Tuple
 
 import IPython.display
 import ipywidgets as widgets
 import numpy as np
-import pandas as pd
 
-from . import controls, display, validation
-
-
-class DoNotLabel:
-    pass
+from .. import controls, display
+from .dbqueue import DatabaseQueue
 
 
-class Labeller(abc.ABC):
+class DistributedLabeller(abc.ABC):
     """
     Data point labelling.
 
@@ -25,7 +20,7 @@ class Labeller(abc.ABC):
     Parameters
     ----------
 
-    features : np.array | pd.DataFrame | list
+    features : np.array | pd.DataFrame
         The input array for your model
     labels : np.array, pd.Series, pd.DataFrame, optional
         The labels for your data.
@@ -36,26 +31,14 @@ class Labeller(abc.ABC):
     keyboard_shortcuts : bool, optional
         If you want to enable ipyevent-mediated keyboard capture to use the
         keyboard rather than the mouse to submit data.
-    use_hints : bool
-        Whether you want to use "hints", small displays of your data underneath
-        or alongside your labelling options.
-    hint_function : func, optional
-        The function to display these hints. By default, the same function as
-        display_func is used.
-    hints : np.array | pd.DataFrame | list
-        The hints to start off with.
+
     """
 
     def __init__(
         self,
-        features: Optional[Any] = None,
-        labels: Optional[Any] = None,
-        options: Tuple[str] = (),
-        display_func: Callable = None,
-        keyboard_shortcuts: bool = False,
-        use_hints: bool = False,
-        hint_function: Optional[Callable] = None,
-        hints: Optional[Dict[str, Any]] = None,
+        connection_string="sqlite:///:memory:",
+        display_func=None,
+        keyboard_shortcuts=False,
     ):
         """
         Make a class that allows you to label data points.
@@ -75,28 +58,18 @@ class Labeller(abc.ABC):
             ),
         )
 
-        if use_hints:
-            hint_function = (
-                hint_function if hint_function is not None else display_func
-            )
-        else:
-            hint_function = hints = None
-        self.input_widget = controls.Submitter(
-            hint_function=hint_function, hints=hints, options=options
-        )
-        self.input_widget.on_submission(self._apply_annotation)
+        self.queue = DatabaseQueue(connection_string)
 
-        self.features = validation.valid_data(features)
-        if labels is not None:
-            self.labels = validation.valid_data(labels)
-        elif self.features is not None:
-            self.labels = np.full(self.features.shape[0], np.nan, dtype=float)
+        self.top_bar = widgets.HBox([])
+
+        self.input_widget = controls.Submitter()
+        self.input_widget.on_submission(self._apply_annotation)
 
         self.progressbar = widgets.FloatProgress(
             max=1, description="Progress:"
         )
-        self.top_bar = widgets.HBox([])
-        self.top_bar.children = [self.progressbar]
+
+        self.top_bar.children = (self.progressbar,)
 
         if display_func is not None:
             self._display_func = display_func
@@ -106,29 +79,40 @@ class Labeller(abc.ABC):
         self.event_manager = None
         self.timer = controls.Timer()
 
+    def add_features(self, features):
+        """
+        Add features to the database.
+
+        This inserts the data into the database, ready to be labelled by the
+        workers.
+        """
+        self.queue.enqueue_many(features)
+
+    @abc.abstractmethod
+    def annotate(self):
+        pass
+
     @abc.abstractmethod
     def _annotation_iterator(self):
         pass
 
-    @classmethod
-    def from_dataframe(cls, features, *args, **kwargs):
-        """Create a relabeller widget from a dataframe.
-        """
-        if not isinstance(features, pd.DataFrame):
-            raise ValueError(
-                "When using from_dataframe, input features "
-                "needs to be a dataframe."
-            )
-        # set the default display func for this method
-        kwargs["display_func"] = kwargs.get(
-            "display_func", display.functions["default"]
-        )
-        instance = cls(features, *args, **kwargs)
-
-        return instance
+    # @classmethod
+    # def from_dataframe(cls, *args, **kwargs):
+    #     """Create a relabeller widget from a dataframe."""
+    #     if not isinstance(features, pd.DataFrame):
+    #         raise ValueError(
+    #             "When using from_dataframe, input features "
+    #             "needs to be a dataframe."
+    #         )
+    #     # set the default display func for this method
+    #     kwargs["display_func"] = kwargs.get(
+    #         "display_func", display.functions["default"]
+    #     )
+    #     instance = cls(features, *args, **kwargs)
+    #     return instance
 
     @classmethod
-    def from_images(cls, features, *args, image_size=None, **kwargs):
+    def from_images(cls, *args, features=None, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
         Params
@@ -144,45 +128,43 @@ class Labeller(abc.ABC):
             Description of returned object.
 
         """
-        if not isinstance(features, np.ndarray):
-            raise ValueError(
-                "When using from_images, input features "
-                "needs to be a numpy array with shape "
-                "(n_features, n_pixel)."
-            )
-        if image_size is None:
-            # check if image is square
-            if int(np.sqrt(features.shape[1])) ** 2 == features.shape[1]:
-                image_size = "square"
-            else:
+
+        if features is not None:
+            if not isinstance(features, np.ndarray):
                 raise ValueError(
-                    "If image_size is None, the image needs to be square, but "
-                    "yours has " + str(args[0].shape[1]) + " pixels."
+                    "When using from_images, input features "
+                    "needs to be a numpy array with shape "
+                    "(n_features, n_pixel)."
                 )
+
+            if image_size is None:
+                # check if image is square
+                if int(np.sqrt(features.shape[1])) ** 2 == features.shape[1]:
+                    image_size = "square"
+                else:
+                    raise ValueError(
+                        "If image_size is None, the image "
+                        "needs to be square, but yours has "
+                        + str(args[0].shape[1])
+                        + " pixels."
+                    )
+        elif features is None and image_size is None:
+            image_size = "square"
+
         kwargs["display_func"] = kwargs.get(
             "display_func",
             partial(display.functions["image"], imsize=image_size),
         )
-        instance = cls(features, *args, **kwargs)
+
+        instance = cls(*args, **kwargs)
+
+        if features is not None:
+            instance.add_features(features)
 
         return instance
 
     def _apply_annotation(self, sender):
         self._annotation_loop.send(sender)
-
-    def add_features(self, features, labels=None):
-        """
-        Add features to the database.
-
-        This inserts the data into the database, ready to be labelled by the
-        workers.
-        """
-        self.queue.enqueue_many(features, labels=labels)
-        # reset the iterator
-        self._annotation_loop = self._annotation_iterator()
-        self.queue.undo()
-        next(self._annotation_loop)
-        self._compose()
 
     def _onkeydown(self, event):
 
@@ -195,7 +177,10 @@ class Labeller(abc.ABC):
         elif event["type"] == "keydown":
             pass
 
-    def _display(self, feature):
+    def _compose(self, feature=None):
+
+        self.progressbar.value = self.queue.progress
+
         if feature is not None:
             if self.timer > 0.5:
                 self._render_processing()
@@ -205,7 +190,6 @@ class Labeller(abc.ABC):
                     IPython.display.clear_output(wait=True)
                     self._display_func(feature)
 
-    def _compose(self):
         self.layout.children = [
             self.top_bar,
             self.feature_display,
@@ -224,14 +208,13 @@ class Labeller(abc.ABC):
         ]
 
     def _render_finished(self):
-
         self.progressbar.bar_style = "success"
-
+        self.progressbar.value = self.progressbar.max
         with self.feature_output:
             IPython.display.clear_output(wait=True)
             IPython.display.display(widgets.HTML(u"<h1>Finished labelling 🎉!"))
-
-        self.layout.children = [self.progressbar, self.feature_display]
+        self.top_bar.children = self.top_bar.children[:-1]
+        self.layout.children = [self.top_bar, self.feature_display]
         return self
 
     def _ipython_display_(self):
