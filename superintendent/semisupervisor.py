@@ -5,6 +5,7 @@ from collections import OrderedDict
 from functools import partial
 
 import ipywidgets as widgets
+
 # import numpy as np
 import sklearn.model_selection
 
@@ -22,13 +23,15 @@ class SemiSupervisor(base.Labeller):
 
     Parameters
     ----------
-    features : list, np.ndarray, pd.Series, pd.DataFrame
+    features : list, np.ndarray, pd.Series, pd.DataFrame, optional
         An array or sequence of data in which each element (if 1D) or each row
         (if 2D) represents one data point for which you'd like to generate
         labels.
     labels : list, np.ndarray, pd.Series, pd.DataFrame, optional
         If you already have some labels, but would like to re-label some, then
         you can pass these in as labels.
+    options : tuple, list
+        The options presented for labelling.
     classifier : sklearn.base.ClassifierMixin, optional
         An object that implements the standard sklearn fit/predict methods. If
         provided, a button for retraining the model is shown, and the model
@@ -179,11 +182,6 @@ class SemiSupervisor(base.Labeller):
 
         yield self._render_finished()
 
-    @property
-    def new_labels(self):
-        _, _, labels = self.queue.list_all()
-        return labels
-
     def retrain(self, *args):
         """Retrain the classifier you passed when creating this widget.
 
@@ -223,6 +221,8 @@ class SemiSupervisor(base.Labeller):
         if self.reorder is not None:
             ids, unlabelled_X = self.queue.list_uncompleted()
 
+            print(unlabelled_X)
+            print(ids)
             reordering = list(
                 self.reorder(
                     self.classifier.predict_proba(unlabelled_X),

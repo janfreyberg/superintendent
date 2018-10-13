@@ -316,7 +316,7 @@ class DatabaseQueue(BaseLabellingQueue):
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
-    @cachetools.cached(cachetools.TTLCache(1, 0.1))
+    @cachetools.cached(cachetools.TTLCache(1, 15))
     def _unlabelled_count(self, timeout: int = 600):
         with self.session() as session:
             return (
@@ -339,14 +339,19 @@ class DatabaseQueue(BaseLabellingQueue):
                 .count()
             )
 
+    @cachetools.cached(cachetools.TTLCache(1, 60))
+    def _total_count(self):
+        with self.session() as session:
+            n_total = session.query(self.data).count()
+            session.expunge_all()
+        return n_total
+
     @property
     def progress(self) -> float:
-        n_labelled = self._labelled_count()
-        n_unlabelled = self._unlabelled_count()
-        if n_labelled + n_unlabelled == 0:
+        try:
+            return len(self._popped) / self._total_count()
+        except ZeroDivisionError:
             return 0
-        else:
-            return n_labelled / (n_unlabelled + n_labelled)
 
     def __len__(self):
         with self.session() as session:
