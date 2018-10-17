@@ -350,6 +350,8 @@ class DatabaseQueue(BaseLabellingQueue):
     def _total_count(self):
         with self.session() as session:
             n_total = session.query(self.data).count()
+            session.expunge_all()
+
         return n_total
 
     @property
