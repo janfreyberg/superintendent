@@ -221,8 +221,6 @@ class SemiSupervisor(base.Labeller):
         if self.reorder is not None:
             ids, unlabelled_X = self.queue.list_uncompleted()
 
-            print(unlabelled_X)
-            print(ids)
             reordering = list(
                 self.reorder(
                     self.classifier.predict_proba(unlabelled_X),
