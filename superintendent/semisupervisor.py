@@ -173,7 +173,7 @@ class SemiSupervisor(base.Labeller):
             else:
                 new_label = sender["value"]
                 self.queue.submit(id_, new_label)
-                self.input_widget.add_hint(new_label, datapoint)
+                # self.input_widget.add_hint(new_label, datapoint)
 
             self.progressbar.value = self.queue.progress
 
@@ -221,8 +221,6 @@ class SemiSupervisor(base.Labeller):
         if self.reorder is not None:
             ids, unlabelled_X = self.queue.list_uncompleted()
 
-            print(unlabelled_X)
-            print(ids)
             reordering = list(
                 self.reorder(
                     self.classifier.predict_proba(unlabelled_X),

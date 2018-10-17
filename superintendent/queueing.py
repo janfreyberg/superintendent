@@ -131,7 +131,7 @@ class SimpleLabellingQueue(BaseLabellingQueue):
     def list_uncompleted(self):
         items = [
             self.item(id=id_, data=self.data[id_], label=None)
-            for id_ in sorted(self._popped)
+            for id_ in sorted(self.order)
             if id_ not in self.labels
         ]
         ids = [item.id for item in items]
