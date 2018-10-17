@@ -134,6 +134,8 @@ class SemiSupervisor(base.Labeller):
                 n_jobs=-1,
                 return_train_score=False,
             )
+        else:
+            self.eval_method = eval_method
 
         if reorder is not None and isinstance(reorder, str):
             if reorder not in prioritisation.functions:
