@@ -307,6 +307,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 for obj in objects
             ]
+            session.expunge_all()
 
         ids = [obj.id for obj in objects]
         x = _features_to_array([item.data for item in items])
