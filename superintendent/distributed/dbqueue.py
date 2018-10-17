@@ -242,7 +242,8 @@ class DatabaseQueue(BaseLabellingQueue):
     def list_all(self):
         with self.session() as session:
             objects = session.query(self.data).all()
-            return [
+
+            items = [
                 self.item(
                     id=obj.id,
                     data=self.deserialiser(obj.input),
@@ -250,6 +251,11 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 for obj in objects
             ]
+        ids = [item.id for item in items]
+        x = _features_to_array([item.data for item in items])
+        y = [item.label for item in items]
+
+        return ids, x, y
 
     def list_completed(self):
         with self.session() as session:
@@ -261,6 +267,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
                 .all()
             )
+
             items = [
                 self.item(
                     id=obj.id,
@@ -270,11 +277,11 @@ class DatabaseQueue(BaseLabellingQueue):
                 for obj in objects
             ]
 
-            ids = [item.id for item in items]
-            x = _features_to_array([item.data for item in items])
-            y = [item.label for item in items]
+        ids = [item.id for item in items]
+        x = _features_to_array([item.data for item in items])
+        y = [item.label for item in items]
 
-            return ids, x, y
+        return ids, x, y
 
     def list_labels(self) -> Set[str]:
         with self.session() as session:
@@ -301,10 +308,10 @@ class DatabaseQueue(BaseLabellingQueue):
                 for obj in objects
             ]
 
-            ids = [obj.id for obj in objects]
-            x = _features_to_array([item.data for item in items])
+        ids = [obj.id for obj in objects]
+        x = _features_to_array([item.data for item in items])
 
-            return ids, x
+        return ids, x
 
     def clear_queue(self):
         with self.session() as session:
@@ -344,6 +351,7 @@ class DatabaseQueue(BaseLabellingQueue):
         with self.session() as session:
             n_total = session.query(self.data).count()
             session.expunge_all()
+
         return n_total
 
     @property

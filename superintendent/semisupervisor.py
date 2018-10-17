@@ -173,7 +173,7 @@ class SemiSupervisor(base.Labeller):
             else:
                 new_label = sender["value"]
                 self.queue.submit(id_, new_label)
-                self.input_widget.add_hint(new_label, datapoint)
+                # self.input_widget.add_hint(new_label, datapoint)
 
             self.progressbar.value = self.queue.progress
 
