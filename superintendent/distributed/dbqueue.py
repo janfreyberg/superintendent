@@ -19,20 +19,22 @@ from .serialization import data_dumps, data_loads
 DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
 
 
-class Superintendent(DeclarativeBase):
-    __tablename__ = "superintendent"
-    id = sa.Column(sa.Integer, primary_key=True)
-    input = sa.Column(sa.String)
-    output = sa.Column(sa.String, nullable=True)
-    inserted_at = sa.Column(sa.DateTime)
-    priority = sa.Column(sa.Integer)
-    popped_at = sa.Column(sa.DateTime, nullable=True)
-    completed_at = sa.Column(sa.DateTime, nullable=True)
-    worker_id = sa.Column(sa.String, nullable=True)
+def _construct_orm_object(table_name):
+    class Superintendent(DeclarativeBase):
+        __tablename__ = table_name
+        id = sa.Column(sa.Integer, primary_key=True)
+        input = sa.Column(sa.String)
+        output = sa.Column(sa.String, nullable=True)
+        inserted_at = sa.Column(sa.DateTime)
+        priority = sa.Column(sa.Integer)
+        popped_at = sa.Column(sa.DateTime, nullable=True)
+        completed_at = sa.Column(sa.DateTime, nullable=True)
+        worker_id = sa.Column(sa.String, nullable=True)
+
+    return Superintendent
 
 
 deserialisers = {"json": data_loads}
-
 serialisers = {"json": data_dumps}
 
 
@@ -57,7 +59,10 @@ class DatabaseQueue(BaseLabellingQueue):
     item = namedtuple("QueueItem", ["id", "data", "label"])
 
     def __init__(
-        self, connection_string="sqlite:///:memory:", storage_type="json"
+        self,
+        connection_string="sqlite:///:memory:",
+        table_name="superintendent",
+        storage_type="json",
     ):
         """Instantiate queue for distributed labelling.
 
@@ -69,7 +74,7 @@ class DatabaseQueue(BaseLabellingQueue):
         storage_type : str, optional
             One of 'integer_index', 'pickle' (default) or 'json'.
         """
-        self.data = Superintendent
+        self.data = _construct_orm_object(table_name)
 
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
