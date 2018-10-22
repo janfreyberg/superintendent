@@ -16,10 +16,10 @@ import pandas as pd
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads
 
-DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
-
 
 def _construct_orm_object(table_name):
+    DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
+
     class Superintendent(DeclarativeBase):
         __tablename__ = table_name
         id = sa.Column(sa.Integer, primary_key=True)

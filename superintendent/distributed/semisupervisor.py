@@ -74,11 +74,14 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
         connection_string="sqlite:///:memory:",
         *args,
         worker_id=False,
+        table_name="superintendent",
         **kwargs
     ):
         super().__init__(*args, **kwargs)
 
-        self.queue = DatabaseQueue(connection_string=connection_string)
+        self.queue = DatabaseQueue(
+            connection_string=connection_string, table_name=table_name
+        )
 
         if kwargs.get("features") is not None:
             self.add_features(kwargs.get("features"), kwargs.get("labels"))
