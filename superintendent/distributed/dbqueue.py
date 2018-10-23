@@ -308,10 +308,10 @@ class DatabaseQueue(BaseLabellingQueue):
                 for obj in objects
             ]
 
-        ids = [obj.id for obj in objects]
-        x = _features_to_array([item.data for item in items])
+            ids = [obj.id for obj in objects]
+            x = _features_to_array([item.data for item in items])
 
-        return ids, x
+            return ids, x
 
     def clear_queue(self):
         with self.session() as session:
