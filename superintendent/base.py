@@ -6,17 +6,18 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import IPython.display
 import ipywidgets as widgets
+import traitlets
 import numpy as np
 import pandas as pd
 
 from . import controls, display, validation
 
 
-class DoNotLabel:
-    pass
+# class AbstractTraitletMetaclass(traitlets.HasTraits, metaclass=abc.ABCMeta):
+#     pass
 
 
-class Labeller(abc.ABC):
+class Labeller(traitlets.HasTraits):
     """
     Data point labelling.
 
@@ -45,6 +46,8 @@ class Labeller(abc.ABC):
     hints : np.array | pd.DataFrame | list
         The hints to start off with.
     """
+
+    options = traitlets.List(list(), allow_none=True)
 
     def __init__(
         self,
@@ -85,6 +88,7 @@ class Labeller(abc.ABC):
             hint_function=hint_function, hints=hints, options=options
         )
         self.input_widget.on_submission(self._apply_annotation)
+        traitlets.link((self, "options"), (self.input_widget, "options"))
 
         self.features = validation.valid_data(features)
         if labels is not None:
@@ -128,7 +132,7 @@ class Labeller(abc.ABC):
         return instance
 
     @classmethod
-    def from_images(cls, features, *args, image_size=None, **kwargs):
+    def from_images(cls, *args, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
         Params
@@ -144,13 +148,15 @@ class Labeller(abc.ABC):
             Description of returned object.
 
         """
-        if not isinstance(features, np.ndarray):
-            raise ValueError(
-                "When using from_images, input features "
-                "needs to be a numpy array with shape "
-                "(n_features, n_pixel)."
-            )
-        if image_size is None:
+        if image_size is None and "features" in kwargs:
+            features = kwargs["features"]
+            # check the input is in the correct format:
+            if not isinstance(features, np.ndarray):
+                raise TypeError(
+                    "When using from_images, input features "
+                    "needs to be a numpy array with shape "
+                    "(n_features, n_pixel)."
+                )
             # check if image is square
             if int(np.sqrt(features.shape[1])) ** 2 == features.shape[1]:
                 image_size = "square"
@@ -159,11 +165,15 @@ class Labeller(abc.ABC):
                     "If image_size is None, the image needs to be square, but "
                     "yours has " + str(args[0].shape[1]) + " pixels."
                 )
+        elif image_size is None and "features" not in kwargs:
+            # just assume images will be square
+            image_size = "square"
+
         kwargs["display_func"] = kwargs.get(
             "display_func",
             partial(display.functions["image"], imsize=image_size),
         )
-        instance = cls(features, *args, **kwargs)
+        instance = cls(*args, **kwargs)
 
         return instance
 

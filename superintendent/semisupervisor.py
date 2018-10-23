@@ -32,14 +32,14 @@ class SemiSupervisor(base.Labeller):
         you can pass these in as labels.
     options : tuple, list
         The options presented for labelling.
-    classifier : sklearn.base.ClassifierMixin, optional
-        An object that implements the standard sklearn fit/predict methods. If
-        provided, a button for retraining the model is shown, and the model
-        performance under k-fold crossvalidation can be read as you go along.
     display_func : callable, optional
         A function that will be used to display the data. This function should
         take in two arguments, first the data to display, and second the number
         of data points to display (set to 1 for this class).
+    classifier : sklearn.base.ClassifierMixin, optional
+        An object that implements the standard sklearn fit/predict methods. If
+        provided, a button for retraining the model is shown, and the model
+        performance under k-fold crossvalidation can be read as you go along.
     eval_method : callable, optional
         A function that accepts the classifier, features, and labels as input
         and returns a dictionary of values that contain the key 'test_score'.
@@ -56,9 +56,15 @@ class SemiSupervisor(base.Labeller):
         "exploration vs exploitation" trade-off - the higher, the more you
         explore the feature space randomly, the lower, the more you exploit
         your current weak points.
-    keyboard_shortcuts : bool, optional
-        If you want to enable ipyevent-mediated keyboard capture to use the
-        keyboard rather than the mouse to submit data.
+    use_hints : bool
+        Whether or not the widget should display "hints" - examples of past
+        data from a class - underneath each button. These can either be taken
+        from the data as you go through, or provided separately with the
+        `hints` argument.
+    hints : dict, optional
+        A dictionary mapping class labels to example data points from that
+        class. Hints are displayed with the same function as the main data, so
+        should be in the same format.
 
     """
 
@@ -72,10 +78,9 @@ class SemiSupervisor(base.Labeller):
         eval_method=None,
         reorder=None,
         shuffle_prop=0.1,
-        keyboard_shortcuts=False,
         use_hints=False,
-        hint_function=None,
         hints=None,
+        keyboard_shortcuts=False,
         *args,
         **kwargs
     ):
@@ -95,7 +100,6 @@ class SemiSupervisor(base.Labeller):
             options=options,
             keyboard_shortcuts=keyboard_shortcuts,
             use_hints=use_hints,
-            hint_function=hint_function,
             hints=hints,
             *args,
             **kwargs
