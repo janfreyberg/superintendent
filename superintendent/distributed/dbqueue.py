@@ -302,7 +302,12 @@ class DatabaseQueue(BaseLabellingQueue):
             except TypeError:
                 return reduce(
                     operator.or_,
-                    [set(self.deserialiser(row.output)) for row in rows],
+                    [
+                        set(self.deserialiser(row.output))
+                        if row.output is not None
+                        else set()
+                        for row in rows
+                    ],
                 )
 
     def list_uncompleted(self):
