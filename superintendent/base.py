@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import IPython.display
 import ipywidgets as widgets
+import ipyevents
 import traitlets
 import numpy as np
 import pandas as pd
@@ -85,7 +86,10 @@ class Labeller(traitlets.HasTraits):
         else:
             hint_function = hints = None
         self.input_widget = controls.Submitter(
-            hint_function=hint_function, hints=hints, options=options
+            hint_function=hint_function,
+            hints=hints,
+            options=options,
+            shortcuts=keyboard_shortcuts,
         )
         self.input_widget.on_submission(self._apply_annotation)
         traitlets.link((self, "options"), (self.input_widget, "options"))
@@ -107,7 +111,14 @@ class Labeller(traitlets.HasTraits):
         else:
             self._display_func = display.functions["default"]
 
-        self.event_manager = None
+        if keyboard_shortcuts:
+            self.event_manager = ipyevents.Event(
+                source=self.layout, watched_events=["keydown", "keyup"]
+            )
+            self.event_manager.on_dom_event(self.input_widget._on_key_down)
+        else:
+            self.event_manager = None
+
         self.timer = controls.Timer()
 
     @abc.abstractmethod

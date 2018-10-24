@@ -8,6 +8,13 @@ import ipywidgets as widgets
 import traitlets
 
 
+DEFAULT_SHORTCUTS = (
+    [str(i) for i in range(1, 10)]
+    + ["0"]
+    + ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"]
+)
+
+
 class Submitter(widgets.VBox):
     """
     A flexible data submission widget.
@@ -50,6 +57,7 @@ class Submitter(widgets.VBox):
         hint_function: Optional[Callable] = None,
         hints: Optional[Dict[str, Any]] = None,
         update_hints: bool = True,
+        shortcuts=None,
     ):
         """
         Create a widget that will render submission options.
@@ -60,8 +68,8 @@ class Submitter(widgets.VBox):
         """
         super().__init__([])
         self.submission_functions = []
-        self.max_buttons = max_buttons
         self.hint_function = hint_function
+        self.shortcuts = shortcuts
         self.hints = dict() if hints is None else hints
         if hint_function is not None:
             for option, feature in self.hints.values():
@@ -86,6 +94,8 @@ class Submitter(widgets.VBox):
             self.options = [str(option) for option in options]
         self.fixed_options = self.options
 
+        self.max_buttons = max_buttons
+
         self.other_option = other_option
 
         self._compose()
@@ -104,6 +114,9 @@ class Submitter(widgets.VBox):
         elif isinstance(sender, widgets.Text):
             value = sender.value
             source = "textfield"
+        elif isinstance(sender, dict) and sender.get("source") == "keystroke":
+            value = sender.get("value")
+            source = "keystroke"
 
         if value is not None and value not in self.options:
             self.options = self.options + [value]
@@ -112,6 +125,15 @@ class Submitter(widgets.VBox):
             func({"value": value, "source": source})
 
         self._compose()
+
+    def _on_key_down(self, event):
+        if event["type"] == "keyup":
+            pressed_option = self._key_option_mapping.get(event.get("key"))
+
+            if pressed_option is not None:
+                self._when_submitted(
+                    {"value": pressed_option, "source": "keystroke"}
+                )
 
     def add_hint(self, value, hint):
         if (
@@ -150,6 +172,9 @@ class Submitter(widgets.VBox):
     def _compose(self, change=None):
 
         self.options = [str(option) for option in self.options]
+        self._key_option_mapping = {
+            key: option for key, option in zip(DEFAULT_SHORTCUTS, self.options)
+        }
 
         if len(self.options) <= self.max_buttons:
             # if we can display all options:
