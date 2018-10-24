@@ -67,6 +67,10 @@ class MultiLabeller(SemiSupervisor):
         """
         super().__init__(*args, **kwargs)
 
+        if self.event_manager is not None:
+            self.event_manager.on_dom_event(
+                self.input_widget._on_key_down, remove=True
+            )
         self.input_widget = controls.MulticlassSubmitter(
             hint_function=kwargs.get("hint_function"),
             hints=kwargs.get("hints"),
