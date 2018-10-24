@@ -105,7 +105,7 @@ class SimpleLabellingQueue(BaseLabellingQueue):
             [
                 idx
                 for idx, _ in sorted(
-                    new_order.items(), key=lambda item: item[1]
+                    new_order.items(), key=lambda item: -item[1]
                 )
             ]
         )
