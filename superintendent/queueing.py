@@ -1,5 +1,7 @@
 import abc
 import itertools
+from functools import reduce
+import operator
 from collections import deque, namedtuple, defaultdict
 from random import shuffle
 from typing import Any, Dict, Set
@@ -149,7 +151,10 @@ class SimpleLabellingQueue(BaseLabellingQueue):
         return ids, x, y
 
     def list_labels(self) -> Set[str]:
-        return set(sorted(self.labels.values()))
+        try:
+            return set(sorted(self.labels.values()))
+        except TypeError:
+            return reduce(operator.or_, map(set, self.labels.values()))
 
     @property
     def progress(self) -> float:
