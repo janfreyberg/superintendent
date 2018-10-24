@@ -1,6 +1,8 @@
 import configparser
 import itertools
 import warnings
+from functools import reduce
+import operator
 from collections import deque, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -23,8 +25,8 @@ def _construct_orm_object(table_name):
     class Superintendent(DeclarativeBase):
         __tablename__ = table_name
         id = sa.Column(sa.Integer, primary_key=True)
-        input = sa.Column(sa.String)
-        output = sa.Column(sa.String, nullable=True)
+        input = sa.Column(sa.Text)
+        output = sa.Column(sa.Text, nullable=True)
         inserted_at = sa.Column(sa.DateTime)
         priority = sa.Column(sa.Integer)
         popped_at = sa.Column(sa.DateTime, nullable=True)
@@ -177,7 +179,7 @@ class DatabaseQueue(BaseLabellingQueue):
                         input=self.serialiser(feature),
                         inserted_at=now,
                         priority=priority,
-                        output=label,
+                        output=self.serialiser(label),
                         completed_at=None if label is None else now,
                     )
                 )
@@ -228,7 +230,7 @@ class DatabaseQueue(BaseLabellingQueue):
     def submit(self, id_: int, label: str) -> None:
         with self.session() as session:
             row = session.query(self.data).filter_by(id=id_).first()
-            row.output = label
+            row.output = self.serialiser(label)
             row.worker_id = self.worker_id
             row.completed_at = datetime.now()
 
@@ -252,7 +254,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 self.item(
                     id=obj.id,
                     data=self.deserialiser(obj.input),
-                    label=obj.output,
+                    label=self.deserialiser(obj.output),
                 )
                 for obj in objects
             ]
@@ -277,7 +279,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 self.item(
                     id=obj.id,
                     data=self.deserialiser(obj.input),
-                    label=obj.output,
+                    label=self.deserialiser(obj.output),
                 )
                 for obj in objects
             ]
@@ -295,7 +297,13 @@ class DatabaseQueue(BaseLabellingQueue):
                 .filter(self.data.output.isnot(None))
                 .distinct()
             )
-            return set([row.output for row in rows])
+            try:
+                return set([self.deserialiser(row.output) for row in rows])
+            except TypeError:
+                return reduce(
+                    operator.or_,
+                    [set(self.deserialiser(row.output)) for row in rows],
+                )
 
     def list_uncompleted(self):
         with self.session() as session:

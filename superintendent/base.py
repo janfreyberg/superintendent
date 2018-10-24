@@ -92,6 +92,7 @@ class Labeller(traitlets.HasTraits):
             shortcuts=keyboard_shortcuts,
         )
         self.input_widget.on_submission(self._apply_annotation)
+        self.options = self.input_widget.options
         traitlets.link((self, "options"), (self.input_widget, "options"))
 
         self.features = validation.valid_data(features)
