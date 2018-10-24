@@ -264,6 +264,145 @@ class Submitter(widgets.VBox):
             ]
 
 
+class MulticlassSubmitter(Submitter):
+    def _on_key_down(self, event):
+        if event["type"] == "keyup":
+            pressed_option = self._key_option_mapping.get(event.get("key"))
+
+            if pressed_option is not None:
+                self._toggle_option(pressed_option)
+            elif event.get("key") == "Enter":
+                self._when_submitted({"source": "enter"})
+            elif event.get("key") == "Backspace":
+                self._when_submitted({"source": "backspace"})
+
+    def _toggle_option(self, option):
+
+        if isinstance(self.selector, widgets.SelectMultiple):
+            if option in self.selector.value:
+                self.selector.value = [
+                    opt for opt in self.selector.value if opt != option
+                ]
+            elif option not in self.selector.value:
+                self.selector.value = list(self.selector.value) + [option]
+        elif isinstance(self.selector, widgets.HBox):
+            for box in self.selector.children:
+                if box.children[0].description == option:
+                    box.children[0].value = not box.children[0].value
+
+    def _when_submitted(self, sender):
+
+        if isinstance(self.selector, widgets.HBox):
+            selected = [
+                box.children[0].description
+                for box in self.selector.children
+                if box.children[0].value
+            ]
+        elif isinstance(self.selector, widgets.SelectMultiple):
+            selected = list(self.selector.value)
+
+        if sender is self.skip_button:
+            value = None
+            source = "__skip__"
+        elif sender is self.undo_button or (
+            isinstance(sender, dict) and sender.get("source") == "backspace"
+        ):
+            value = None
+            source = "__undo__"
+        elif sender is self.submission_button:
+            value = selected
+            source = "multi-selector"
+        elif isinstance(sender, widgets.Text):
+            if sender.value is not None and sender.value not in self.options:
+                self.options = self.options + [sender.value]
+                self._toggle_option(sender.value)
+            self._compose()
+            return
+        elif isinstance(sender, dict) and sender.get("source") == "enter":
+            value = selected
+            source = "multi-selector"
+
+        for func in self.submission_functions:
+            func({"value": value, "source": source})
+
+        self._compose()
+
+    @traitlets.observe("other_option", "options", "max_buttons")
+    def _compose(self, change=None):
+
+        self.options = [str(option) for option in self.options]
+        self._key_option_mapping = {
+            key: option for key, option in zip(DEFAULT_SHORTCUTS, self.options)
+        }
+
+        if len(self.options) <= self.max_buttons:
+            # if we can display all options:
+            self.selector = widgets.HBox(
+                [
+                    widgets.VBox(
+                        [
+                            widgets.ToggleButton(
+                                description=str(option),
+                                layout=widgets.Layout(width="95%"),
+                            ),
+                            self.hints.get(option, widgets.HBox()),
+                        ],
+                        layout=widgets.Layout(
+                            width="{}%".format(100 / len(self.options)),
+                            min_width="10%",
+                        ),
+                    )
+                    for option in self.options
+                ],
+                layout=widgets.Layout(flex_flow="row wrap"),
+            )
+
+        else:
+
+            self.selector = widgets.SelectMultiple(
+                options=[str(option) for option in self.options],
+                description="Label:",
+            )
+
+        self.submission_button = widgets.Button(
+            description="Apply", button_style="success"
+        )
+        self.submission_button.on_click(self._when_submitted)
+
+        if self.other_option:
+            other_widget = widgets.Text(
+                value="",
+                description="Other:",
+                placeholder="Hit enter to submit.",
+            )
+            other_widget.on_submit(self._when_submitted)
+            self.children = [
+                self.selector,
+                # hint_elements,
+                widgets.HBox(
+                    [
+                        other_widget,
+                        widgets.HBox(
+                            [
+                                self.sort_button,
+                                self.skip_button,
+                                self.undo_button,
+                                self.submission_button,
+                            ]
+                        ),
+                    ],
+                    layout=widgets.Layout(justify_content="space-between"),
+                ),
+            ]
+        else:
+            self.children = [
+                self.selector,
+                widgets.HBox(
+                    [self.sort_button, self.skip_button, self.undo_button]
+                ),
+            ]
+
+
 @total_ordering
 class Timer:
     """
