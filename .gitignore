@@ -5,6 +5,8 @@ dist
 test.ipynb
 .pytest_cache
 .hypothesis
+.coverage
+htmlcov
 .eggs
 **/*.pyc
 build
