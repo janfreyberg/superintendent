@@ -86,9 +86,6 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
         if kwargs.get("features") is not None:
             self.add_features(kwargs.get("features"), kwargs.get("labels"))
 
-        self._annotation_loop = self._annotation_iterator()
-        next(self._annotation_loop)
-
         if worker_id and not isinstance(worker_id, str):
             self._get_worker_id()
         else:
