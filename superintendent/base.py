@@ -236,14 +236,15 @@ class Labeller(traitlets.HasTraits):
         return self
 
     def _render_processing(self, message="Rendering..."):
-        self.layout.children = [
-            self.top_bar,
-            widgets.HTML(
-                "<h1>{}".format(message)
-                + '<i class="fa fa-spinner fa-spin"'
-                + ' aria-hidden="true"></i>'
-            ),
-        ]
+        with self.feature_output:
+            IPython.display.clear_output(wait=True)
+            IPython.display.display(
+                widgets.HTML(
+                    "<h1>{}".format(message)
+                    + '<i class="fa fa-spinner fa-spin"'
+                    + ' aria-hidden="true"></i>'
+                )
+            )
 
     def _render_finished(self):
 
