@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 
-class BaseLabellingQueue(abc.ABC):
+class BaseLabellingQueue(abc.ABC):  # pragma: no cover
     @abc.abstractmethod
     def enqueue(self):
         pass
@@ -105,7 +105,7 @@ class SimpleLabellingQueue(BaseLabellingQueue):
             [
                 idx
                 for idx, _ in sorted(
-                    new_order.items(), key=lambda item: item[1]
+                    new_order.items(), key=lambda item: -item[1]
                 )
             ]
         )
