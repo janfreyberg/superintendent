@@ -2,7 +2,7 @@ from collections import OrderedDict, Counter
 import pytest
 
 import numpy as np
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import (
     booleans,
     floats,
@@ -15,12 +15,14 @@ from hypothesis.strategies import (
 )
 from hypothesis.extra.pandas import data_frames, column
 
+from hypothesis import HealthCheck
+
 from superintendent.queueing import SimpleLabellingQueue
 
 
 @composite
 def dataframe(draw):
-    n_cols = draw(integers(min_value=0, max_value=100))
+    n_cols = draw(integers(min_value=1, max_value=20))
     dtypes = draw(
         lists(
             sampled_from([float, int, str]), min_size=n_cols, max_size=n_cols
@@ -33,7 +35,7 @@ def dataframe(draw):
     )
     return draw(
         data_frames(
-            [
+            columns=[
                 column(name=name, dtype=dtype)
                 for dtype, name in zip(dtypes, colnames)
             ]
@@ -75,6 +77,7 @@ def test_enqueue_many(inputs):
         q.pop()
 
 
+@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(inputs=dataframe())
 def test_enqueue_dataframe(inputs):
     n = len(inputs)
