@@ -240,4 +240,7 @@ class SemiSupervisor(base.Labeller):
 
             self.queue.reorder(new_order)
 
-        self._compose()
+        # undo the previously popped item and pop the next one
+        self.queue.undo()
+        self._annotation_loop.send({"source": "__skip__"})
+        # self._compose()
