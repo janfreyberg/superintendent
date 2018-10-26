@@ -11,7 +11,7 @@ import traitlets
 import numpy as np
 import pandas as pd
 
-from . import controls, display, validation
+from . import controls, display
 
 
 # class AbstractTraitletMetaclass(traitlets.HasTraits, metaclass=abc.ABCMeta):

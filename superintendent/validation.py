@@ -1,8 +1,8 @@
 """Functions to validate arguments."""
-from typing import Any, Optional
+from typing import Any
 
-import numpy as np
-import pandas as pd
+# import numpy as np
+# import pandas as pd
 
 
 def valid_classifier(classifier: Any):
