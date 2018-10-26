@@ -14,6 +14,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
 import pandas as pd
+import numpy as np
 
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads
@@ -365,16 +366,14 @@ class DatabaseQueue(BaseLabellingQueue):
     def _total_count(self):
         with self.session() as session:
             n_total = session.query(self.data).count()
-            session.expunge_all()
-
         return n_total
 
     @property
     def progress(self) -> float:
         try:
-            return len(self._popped) / self._total_count()
+            return self._labelled_count() / self._total_count()
         except ZeroDivisionError:
-            return 0
+            return np.nan
 
     def __len__(self):
         with self.session() as session:
