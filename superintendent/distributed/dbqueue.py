@@ -329,6 +329,7 @@ class DatabaseQueue(BaseLabellingQueue):
             return ids, x
 
     def clear_queue(self):
+        self._popped = deque([])
         with self.session() as session:
             session.query(self.data).delete()
 
