@@ -339,8 +339,7 @@ class DatabaseQueue(BaseLabellingQueue):
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
-    @cachetools.cached(cachetools.TTLCache(1, 15))
-    def _unlabelled_count(self, timeout: int = 600):
+    def _unlabelled_count(self):
         with self.session() as session:
             return (
                 session.query(self.data)
