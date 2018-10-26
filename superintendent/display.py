@@ -33,7 +33,7 @@ def default_display_func(feature):
         IPython.display.display(feature)
 
 
-def image_display_func(feature, imsize=None):
+def image_display_func(image, imsize=None):
     """
     Image display function.
 
@@ -53,7 +53,7 @@ def image_display_func(feature, imsize=None):
     fig, ax = plt.subplots(1, 1)
 
     if imsize == "square":
-        image = feature.reshape(2 * [int(np.sqrt(feature.size))])
+        image = image.reshape(2 * [int(np.sqrt(image.size))])
     elif imsize is not None:
         image = image.reshape(imsize)
 
