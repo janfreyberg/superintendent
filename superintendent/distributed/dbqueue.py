@@ -223,6 +223,8 @@ class DatabaseQueue(BaseLabellingQueue):
                 return id_, self.deserialiser(value)
 
     def submit(self, id_: int, label: str) -> None:
+        if id_ not in self._popped:
+            raise ValueError("This item was not popped; you cannot label it.")
         with self.session() as session:
             row = session.query(self.data).filter_by(id=id_).first()
             row.output = self.serialiser(label)
