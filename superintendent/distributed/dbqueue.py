@@ -190,11 +190,6 @@ class DatabaseQueue(BaseLabellingQueue):
             [int(priority) for priority in priorities.values()],
         )
 
-    def set_priority(self, id_: int, priority: int):
-        with self.session() as session:
-            row = session.query(self.data).filter_by(id=id_).first()
-            row.priority = priority
-
     def set_priorities(self, ids: Sequence[int], priorities: Sequence[int]):
         with self.session() as session:
             rows = session.query(self.data).filter(self.data.id.in_(ids)).all()
