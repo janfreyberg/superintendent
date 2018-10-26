@@ -1,30 +1,8 @@
 """Helper functions for displaying types of data."""
 
-import operator
-
 import IPython.display
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
-
-
-def get_values(data, idxs):
-    """
-    Helper function to index numpy arrays and pandas objects similarly.
-
-    Parameters
-    ----------
-    data : np.ndarray, pd.Series, pd.DataFrame
-        The features
-    idxs : np.ndarray, pd.Series, list
-        The indices to get. Should be integers.
-    """
-    if isinstance(data, np.ndarray):
-        return data[idxs, ...]
-    elif isinstance(data, (pd.Series, pd.DataFrame)):
-        return data.iloc[list(idxs)]
-    else:
-        return [operator.itemgetter(idx)(data) for idx in idxs]
 
 
 def default_display_func(feature):
