@@ -1,10 +1,11 @@
 import collections
+import traitlets
 
 import pytest
 from hypothesis import strategies as st
 from hypothesis import given, settings
 
-from superintendent.controls.buttongroup import ButtonGroup
+from superintendent.controls.buttongroup import ButtonGroup, ButtonWithHint
 
 
 def same_elements(a, b):
@@ -59,3 +60,19 @@ def test_that_button_width_is_set_correctly():
 
     widget.button_width = "87%"
     assert widget.button_width == "87%"
+
+    with pytest.raises(traitlets.TraitError):
+        widget.button_width = {"test-set", "lol"}
+
+
+def test_that_enter_exit_for_output_get_called(mock):
+    mock_enter = mock.patch("ipywidgets.Output.__enter__")
+    mock_exit = mock.patch("ipywidgets.Output.__exit__")
+
+    button = ButtonWithHint("Hi", "50%")
+
+    with button:
+        pass
+
+    assert mock_enter.call_count == 1
+    assert mock_exit.call_count == 1
