@@ -10,6 +10,21 @@ from superintendent.controls import buttongroup
 from superintendent.controls import dropdownbutton
 
 
+DUMMY_KEYUP_DICT_ONE = {
+    "altKey": False,
+    "ctrlKey": False,
+    "metaKey": False,
+    "shiftKey": False,
+    "type": "keyup",
+    "timeStamp": 129242.40000001737,
+    "code": "Digit1",
+    "key": "1",
+    "location": 0,
+    "repeat": False,
+    "event": "keyup",
+}
+
+
 @settings(deadline=1000)
 @given(options=st.lists(st.text()))
 def test_that_options_are_set_correctly_when_instantiated(options):
@@ -95,6 +110,29 @@ def test_that_when_submitted_passes_correct_values_from_text_box(mock):
     )
 
 
+def test_that_on_key_down_calls_when_submitted_correctly(mock):
+    widget = controls.Submitter(["a", "b"])
+    mock_handler = mock.patch.object(widget, "_when_submitted")
+    widget._on_key_down(DUMMY_KEYUP_DICT_ONE)
+
+    assert mock_handler.call_args == (
+        ({"value": "a", "source": "keystroke"},),
+    )
+
+
+def test_that_when_submitted_passes_correct_values_from_keystroke(mock):
+    widget = controls.Submitter(["a", "b"])
+    mock_function = mock.Mock()
+    widget.on_submission(mock_function)
+
+    widget.other_widget.value = "dummy submission"
+    widget._when_submitted({"source": "keystroke", "value": "dummy"})
+
+    assert mock_function.call_args == (
+        ({"source": "keystroke", "value": "dummy"},),
+    )
+
+
 def test_that_sort_options_sorts_options(mock):
     options = ["d", "a", "b", "c"]
     widget = controls.Submitter(options)
@@ -172,3 +210,31 @@ def test_that_disabling_other_option_works():
         isinstance(item, ipywidgets.Text)
         for item in widget.children[-1].children
     )
+
+
+def test_that_add_hint_calls_hint_function(mock):
+    options = ["a", "b", "c", "d", "e", "f"]
+
+    mock_hint_function = mock.Mock()
+
+    widget = controls.Submitter(options, hint_function=mock_hint_function)
+
+    assert widget.hint_function is mock_hint_function
+    assert mock_hint_function.call_count == 0
+
+    widget.add_hint("a", "test hint")
+    assert mock_hint_function.call_count == 1
+    assert mock_hint_function.call_args == (("test hint",),)
+
+
+def test_that_passing_hints_calls_hint_function(mock):
+    options = ["a", "b", "c", "d", "e", "f"]
+
+    mock_hint_function = mock.Mock()
+
+    widget = controls.Submitter(
+        options, hint_function=mock_hint_function, hints={"a": "test hint"}
+    )
+
+    assert mock_hint_function.call_count == 1
+    assert mock_hint_function.call_args == (("test hint",),)
