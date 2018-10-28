@@ -5,7 +5,7 @@ python:
   - "3.5"
   - "3.6"
 script:
-  - pip install flake8 coverage coveralls
+  - pip install -qq flake8 coverage coveralls
   # - pip install git+https://github.com/janfreyberg/docargs.git
   - flake8 superintendent
   - pip install -qq -e '.[test]'
