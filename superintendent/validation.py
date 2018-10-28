@@ -17,7 +17,7 @@ def valid_classifier(classifier: Any):
     if (
         classifier is not None
         and hasattr(classifier, "fit")
-        and hasattr(classifier, "predict")
+        and hasattr(classifier, "predict_proba")
     ):
         return classifier
     elif classifier is None:
@@ -25,7 +25,7 @@ def valid_classifier(classifier: Any):
     else:
         raise ValueError(
             "The classifier needs to conform to "
-            "the sklearn interface (fit/predict)."
+            "the sklearn interface (fit/predict_proba)."
         )
 
 
