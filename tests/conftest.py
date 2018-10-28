@@ -1,9 +1,13 @@
 pytest_plugins = ["helpers_namespace"]  # noqa
 
+import warnings
 import collections
 import pytest
 
+from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis import settings, HealthCheck
+
+warnings.simplefilter("ignore", HypothesisDeprecationWarning)
 
 settings.register_profile(
     "travis-ci", suppress_health_check=(HealthCheck.too_slow,), deadline=1500
