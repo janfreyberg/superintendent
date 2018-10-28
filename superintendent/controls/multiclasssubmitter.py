@@ -70,20 +70,20 @@ class MulticlassSubmitter(Submitter):
         self.submission_button.on_click(self._when_submitted)
 
         if self.other_option:
-            other_widget = widgets.Text(
+            self.other_widget = widgets.Text(
                 value="",
                 description="Other:",
                 placeholder="Hit enter to submit.",
             )
-            other_widget.on_submit(self._when_submitted)
+            self.other_widget.on_submit(self._when_submitted)
         else:
-            other_widget = widgets.HBox([])
+            self.other_widget = widgets.HBox([])
 
         self.children = [
             self.control_elements,
             widgets.HBox(
                 [
-                    other_widget,
+                    self.other_widget,
                     widgets.HBox(
                         [
                             self.sort_button,
