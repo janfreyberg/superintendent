@@ -7,14 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from hypothesis import HealthCheck, given, settings
-from hypothesis.extra.numpy import (
-    arrays,
-    datetime64_dtypes,
-    floating_dtypes,
-    integer_dtypes,
-    scalar_dtypes,
-    unsigned_integer_dtypes,
-)
+import hypothesis.extra.numpy as np_strategies
 from hypothesis.extra.pandas import column, data_frames
 from hypothesis.strategies import (
     booleans,
@@ -23,7 +16,6 @@ from hypothesis.strategies import (
     integers,
     lists,
     one_of,
-    sampled_from,
     text,
     tuples,
 )
@@ -31,11 +23,11 @@ from hypothesis.strategies import (
 from superintendent.distributed.dbqueue import DatabaseQueue
 
 guaranteed_dtypes = one_of(
-    scalar_dtypes(),
-    unsigned_integer_dtypes(),
-    datetime64_dtypes(),
-    floating_dtypes(),
-    integer_dtypes(),
+    np_strategies.scalar_dtypes(),
+    np_strategies.unsigned_integer_dtypes(),
+    np_strategies.datetime64_dtypes(),
+    np_strategies.floating_dtypes(),
+    np_strategies.integer_dtypes(),
 )
 
 
@@ -44,7 +36,13 @@ def dataframe(draw):
     n_cols = draw(integers(min_value=1, max_value=20))
     dtypes = draw(
         lists(
-            sampled_from([float, int, str]), min_size=n_cols, max_size=n_cols
+            one_of(
+                np_strategies.floating_dtypes(),
+                np_strategies.integer_dtypes(),
+                np_strategies.unicode_string_dtypes(),
+            ),
+            min_size=n_cols,
+            max_size=n_cols,
         )
     )
     colnames = draw(
@@ -60,14 +58,6 @@ def dataframe(draw):
             ]
         )
     )
-
-
-def same_elements(a, b):
-    return Counter(a) == Counter(b)
-
-
-def no_shared_members(a, b):
-    return (set(a) & set(b)) == set()
 
 
 @contextmanager
@@ -132,7 +122,7 @@ def test_enqueue_dataframe(inputs):
 
 @settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(
-    inputs=arrays(
+    inputs=np_strategies.arrays(
         guaranteed_dtypes,
         tuples(
             integers(min_value=1, max_value=50),
@@ -296,6 +286,10 @@ def test_undo():
         assert val == "input 1"
 
 
+def no_shared_members(a, b):
+    return (set(a) & set(b)) == set()
+
+
 @given(
     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
     labels=lists(text(), min_size=5),
@@ -315,8 +309,17 @@ def test_list_completed(inputs, labels):
 
         assert len(ids) == 5
         # test that the popped IDs and completed IDs have the same members
-        assert same_elements(ids, popped_ids)
-        assert same_elements(y, labels[:5])
+        assert pytest.helpers.same_elements(ids, popped_ids)
+        assert pytest.helpers.same_elements(y, labels[:5])
+
+
+@given(
+    inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
+    labels=lists(text(), min_size=5),
+)
+def test_list_completed(inputs, labels):
+    with q_context() as q:
+        q.enqueue_many(inputs)
 
 
 @given(
@@ -339,8 +342,8 @@ def test_list_uncompleted(inputs, labels):
         assert len(ids) == (len(inputs) - 5)
         assert q._unlabelled_count() == (len(inputs) - 5)
         # test that the popped IDs and completed IDs don't share members
-        assert no_shared_members(ids, popped_ids)
-        # assert same_elements(x, [inputs[idx] for idx in id])
+        assert pytest.helpers.no_shared_members(ids, popped_ids)
+        # assert pytest.helpers.same_elements(x, [inputs[idx] for idx in id])
 
 
 @given(
@@ -366,4 +369,4 @@ def test_list_all(inputs, labels):
             [label is None or id_ in popped_ids for id_, label in zip(ids, y)]
         )
         assert Counter(y)[None] == (len(inputs) - 5)
-        assert same_elements(ids, range(1, 1 + len(inputs)))
+        assert pytest.helpers.same_elements(ids, range(1, 1 + len(inputs)))

@@ -63,14 +63,6 @@ def dataframe(draw):
     )
 
 
-def same_elements(a, b):
-    return Counter(a) == Counter(b)
-
-
-def no_shared_members(a, b):
-    return (set(a) & set(b)) == set()
-
-
 @given(input_=one_of(booleans(), floats(), integers(), text()))
 def test_enqueueing_and_popping(input_):
     q = SimpleLabellingQueue()
@@ -307,8 +299,8 @@ def test_list_completed(inputs, labels):
 
     assert len(ids) == 5
     # test that the popped IDs and completed IDs have the same members
-    assert same_elements(ids, popped_ids)
-    assert same_elements(y, labels[:5])
+    assert pytest.helpers.same_elements(ids, popped_ids)
+    assert pytest.helpers.same_elements(y, labels[:5])
 
 
 @given(
@@ -330,8 +322,8 @@ def test_list_uncompleted(inputs, labels):
 
     assert len(ids) == (len(inputs) - 5)
     # test that the popped IDs and completed IDs don't share members
-    assert no_shared_members(ids, popped_ids)
-    assert same_elements(x, inputs[5:])
+    assert pytest.helpers.no_shared_members(ids, popped_ids)
+    assert pytest.helpers.same_elements(x, inputs[5:])
 
 
 @given(
@@ -357,4 +349,4 @@ def test_list_all(inputs, labels):
         [label is None or id_ in popped_ids for id_, label in zip(ids, y)]
     )
     assert Counter(y)[None] == (len(inputs) - 5)
-    assert same_elements(ids, range(len(inputs)))
+    assert pytest.helpers.same_elements(ids, range(len(inputs)))

@@ -1,4 +1,4 @@
-from collections import OrderedDict, Counter
+from collections import OrderedDict
 import pytest
 
 import numpy as np
@@ -116,14 +116,6 @@ def array_and_clusters(draw):
     return array, cluster_labels
 
 
-def same_elements(a, b):
-    return Counter(a) == Counter(b)
-
-
-def no_shared_members(a, b):
-    return (set(a) & set(b)) == set()
-
-
 @given(
     input_=one_of(booleans(), floats(), integers(), text()),
     cluster_index=integers(),
@@ -136,7 +128,8 @@ def test_enqueueing_and_popping(input_, cluster_index):
 
     idx, data = q.pop()
     assert idx == cluster_index
-    assert same_elements(data, [input_] * 10)
+    assert pytest.helpers.same_elements(data, [input_] * 10)
+    assert pytest.helpers.same_elements(data, [input_] * 10)
 
 
 @given(
@@ -165,7 +158,7 @@ def test_enqueue_dataframe(inputs):
     q.enqueue_many(inputs, cluster_labels)
 
     # assert the queue has only unique elements from cluster_labels
-    assert same_elements(q.order, set(cluster_labels))
+    assert pytest.helpers.same_elements(q.order, set(cluster_labels))
 
     # assert len(q.data) == n
     # # assert we can pop everything:
@@ -372,8 +365,8 @@ def test_list_completed(inputs, labels):
 
     assert len(set(cluster_indices)) == n_clusters // 2
     # test that the popped IDs and completed IDs have the same members
-    assert same_elements(set(cluster_indices), popped_ids)
-    assert same_elements(set(y), set(labels[: n_clusters // 2]))
+    assert pytest.helpers.same_elements(set(cluster_indices), popped_ids)
+    assert pytest.helpers.same_elements(set(y), set(labels[: n_clusters // 2]))
 
 
 @given(
@@ -397,7 +390,7 @@ def test_list_uncompleted(inputs, labels):
 
     assert len(set(cluster_indices)) == n_clusters - n_clusters // 2
     # test that the popped IDs and completed IDs don't share members
-    assert no_shared_members(cluster_indices, popped_ids)
+    assert pytest.helpers.no_shared_members(cluster_indices, popped_ids)
 
 
 def test_list_all():
@@ -429,5 +422,4 @@ def test_list_all():
         ]
     )
     assert len(set(y) - {None}) == n_clusters // 2
-
-    assert same_elements(cluster_indices, cluster_labels)
+    assert pytest.helpers.same_elements(cluster_indices, cluster_labels)
