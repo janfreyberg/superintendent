@@ -65,9 +65,10 @@ class Submitter(widgets.VBox):
         self.submission_functions = []
         self.hint_function = hint_function
         self.shortcuts = shortcuts
+
         self.hints = dict() if hints is None else hints
         if hint_function is not None:
-            for option, feature in self.hints.values():
+            for option, feature in self.hints.items():
                 self.hints[option] = widgets.Output()
                 with self.hints[option]:
                     self.hint_function(feature)
