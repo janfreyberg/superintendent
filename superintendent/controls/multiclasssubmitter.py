@@ -20,18 +20,7 @@ class MulticlassSubmitter(Submitter):
                 self._when_submitted({"source": "backspace"})
 
     def _toggle_option(self, option):
-
-        if isinstance(self.selector, widgets.SelectMultiple):
-            if option in self.selector.value:
-                self.selector.value = [
-                    opt for opt in self.selector.value if opt != option
-                ]
-            elif option not in self.selector.value:
-                self.selector.value = list(self.selector.value) + [option]
-        elif isinstance(self.selector, widgets.HBox):
-            for box in self.selector.children:
-                if box.children[0].description == option:
-                    box.children[0].value = not box.children[0].value
+        self.control_elements._toggle(option)
 
     def _when_submitted(self, sender):
 
