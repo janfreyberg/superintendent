@@ -8,17 +8,39 @@ from setuptools import setup, find_packages
 
 here = os.path.dirname(os.path.abspath(__file__))
 
-version_ns = {}
+version_namespace = {}
 with open(os.path.join(here, "superintendent", "version.py")) as f:
-    exec(f.read(), {}, version_ns)
+    exec(f.read(), {}, version_namespace)
 
-version = version_ns["version"]
+version = version_namespace["version"]
 
 blurb = "Interactive machine learning supervision."
 if os.path.isfile("README.md"):
     readme = open("README.md", "r").read()
 else:
     readme = blurb
+
+requirements = [
+    "ipywidgets",
+    "ipyevents",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",
+    "scipy",
+    "schedule",
+    "sqlalchemy",
+    "cachetools",
+    "psycopg2-binary",
+    "flask",
+]
+
+testing_requirements = [
+    "pytest",
+    "hypothesis",
+    "pytest-helpers-namespace",
+    "pytest-mock",
+]
 
 setup(
     name="superintendent",
@@ -28,34 +50,15 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/janfreyberg/superintendent",
     download_url="https://github.com/janfreyberg/superintendent/"
-    + version_ns["version"]
+    + version_namespace["version"]
     + ".tar.gz",
     # Author details
     author="Jan Freyberg",
     author_email="jan@asidatascience.com",
     packages=find_packages(),
     keywords=["widgets", "labelling", "annotation"],
-    install_requires=[
-        "ipywidgets",
-        "ipyevents",
-        "numpy",
-        "pandas",
-        "matplotlib",
-        "scikit-learn",
-        "scipy",
-        "schedule",
-        "sqlalchemy",
-        "cachetools",
-        "psycopg2-binary",
-        "cython",
-        "flask",
-        "werkzeug",
-    ],
-    tests_require=[
-        "pytest",
-        "hypothesis",
-        "pytest-helpers-namespace",
-        "pytest-mock",
-    ],
-    setup_requires=["pytest-runner"],
+    install_requires=requirements,
+    tests_require=testing_requirements,
+    extras_require={"test": testing_requirements},
+    # setup_requires=["pytest-runner"],
 )

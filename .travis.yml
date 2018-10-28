@@ -8,7 +8,8 @@ script:
   - pip install flake8 coverage coveralls
   # - pip install git+https://github.com/janfreyberg/docargs.git
   - flake8 superintendent
-  - coverage run --source=superintendent setup.py -q test
+  - pip install -qq -e '.[test]'
+  - coverage run --source=superintendent -m pytest
   - coveralls
   # - pip install .
   # - docargs superintendent
