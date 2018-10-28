@@ -32,6 +32,15 @@ class HintedMultiselect(widgets.HBox):
     def _reset(self):
         self.value = []
 
+    def _toggle(self, option: str):
+
+        if option in self.value:
+            new_value = list(self.value)
+            new_value.remove(option)
+            self.multi_select.value = new_value
+        else:
+            self.multi_select.value = self.value + [option]
+
     @traitlets.observe("value")
     def _refresh_hints(self, change=None):
         self.children = [
