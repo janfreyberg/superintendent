@@ -149,6 +149,10 @@ def test_enqueue_array(inputs):
             assert isinstance(X, np.ndarray)
 
 
+def same_elements(a, b):
+    return Counter(a) == Counter(b)
+
+
 @given(
     inputs=lists(one_of(booleans(), floats(), integers(), text())),
     labels=lists(text()),
@@ -286,6 +290,10 @@ def test_undo():
         assert val == "input 1"
 
 
+def no_shared_members(a, b):
+    return (set(a) & set(b)) == set()
+
+
 @given(
     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
     labels=lists(text(), min_size=5),
@@ -313,6 +321,15 @@ def test_list_completed(inputs, labels):
     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
     labels=lists(text(), min_size=5),
 )
+def test_list_completed(inputs, labels):
+    with q_context() as q:
+        q.enqueue_many(inputs)
+
+
+@given(
+    inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
+    labels=lists(text(), min_size=5),
+)
 def test_list_uncompleted(inputs, labels):
     with q_context() as q:
         q.enqueue_many(inputs)
@@ -331,6 +348,7 @@ def test_list_uncompleted(inputs, labels):
         # test that the popped IDs and completed IDs don't share members
         assert pytest.helpers.no_shared_members(ids, popped_ids)
         # assert pytest.helpers.same_elements(x, [inputs[idx] for idx in id])
+
 
 
 @given(
