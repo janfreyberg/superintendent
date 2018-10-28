@@ -149,10 +149,6 @@ def test_enqueue_array(inputs):
             assert isinstance(X, np.ndarray)
 
 
-def same_elements(a, b):
-    return Counter(a) == Counter(b)
-
-
 @given(
     inputs=lists(one_of(booleans(), floats(), integers(), text())),
     labels=lists(text()),
@@ -348,7 +344,6 @@ def test_list_uncompleted(inputs, labels):
         # test that the popped IDs and completed IDs don't share members
         assert pytest.helpers.no_shared_members(ids, popped_ids)
         # assert pytest.helpers.same_elements(x, [inputs[idx] for idx in id])
-
 
 
 @given(

@@ -129,7 +129,7 @@ def test_enqueueing_and_popping(input_, cluster_index):
     idx, data = q.pop()
     assert idx == cluster_index
     assert pytest.helpers.same_elements(data, [input_] * 10)
-    assert same_elements(data, [input_] * 10)
+    assert pytest.helpers.same_elements(data, [input_] * 10)
 
 
 @given(
@@ -159,7 +159,6 @@ def test_enqueue_dataframe(inputs):
 
     # assert the queue has only unique elements from cluster_labels
     assert pytest.helpers.same_elements(q.order, set(cluster_labels))
-
 
     # assert len(q.data) == n
     # # assert we can pop everything:
