@@ -7,14 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from hypothesis import HealthCheck, given, settings
-from hypothesis.extra.numpy import (
-    arrays,
-    datetime64_dtypes,
-    floating_dtypes,
-    integer_dtypes,
-    scalar_dtypes,
-    unsigned_integer_dtypes,
-)
+import hypothesis.extra.numpy as np_strategies
 from hypothesis.extra.pandas import column, data_frames
 from hypothesis.strategies import (
     booleans,
@@ -23,7 +16,6 @@ from hypothesis.strategies import (
     integers,
     lists,
     one_of,
-    sampled_from,
     text,
     tuples,
 )
@@ -31,11 +23,11 @@ from hypothesis.strategies import (
 from superintendent.distributed.dbqueue import DatabaseQueue
 
 guaranteed_dtypes = one_of(
-    scalar_dtypes(),
-    unsigned_integer_dtypes(),
-    datetime64_dtypes(),
-    floating_dtypes(),
-    integer_dtypes(),
+    np_strategies.scalar_dtypes(),
+    np_strategies.unsigned_integer_dtypes(),
+    np_strategies.datetime64_dtypes(),
+    np_strategies.floating_dtypes(),
+    np_strategies.integer_dtypes(),
 )
 
 
@@ -44,7 +36,13 @@ def dataframe(draw):
     n_cols = draw(integers(min_value=1, max_value=20))
     dtypes = draw(
         lists(
-            sampled_from([float, int, str]), min_size=n_cols, max_size=n_cols
+            one_of(
+                np_strategies.floating_dtypes(),
+                np_strategies.integer_dtypes(),
+                np_strategies.unicode_string_dtypes(),
+            ),
+            min_size=n_cols,
+            max_size=n_cols,
         )
     )
     colnames = draw(
@@ -124,7 +122,7 @@ def test_enqueue_dataframe(inputs):
 
 @settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(
-    inputs=arrays(
+    inputs=np_strategies.arrays(
         guaranteed_dtypes,
         tuples(
             integers(min_value=1, max_value=50),
