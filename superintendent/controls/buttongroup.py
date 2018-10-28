@@ -78,7 +78,7 @@ class ButtonGroup(widgets.HBox):
             return "{}px".format(int(proposal["value"]))
         elif isinstance(proposal["value"], str):
             return proposal["value"]
-        else:
+        else:  # pragma: no cover
             raise traitlets.TraitError(
                 "Button_width can only be a float, an integer, or a string."
             )
