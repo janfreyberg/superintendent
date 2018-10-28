@@ -102,15 +102,12 @@ def test_that_when_submitted_passes_correct_values_from_button(mock):
     widget = controls.MulticlassSubmitter(options)
 
     widget.control_elements._toggle("a")
-    widget.control_elements._toggle("b")
 
     mock_function = mock.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.submission_button)
     assert mock_function.call_args == (
-        ({"source": "multi-selector", "value": ["a", "b"]},),
-    ) or mock_function.call_args == (
-        ({"source": "multi-selector", "value": ["b", "a"]},),
+        ({"source": "multi-selector", "value": ["a"]},),
     )
 
 
@@ -119,13 +116,12 @@ def test_that_when_submitted_passes_correct_values_from_enter_key(mock):
     widget = controls.MulticlassSubmitter(options)
 
     widget.control_elements._toggle("a")
-    widget.control_elements._toggle("b")
 
     mock_function = mock.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted({"source": "enter"})
     assert mock_function.call_args == (
-        ({"source": "multi-selector", "value": ["a", "b"]},),
+        ({"source": "multi-selector", "value": ["a"]},),
     )
 
 
