@@ -23,7 +23,8 @@ class ToggleButtonGroup(widgets.HBox):
     )
     submission_functions = traitlets.List(list(), allow_none=True)
     button_width = traitlets.Union(
-        [traitlets.Float(), traitlets.Integer(), traitlets.Unicode()]
+        [traitlets.Float(), traitlets.Integer(), traitlets.Unicode()],
+        allow_none=True,
     )
 
     def __init__(
@@ -36,7 +37,7 @@ class ToggleButtonGroup(widgets.HBox):
 
         super().__init__(children=[], **kwargs)
 
-        if button_width is None:
+        if button_width is None and len(options) > 0:
             self.button_width = max(1 / len(options), 0.1)
         else:
             self.button_width = button_width
