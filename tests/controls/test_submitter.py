@@ -232,7 +232,7 @@ def test_that_passing_hints_calls_hint_function(mock):
 
     mock_hint_function = mock.Mock()
 
-    widget = controls.Submitter(
+    widget = controls.Submitter(  # noqa
         options, hint_function=mock_hint_function, hints={"a": "test hint"}
     )
 
