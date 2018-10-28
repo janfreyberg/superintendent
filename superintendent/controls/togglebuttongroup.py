@@ -70,12 +70,12 @@ class ToggleButtonGroup(widgets.HBox):
     @traitlets.validate("button_width")
     def _valid_value(self, proposal: Dict):
         if isinstance(proposal["value"], Number) and proposal["value"] <= 1:
-            return "{}%".format(100 * proposal["value"])
+            return "{}%".format(int(100 * proposal["value"]))
         elif isinstance(proposal["value"], Number):
             return "{}px".format(int(proposal["value"]))
         elif isinstance(proposal["value"], str):
             return proposal["value"]
-        else:
+        else:  # pragma: no cover
             raise traitlets.TraitError(
                 "Button_width can only be a float, an integer, or a string."
             )
