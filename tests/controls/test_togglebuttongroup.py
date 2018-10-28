@@ -61,7 +61,7 @@ def test_that_reset_sets_all_values_to_false():
 
     widget._toggle("a")
     widget._toggle("b")
-    assert widget.value == ["a", "b"]
+    assert pytest.helpers.same_elements(widget.value, ["a", "b"])
 
     widget._reset()
     assert widget.value == []

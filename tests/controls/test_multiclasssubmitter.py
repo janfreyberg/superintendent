@@ -109,6 +109,8 @@ def test_that_when_submitted_passes_correct_values_from_button(mock):
     widget._when_submitted(widget.submission_button)
     assert mock_function.call_args == (
         ({"source": "multi-selector", "value": ["a", "b"]},),
+    ) or mock_function.call_args == (
+        ({"source": "multi-selector", "value": ["b", "a"]},),
     )
 
 
