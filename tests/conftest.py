@@ -3,6 +3,14 @@ pytest_plugins = ["helpers_namespace"]  # noqa
 import collections
 import pytest
 
+from hypothesis import settings, HealthCheck
+
+settings.register_profile(
+    "travis-ci", suppress_health_check=(HealthCheck.too_slow,), deadline=1500
+)
+
+settings.load_profile("travis-ci")
+
 
 @pytest.helpers.register
 def same_elements(a, b):
