@@ -1,4 +1,3 @@
-import collections
 import traitlets
 
 import pytest
@@ -8,26 +7,22 @@ from hypothesis import given, settings
 from superintendent.controls.buttongroup import ButtonGroup, ButtonWithHint
 
 
-def same_elements(a, b):
-    return collections.Counter(a) == collections.Counter(b)
-
-
 @settings(deadline=1000)
 @given(options=st.lists(st.text(), unique=True))
 def test_that_options_are_set(options):
 
     widget = ButtonGroup(options)
     assert widget.options == options
-    assert same_elements(widget.buttons.keys(), options)
-    assert same_elements(
+    assert pytest.helpers.same_elements(widget.buttons.keys(), options)
+    assert pytest.helpers.same_elements(
         [button.description for button in widget.buttons.values()], options
     )
 
     widget = ButtonGroup([])
     widget.options = options
     assert widget.options == options
-    assert same_elements(widget.buttons.keys(), options)
-    assert same_elements(
+    assert pytest.helpers.same_elements(widget.buttons.keys(), options)
+    assert pytest.helpers.same_elements(
         [button.description for button in widget.buttons.values()], options
     )
 

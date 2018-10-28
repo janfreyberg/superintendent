@@ -1,14 +1,8 @@
-import collections
-
 import pytest
 from hypothesis import strategies as st
 from hypothesis import given, settings
 
 from superintendent.controls.dropdownbutton import DropdownButton
-
-
-def same_elements(a, b):
-    return collections.Counter(a) == collections.Counter(b)
 
 
 @settings(deadline=1000)

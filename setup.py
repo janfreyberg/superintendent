@@ -51,6 +51,6 @@ setup(
         "flask",
         "werkzeug",
     ],
-    tests_require=["pytest", "hypothesis"],
+    tests_require=["pytest", "hypothesis", "pytest-helpers-namespace"],
     setup_requires=["pytest-runner"],
 )
