@@ -14,6 +14,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
 import pandas as pd
+import numpy as np
 
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads
@@ -190,11 +191,6 @@ class DatabaseQueue(BaseLabellingQueue):
             [int(priority) for priority in priorities.values()],
         )
 
-    def set_priority(self, id_: int, priority: int):
-        with self.session() as session:
-            row = session.query(self.data).filter_by(id=id_).first()
-            row.priority = priority
-
     def set_priorities(self, ids: Sequence[int], priorities: Sequence[int]):
         with self.session() as session:
             rows = session.query(self.data).filter(self.data.id.in_(ids)).all()
@@ -228,6 +224,8 @@ class DatabaseQueue(BaseLabellingQueue):
                 return id_, self.deserialiser(value)
 
     def submit(self, id_: int, label: str) -> None:
+        if id_ not in self._popped:
+            raise ValueError("This item was not popped; you cannot label it.")
         with self.session() as session:
             row = session.query(self.data).filter_by(id=id_).first()
             row.output = self.serialiser(label)
@@ -332,6 +330,7 @@ class DatabaseQueue(BaseLabellingQueue):
             return ids, x
 
     def clear_queue(self):
+        self._popped = deque([])
         with self.session() as session:
             session.query(self.data).delete()
 
@@ -341,8 +340,7 @@ class DatabaseQueue(BaseLabellingQueue):
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
-    @cachetools.cached(cachetools.TTLCache(1, 15))
-    def _unlabelled_count(self, timeout: int = 600):
+    def _unlabelled_count(self):
         with self.session() as session:
             return (
                 session.query(self.data)
@@ -368,16 +366,14 @@ class DatabaseQueue(BaseLabellingQueue):
     def _total_count(self):
         with self.session() as session:
             n_total = session.query(self.data).count()
-            session.expunge_all()
-
         return n_total
 
     @property
     def progress(self) -> float:
         try:
-            return len(self._popped) / self._total_count()
+            return self._labelled_count() / self._total_count()
         except ZeroDivisionError:
-            return 0
+            return np.nan
 
     def __len__(self):
         with self.session() as session:

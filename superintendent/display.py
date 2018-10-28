@@ -1,30 +1,8 @@
 """Helper functions for displaying types of data."""
 
-import operator
-
 import IPython.display
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
-
-
-def get_values(data, idxs):
-    """
-    Helper function to index numpy arrays and pandas objects similarly.
-
-    Parameters
-    ----------
-    data : np.ndarray, pd.Series, pd.DataFrame
-        The features
-    idxs : np.ndarray, pd.Series, list
-        The indices to get. Should be integers.
-    """
-    if isinstance(data, np.ndarray):
-        return data[idxs, ...]
-    elif isinstance(data, (pd.Series, pd.DataFrame)):
-        return data.iloc[list(idxs)]
-    else:
-        return [operator.itemgetter(idx)(data) for idx in idxs]
 
 
 def default_display_func(feature):
@@ -55,7 +33,7 @@ def default_display_func(feature):
         IPython.display.display(feature)
 
 
-def image_display_func(feature, imsize=None):
+def image_display_func(image, imsize=None):
     """
     Image display function.
 
@@ -75,7 +53,7 @@ def image_display_func(feature, imsize=None):
     fig, ax = plt.subplots(1, 1)
 
     if imsize == "square":
-        image = feature.reshape(2 * [int(np.sqrt(feature.size))])
+        image = image.reshape(2 * [int(np.sqrt(image.size))])
     elif imsize is not None:
         image = image.reshape(imsize)
 

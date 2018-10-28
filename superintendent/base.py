@@ -11,7 +11,7 @@ import traitlets
 import numpy as np
 import pandas as pd
 
-from . import controls, display, validation
+from . import controls, display
 
 
 # class AbstractTraitletMetaclass(traitlets.HasTraits, metaclass=abc.ABCMeta):
@@ -95,11 +95,14 @@ class Labeller(traitlets.HasTraits):
         self.options = self.input_widget.options
         traitlets.link((self, "options"), (self.input_widget, "options"))
 
-        self.features = validation.valid_data(features)
-        if labels is not None:
-            self.labels = validation.valid_data(labels)
-        elif self.features is not None:
-            self.labels = np.full(self.features.shape[0], np.nan, dtype=float)
+        # self.features = validation.valid_data(features)
+        self.features = features
+        # if labels is not None:
+        #     self.labels = validation.valid_data(labels)
+        # elif self.features is not None:
+        #     self.labels = np.full(
+        #         self.features.shape[0], np.nan, dtype=float)
+        self.labels = labels
 
         self.progressbar = widgets.FloatProgress(
             max=1, description="Progress:"

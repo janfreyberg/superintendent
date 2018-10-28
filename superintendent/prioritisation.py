@@ -34,7 +34,7 @@ def entropy(
 
     """
     ordered = np.argsort(-scipy.stats.entropy(probabilities.T))
-    return _shuffle_subset(ordered, shuffle_prop)
+    return _shuffle_subset(ordered.argsort(), shuffle_prop)
 
 
 def margin(probabilities, shuffle_prop=0.1):
@@ -57,12 +57,27 @@ def margin(probabilities, shuffle_prop=0.1):
         np.sort(probabilities, axis=1)[:, -1]
         - np.sort(probabilities, axis=1)[:, -2]
     )
-    return _shuffle_subset(ordered, shuffle_prop)
+    return _shuffle_subset(ordered.argsort(), shuffle_prop)
 
 
 def certainty(probabilities, shuffle_prop=0.1):
+    """
+    Sort by the certainty of the maximum prediction.
+
+    Parameters
+    ----------
+    probabilities : np.ndarray
+        An array of probabilities, with the shape n_samples,
+        n_classes
+    shuffle_prop : float
+        The proportion of data points that should be randomly shuffled. This
+        means the sorting retains some randomness, to avoid biasing your
+        new labels and catching any minority classes the algorithm currently
+        classifies as a different label.
+
+    """
     ordered = np.argsort(np.max(probabilities, axis=1))
-    return _shuffle_subset(ordered, shuffle_prop)
+    return _shuffle_subset(ordered.argsort(), shuffle_prop)
 
 
 functions = {"entropy": entropy, "margin": margin, "certainty": certainty}

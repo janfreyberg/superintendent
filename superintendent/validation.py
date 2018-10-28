@@ -1,8 +1,8 @@
 """Functions to validate arguments."""
-from typing import Any, Optional
+from typing import Any
 
-import numpy as np
-import pandas as pd
+# import numpy as np
+# import pandas as pd
 
 
 def valid_classifier(classifier: Any):
@@ -29,23 +29,25 @@ def valid_classifier(classifier: Any):
         )
 
 
-def valid_data(features: Optional[Any]):
-    """
-    Check if an object is an array or can be turned into one.
+# def valid_data(features: Optional[Any]):
+#     """
+#     Check if an object is an array or can be turned into one.
 
-    Parameters
-    ----------
-    features : pd.DataFrame, pd.Series, np.ndarray
-        the data to double-check.
-    """
-    if features is None:
-        return None
-    if isinstance(features, (pd.DataFrame, pd.Series, np.ndarray)):
-        return features
-    elif isinstance(features, (list, tuple)):
-        return np.array(features)
-    else:
-        raise ValueError(
-            "The features need to be an array, array-like, or "
-            "a pandas DataFrame / Series."
-        )
+#     Parameters
+#     ----------
+#     features : pd.DataFrame, pd.Series, np.ndarray
+#         the data to double-check.
+#     """
+#     if features is None:
+#         return None
+#     if isinstance(
+#         features, (pd.DataFrame, pd.Series, np.ndarray, list, tuple)
+#     ):
+#         return features
+#     # elif isinstance(features, (list, tuple)):
+#     #     return np.array(features)
+#     else:
+#         raise ValueError(
+#             "The features need to be an array, sequence, or "
+#             "a pandas DataFrame / Series."
+#         )

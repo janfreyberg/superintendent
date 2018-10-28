@@ -199,17 +199,19 @@ class ClusterLabellingQueue(BaseLabellingQueue):
             features = [row for _, row in features.iterrows()]
 
         if representativeness is None:
-            representativeness = np.ones(len(features))
+            representativeness = np.full(len(features), np.nan)
 
         for cluster_index, feature, represents in zip(
             cluster_indices, features, representativeness
         ):
             self.enqueue(cluster_index, feature, represents)
 
-    def enqueue(self, cluster_index, feature, representativeness):
+    def enqueue(self, cluster_index, feature, representativeness=None):
 
         self.data[cluster_index].append(feature)
-        self.representativeness[cluster_index].append(feature)
+        if representativeness is None:
+            representativeness = np.nan
+        self.representativeness[cluster_index].append(representativeness)
 
         if cluster_index not in self.order:
             self.order.appendleft(cluster_index)
@@ -227,15 +229,20 @@ class ClusterLabellingQueue(BaseLabellingQueue):
         return id_, _features_to_array(features)
 
     def submit(self, cluster_index, cluster_label):
+        if cluster_index not in self._popped:
+            raise ValueError("This item was not popped; you cannot label it.")
         self.cluster_labels[cluster_index] = cluster_label
 
     def reorder(self):
         pass
 
+    def shuffle(self) -> None:
+        shuffle(self.order)
+
     def undo(self):
         if len(self._popped) > 0:
             cluster_index = self._popped.pop()
-            self.labels.pop(cluster_index, None)
+            self.cluster_labels.pop(cluster_index, None)
             self.order.append(cluster_index)
 
     def list_completed(self):
@@ -295,13 +302,22 @@ class ClusterLabellingQueue(BaseLabellingQueue):
 
     @property
     def progress(self):
-        return len(self.cluster_labels) / len(self.data)
+        try:
+            return len(self.cluster_labels) / len(self.data)
+        except ZeroDivisionError:
+            return np.nan
 
     def list_labels(self):
-        return set(self.cluster_labels.values())
+        try:
+            return set(sorted(self.cluster_labels.values()))
+        except TypeError:
+            return reduce(operator.or_, map(set, self.cluster_labels.values()))
 
     def __iter__(self):
         return self
+
+    def __len__(self):
+        return len(self.order)
 
     def __next__(self):
         try:
@@ -312,11 +328,12 @@ class ClusterLabellingQueue(BaseLabellingQueue):
 
 def _features_to_array(features: list):
     """Convert a list of features to a 2D array."""
-    if all(isinstance(feature, pd.Series) for feature in features):
-        features = pd.DataFrame([item.to_dict() for item in features])
-    elif all(isinstance(feature, pd.DataFrame) for feature in features):
-        features = pd.concat(features)
-    elif all(isinstance(feature, np.ndarray) for feature in features):
-        features = np.stack(features)
+    if len(features) > 0:
+        if all(isinstance(feature, pd.Series) for feature in features):
+            features = pd.concat([item.to_frame().T for item in features])
+        elif all(isinstance(feature, pd.DataFrame) for feature in features):
+            features = pd.concat(features)
+        elif all(isinstance(feature, np.ndarray) for feature in features):
+            features = np.stack(features)
 
     return features

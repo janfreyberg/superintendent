@@ -27,8 +27,6 @@ class DataEncoder(json.JSONEncoder):
                     "name": obj.name,
                 },
             }
-        else:
-            return json.JSONEncoder.default(self, obj)
 
 
 def data_decoder(obj):

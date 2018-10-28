@@ -2,22 +2,42 @@ from collections import OrderedDict, Counter
 import pytest
 
 import numpy as np
+import pandas as pd
+
 from hypothesis import given, settings
 from hypothesis.strategies import (
     booleans,
     floats,
     integers,
     lists,
+    tuples,
     one_of,
     sampled_from,
     text,
     composite,
 )
 from hypothesis.extra.pandas import data_frames, column
+from hypothesis.extra.numpy import (
+    arrays,
+    scalar_dtypes,
+    unsigned_integer_dtypes,
+    datetime64_dtypes,
+    floating_dtypes,
+    integer_dtypes,
+)
 
 from hypothesis import HealthCheck
 
 from superintendent.queueing import SimpleLabellingQueue
+
+
+guaranteed_dtypes = one_of(
+    scalar_dtypes(),
+    unsigned_integer_dtypes(),
+    datetime64_dtypes(),
+    floating_dtypes(),
+    integer_dtypes(),
+)
 
 
 @composite
@@ -86,10 +106,52 @@ def test_enqueue_dataframe(inputs):
     assert len(q.data) == n
     # assert we can pop everything:
     for _ in range(n):
-        q.pop()
+        id_, val = q.pop()
+        assert isinstance(val, pd.Series)
     # assert there's nothing else to pop:
     with pytest.raises(IndexError):
         q.pop()
+    # assert it re-constructs a df on list all
+    if n > 0:
+        ids, X, y = q.list_all()
+        assert isinstance(X, pd.DataFrame) or len(X) == 0
+        # assert it re-constructs a df on list uncomplete
+        q.submit(ids[0], "hello")
+        ids, X = q.list_uncompleted()
+        assert isinstance(X, pd.DataFrame) or len(X) == 0
+        # assert it re-constructs a df on list uncomplete
+        ids, X, y = q.list_completed()
+        assert isinstance(X, pd.DataFrame) or len(X) == 0
+
+
+@settings(suppress_health_check=(HealthCheck.too_slow,))
+@given(
+    inputs=arrays(
+        guaranteed_dtypes,
+        tuples(
+            integers(min_value=1, max_value=50),
+            integers(min_value=1, max_value=50),
+        ),
+    )
+)
+def test_enqueue_array(inputs):
+    n = inputs.shape[0]
+    q = SimpleLabellingQueue()
+    q.enqueue_many(inputs)
+    assert len(q.data) == n
+    # assert we can pop everything:
+    for _ in range(n):
+        id_, val = q.pop()
+        assert isinstance(val, np.ndarray)
+        assert len(val.shape) == 1
+        assert val.size == inputs.shape[-1]
+    # assert there's nothing else to pop:
+    with pytest.raises(IndexError):
+        q.pop()
+    # assert it re-constructs a df on list all
+    if n > 0:
+        ids, X, y = q.list_all()
+        assert isinstance(X, np.ndarray)
 
 
 @given(
