@@ -52,21 +52,7 @@ class ToggleButtonGroup(widgets.HBox):
             for option in self.options
         }
 
-        # self.submission_button = widgets.Button(
-        #     description="Apply", button_style="success"
-        # )
-        # self.submission_button.on_click(self._handle_click)
-
         self.children = [self.buttons[option] for option in self.options]
-
-    def on_click(self, func: Callable) -> None:
-        if not callable(func):
-            raise ValueError(
-                "You need to provide a callable object, but you provided "
-                + str(func)
-                + "."
-            )
-        self.submission_functions.append(func)
 
     def _toggle(self, option: str):
         self.buttons[option].value = not self.buttons[option].value
@@ -98,6 +84,7 @@ class ToggleButtonGroup(widgets.HBox):
 class ToggleButtonWithHint(widgets.VBox):
 
     value = traitlets.Bool(default_value=False)
+    description = traitlets.Unicode()
 
     def __init__(self, label: str, button_width: str, *args, **kwargs):
         kwargs["layout"] = kwargs.get(
@@ -113,8 +100,8 @@ class ToggleButtonWithHint(widgets.VBox):
         self.hint = widgets.Output()
         self.children = [self.button, self.hint]
 
-    def on_click(self, func: Callable):
-        self.button.on_click(func)
+        self.description = label
+        widgets.link((self, "description"), (self.button, "description"))
 
     def __enter__(self):
         return self.hint.__enter__()
