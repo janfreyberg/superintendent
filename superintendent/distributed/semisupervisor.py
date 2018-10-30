@@ -120,11 +120,18 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
             self.queue.worker_id = worker_id_field.value
             self._compose()
 
-    def orchestrate(
+    def _run_orchestration(
         self, interval_seconds: int = 30, shuffle_prop: float = 0.1
     ):
         self.shuffle_prop = shuffle_prop
-        while True:
-            self.retrain()
-            print(self.model_performance.value)
-            time.sleep(interval_seconds)
+        self.retrain()
+        print(self.model_performance.value)
+        time.sleep(interval_seconds)
+
+    def orchestrate(
+        self, interval_seconds: int = 30, shuffle_prop: float = 0.1
+    ):
+        while True:  # pragma: no cover
+            self._run_orchestration(
+                interval_seconds, shuffle_prop=shuffle_prop
+            )
