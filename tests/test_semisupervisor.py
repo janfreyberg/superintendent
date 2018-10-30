@@ -3,6 +3,7 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import ipywidgets
+import ipyevents
 from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
 
@@ -349,3 +350,16 @@ def test_that_retrain_calls_reorder_correctly(mocker):
 
     assert (call_args[0] == test_probabilities).all()
     assert call_kwargs["shuffle_prop"] == 0.2
+
+
+def test_that_the_event_manager_is_closed(mocker):
+
+    test_array = np.array([[1, 2, 3], [1, 2, 3]])
+
+    mock_event_manager_close = mocker.patch.object(ipyevents.Event, "close")
+
+    widget = SemiSupervisor(features=test_array, keyboard_shortcuts=True)
+    widget._annotation_loop.send({"source": "", "value": "dummy label"})
+    widget._annotation_loop.send({"source": "", "value": "dummy label"})
+
+    assert mock_event_manager_close.call_count == 1
