@@ -377,3 +377,28 @@ def test_that_get_worker_id_sets_correct_children():
     widget._set_worker_id(worker_id_text_field)
 
     assert widget.queue.worker_id == "test worker id"
+
+
+def test_that_run_orchestration_calls_retrain_and_prints(mocker):
+    mock_value = mocker.patch.object(
+        ipywidgets.HTML, "value", value="test model performance"
+    )
+    mock_print = mocker.patch(
+        "superintendent.distributed.semisupervisor.print"
+    )
+    mock_sleep = mocker.patch("time.sleep")
+
+    widget = SemiSupervisor(worker_id=True)
+
+    dummy_html_widget = namedtuple("dummy_html_widget", ["value"])
+    widget.model_performance = dummy_html_widget(
+        value="test model performance"
+    )
+
+    mock_retrain = mocker.patch.object(widget, "retrain")
+
+    widget._run_orchestration()
+
+    mock_retrain.assert_called_once_with()
+    mock_print.assert_called_once_with("test model performance")
+    mock_sleep.assert_called_once_with(30)
