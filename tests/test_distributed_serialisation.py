@@ -1,5 +1,7 @@
 from functools import partial
 
+import pytest
+
 import hypothesis.extra.numpy as np_strategies
 import numpy as np
 import pandas as pd
@@ -14,7 +16,6 @@ from hypothesis.strategies import (
     one_of,
     recursive,
     text,
-    composite,
 )
 from superintendent.distributed.serialization import data_dumps, data_loads
 
@@ -68,7 +69,7 @@ def test_numpy_array_serialisation(input_):
     assert isinstance(serialised, str)
     deserialised = data_loads(serialised)
     assert isinstance(deserialised, type(input_))
-    assert exact_element_match(input_, deserialised)
+    assert pytest.helpers.exact_element_match(input_, deserialised)
 
 
 @given(
@@ -79,7 +80,7 @@ def test_pandas_series_serialisation(input_):
     assert isinstance(serialised, str)
     deserialised = data_loads(serialised)
     assert isinstance(deserialised, type(input_))
-    assert exact_element_match(input_, deserialised)
+    assert pytest.helpers.exact_element_match(input_, deserialised)
 
 
 @given(
@@ -97,7 +98,7 @@ def test_pandas_df_serialisation(input_):
     assert isinstance(serialised, str)
     deserialised = data_loads(serialised)
     assert isinstance(deserialised, type(input_))
-    assert exact_element_match(input_, deserialised)
+    assert pytest.helpers.exact_element_match(input_, deserialised)
 
 
 @given(input_=one_of(json_array, json_object))
