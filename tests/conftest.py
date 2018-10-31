@@ -1,6 +1,5 @@
 pytest_plugins = ["helpers_namespace"]  # noqa
 
-import itertools
 import warnings
 import collections
 import pytest
