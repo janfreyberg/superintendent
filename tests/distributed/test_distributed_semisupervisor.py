@@ -3,7 +3,6 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import ipywidgets
-import ipyevents
 from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
 
@@ -31,7 +30,7 @@ from hypothesis.strategies import (
 )
 
 import superintendent.prioritisation
-from superintendent import SemiSupervisor
+from superintendent.distributed import SemiSupervisor
 
 primitive_strategy = text() | integers() | floats(allow_nan=False) | booleans()
 
@@ -105,20 +104,22 @@ def test_that_creating_a_widget_works():
 def test_that_supplied_features_are_passed_to_queue(mocker):
     test_array = np.array([[1, 2, 3], [1, 2, 3]])
     mock_queue = mocker.patch(
-        "superintendent.semisupervisor.SimpleLabellingQueue"
+        "superintendent.distributed.semisupervisor.DatabaseQueue.enqueue_many"
     )
     widget = SemiSupervisor(features=test_array, labels=None)  # noqa
-    mock_queue.assert_called_once_with(test_array, None)
+    mock_queue.assert_called_once_with(test_array, labels=None)
 
 
 def test_that_supplied_labels_are_passed_to_queue(mocker):
     test_array = np.array([[1, 2, 3], [1, 2, 3]])
     test_labels = np.array(["hi", "hello"])
     mock_queue = mocker.patch(
-        "superintendent.semisupervisor.SimpleLabellingQueue"
+        "superintendent.distributed.semisupervisor.DatabaseQueue.enqueue_many"
     )
     widget = SemiSupervisor(features=test_array, labels=test_labels)  # noqa
-    mock_queue.assert_called_once_with(test_array, test_labels)
+    args, kwargs = mock_queue.call_args
+    assert pytest.helpers.exact_element_match(test_array, args[0])
+    assert pytest.helpers.exact_element_match(test_labels, kwargs["labels"])
 
 
 @given(shuffle_prop=floats(min_value=0, max_value=1))
@@ -183,23 +184,24 @@ def test_that_reorder_is_set_correctly(mocker):
 
 def test_that_sending_labels_into_iterator_submits_them_to_queue(mocker):
     mock_submit = mocker.patch(
-        "superintendent.queueing.SimpleLabellingQueue.submit"
+        "superintendent.distributed.semisupervisor.DatabaseQueue.submit"
     )
     test_array = np.array([[1, 2, 3], [1, 2, 3]])
 
     widget = SemiSupervisor(features=test_array)
     widget._annotation_loop.send({"source": "", "value": "dummy label"})
 
-    mock_submit.assert_called_once_with(0, "dummy label")
+    mock_submit.assert_called_once_with(1, "dummy label")
 
 
 def test_that_sending_undo_into_iterator_calls_undo_on_queue(mocker):
     mock_undo = mocker.patch(
-        "superintendent.queueing.SimpleLabellingQueue.undo"
+        "superintendent.distributed.semisupervisor.DatabaseQueue.undo"
     )
 
     test_array = np.array([[1, 2, 3], [1, 2, 3]])
     widget = SemiSupervisor(features=test_array)
+    mock_undo.reset_mock()
     widget._annotation_loop.send({"source": "__undo__", "value": None})
 
     assert mock_undo.call_count == 2
@@ -207,7 +209,7 @@ def test_that_sending_undo_into_iterator_calls_undo_on_queue(mocker):
 
 def test_that_sending_skip_calls_no_queue_method(mocker):
     mock_undo = mocker.patch(
-        "superintendent.queueing.SimpleLabellingQueue.undo"
+        "superintendent.distributed.semisupervisor.DatabaseQueue.undo"
     )
     mock_submit = mocker.patch(
         "superintendent.queueing.SimpleLabellingQueue.submit"
@@ -215,6 +217,8 @@ def test_that_sending_skip_calls_no_queue_method(mocker):
 
     test_array = np.array([[1, 2, 3], [1, 2, 3]])
     widget = SemiSupervisor(features=test_array)
+    mock_undo.reset_mock()
+    mock_submit.reset_mock()
     widget._annotation_loop.send({"source": "__skip__", "value": None})
 
     assert mock_undo.call_count == 0
@@ -223,7 +227,8 @@ def test_that_sending_skip_calls_no_queue_method(mocker):
 
 def test_that_progressbar_value_is_updated_and_render_finished_called(mocker):
     mock_render_finished = mocker.patch(
-        "superintendent.semisupervisor.SemiSupervisor._render_finished"
+        "superintendent.distributed.semisupervisor"
+        ".SemiSupervisor._render_finished"
     )
 
     test_array = np.array([[1, 2, 3], [1, 2, 3]])
@@ -352,14 +357,48 @@ def test_that_retrain_calls_reorder_correctly(mocker):
     assert call_kwargs["shuffle_prop"] == 0.2
 
 
-def test_that_the_event_manager_is_closed(mocker):
+def test_that_get_worker_id_sets_correct_children():
+    widget = SemiSupervisor(worker_id=True)
+    assert any(
+        isinstance(child, ipywidgets.Text)
+        for child in pytest.helpers.recursively_list_widget_children(
+            widget.layout
+        )
+    )
+    worker_id_text_field = next(
+        child
+        for child in pytest.helpers.recursively_list_widget_children(
+            widget.layout
+        )
+        if isinstance(child, ipywidgets.Text)
+    )
 
-    test_array = np.array([[1, 2, 3], [1, 2, 3]])
+    worker_id_text_field.value = "test worker id"
+    widget._set_worker_id(worker_id_text_field)
 
-    mock_event_manager_close = mocker.patch.object(ipyevents.Event, "close")
+    assert widget.queue.worker_id == "test worker id"
 
-    widget = SemiSupervisor(features=test_array, keyboard_shortcuts=True)
-    widget._annotation_loop.send({"source": "", "value": "dummy label"})
-    widget._annotation_loop.send({"source": "", "value": "dummy label"})
 
-    assert mock_event_manager_close.call_count == 1
+def test_that_run_orchestration_calls_retrain_and_prints(mocker):
+    mock_value = mocker.patch.object(
+        ipywidgets.HTML, "value", value="test model performance"
+    )
+    mock_print = mocker.patch(
+        "superintendent.distributed.semisupervisor.print"
+    )
+    mock_sleep = mocker.patch("time.sleep")
+
+    widget = SemiSupervisor(worker_id=True)
+
+    dummy_html_widget = namedtuple("dummy_html_widget", ["value"])
+    widget.model_performance = dummy_html_widget(
+        value="test model performance"
+    )
+
+    mock_retrain = mocker.patch.object(widget, "retrain")
+
+    widget._run_orchestration()
+
+    mock_retrain.assert_called_once_with()
+    mock_print.assert_called_once_with("test model performance")
+    mock_sleep.assert_called_once_with(30)

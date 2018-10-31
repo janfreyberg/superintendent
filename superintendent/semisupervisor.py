@@ -138,6 +138,8 @@ class SemiSupervisor(base.Labeller):
                 n_jobs=-1,
                 return_train_score=False,
             )
+        elif not callable(eval_method):
+            raise ValueError("The eval_method needs to be a callable.")
         else:
             self.eval_method = eval_method
 
@@ -149,8 +151,13 @@ class SemiSupervisor(base.Labeller):
             self.reorder = prioritisation.functions[reorder]
         elif reorder is not None and callable(reorder):
             self.reorder = reorder
-        else:
+        elif reorder is None:
             self.reorder = None
+        else:
+            raise ValueError(
+                "The reorder argument needs to be either a function or the "
+                "name of a function listed in superintendent.prioritisation."
+            )
 
         self._annotation_loop = self._annotation_iterator()
         next(self._annotation_loop)
@@ -218,7 +225,7 @@ class SemiSupervisor(base.Labeller):
                     self.performance["test_score"].mean()
                 )
 
-        except ValueError:
+        except ValueError:  # pragma: no cover
             self.performance = "Could not evaluate"
             self.model_performance.value = "Score: {}".format(self.performance)
 
