@@ -130,23 +130,6 @@ class Labeller(traitlets.HasTraits):
         pass
 
     @classmethod
-    def from_dataframe(cls, features, *args, **kwargs):
-        """Create a relabeller widget from a dataframe.
-        """
-        if not isinstance(features, pd.DataFrame):
-            raise ValueError(
-                "When using from_dataframe, input features "
-                "needs to be a dataframe."
-            )
-        # set the default display func for this method
-        kwargs["display_func"] = kwargs.get(
-            "display_func", display.functions["default"]
-        )
-        instance = cls(features, *args, **kwargs)
-
-        return instance
-
-    @classmethod
     def from_images(cls, *args, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
