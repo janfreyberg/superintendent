@@ -70,4 +70,4 @@ def test_that_ipython_display_displays_layout(mocker):
     mock_display = mocker.patch("IPython.display.display")
     widget = Labeller()
     widget._ipython_display_()
-    assert mock_display.call_args == ((),)
+    assert mock_display.call_args == ((widget.layout,),)
