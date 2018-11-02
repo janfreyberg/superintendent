@@ -20,17 +20,7 @@ def default_display_func(feature):
         How many you want to display.
     """
     # n_samples = min(n_samples, feature.shape[0])
-    if isinstance(feature, np.ndarray) and not np.issubdtype(
-        feature.dtype, np.number
-    ):
-        IPython.display.display(
-            IPython.display.HTML(
-                "<br>\n&nbsp;\n<br>".join([str(item) for item in feature])
-            )
-        )
-
-    else:
-        IPython.display.display(feature)
+    IPython.display.display(feature)
 
 
 def image_display_func(image, imsize=None):
