@@ -161,7 +161,7 @@ class Labeller(traitlets.HasTraits):
             else:
                 raise ValueError(
                     "If image_size is None, the image needs to be square, but "
-                    "yours has " + str(args[0].shape[1]) + " pixels."
+                    "yours has " + str(features.shape[1]) + " pixels."
                 )
         elif image_size is None and "features" not in kwargs:
             # just assume images will be square
