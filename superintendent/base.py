@@ -191,17 +191,6 @@ class Labeller(traitlets.HasTraits):
         next(self._annotation_loop)
         self._compose()
 
-    def _onkeydown(self, event):
-
-        if event["type"] == "keyup":
-            pressed_option = self._key_option_mapping.get(
-                event.get("key"), None
-            )
-            if pressed_option is not None:
-                self._apply_annotation(pressed_option)
-        elif event["type"] == "keydown":
-            pass
-
     def _display(self, feature):
         if feature is not None:
             if self.timer > 0.5:
