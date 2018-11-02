@@ -181,6 +181,20 @@ def test_that_reorder_is_set_correctly(mocker):
         widget = SemiSupervisor(reorder=1)
 
 
+def test_that_the_control_widget_calls_apply_annotation(mocker):
+    mock_submit = mocker.patch(
+        "superintendent.queueing.SimpleLabellingQueue.submit"
+    )
+    test_array = np.array([[1, 2, 3], [1, 2, 3]])
+
+    widget = SemiSupervisor(features=test_array, options=["dummy label"])
+    widget.input_widget._when_submitted(
+        widget.input_widget.control_elements.buttons["dummy label"]
+    )
+
+    mock_submit.assert_called_once_with(0, "dummy label")
+
+
 def test_that_sending_labels_into_iterator_submits_them_to_queue(mocker):
     mock_submit = mocker.patch(
         "superintendent.queueing.SimpleLabellingQueue.submit"
