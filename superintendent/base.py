@@ -37,9 +37,6 @@ class Labeller(traitlets.HasTraits):
     keyboard_shortcuts : bool, optional
         If you want to enable ipyevent-mediated keyboard capture to use the
         keyboard rather than the mouse to submit data.
-    use_hints : bool
-        Whether you want to use "hints", small displays of your data underneath
-        or alongside your labelling options.
     hint_function : func, optional
         The function to display these hints. By default, the same function as
         display_func is used.
@@ -56,7 +53,6 @@ class Labeller(traitlets.HasTraits):
         options: Tuple[str] = (),
         display_func: Callable = None,
         keyboard_shortcuts: bool = False,
-        use_hints: bool = False,
         hint_function: Optional[Callable] = None,
         hints: Optional[Dict[str, Any]] = None,
     ):
@@ -78,12 +74,6 @@ class Labeller(traitlets.HasTraits):
             ),
         )
 
-        if use_hints:
-            hint_function = (
-                hint_function if hint_function is not None else display_func
-            )
-        else:
-            hint_function = hints = None
         self.input_widget = controls.Submitter(
             hint_function=hint_function,
             hints=hints,
