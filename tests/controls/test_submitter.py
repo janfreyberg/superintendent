@@ -25,14 +25,14 @@ DUMMY_KEYUP_DICT_ONE = {
 }
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.text()))
 def test_that_options_are_set_correctly_when_instantiated(options):
     widget = controls.Submitter(options=options)
     assert widget.options == options
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.text()))
 def test_that_options_are_set_correctly_when_updated(options):
     widget = controls.Submitter()
@@ -42,7 +42,7 @@ def test_that_options_are_set_correctly_when_updated(options):
     assert widget.options == options
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.integers()))
 def test_that_options_are_converted_to_strings(options):
     widget = controls.Submitter(options=options)

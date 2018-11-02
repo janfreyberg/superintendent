@@ -69,6 +69,7 @@ def q_context():
             os.remove("testing.db")
 
 
+@settings(deadline=None)
 @given(input_=one_of(booleans(), floats(), integers(), text()))
 def test_enqueueing_and_popping(input_):
     with q_context() as q:

@@ -7,7 +7,7 @@ from hypothesis import given, settings
 from superintendent.controls.buttongroup import ButtonGroup, ButtonWithHint
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.text(), unique=True))
 def test_that_options_are_set(options):
 
