@@ -64,3 +64,10 @@ def test_that_from_images_sets_correct_arguments():
         widget = Labeller.from_images(
             features=[[0, 0, 0, 0, 5], [0, 0, 0, 0, 5]]
         )
+
+
+def test_that_ipython_display_displays_layout(mocker):
+    mock_display = mocker.patch("IPython.display.display")
+    widget = Labeller()
+    widget._ipython_display_()
+    assert mock_display.call_args == ((),)

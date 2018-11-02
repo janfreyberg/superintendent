@@ -235,6 +235,17 @@ def test_that_sending_skip_calls_no_queue_method(mocker):
     assert mock_submit.call_count == 0
 
 
+def test_that_added_labels_are_returned_correctly(mocker):
+
+    test_array = np.array([[1, 2, 3], [1, 2, 3]])
+    widget = SemiSupervisor(features=test_array)
+
+    widget._annotation_loop.send({"source": "", "value": "dummy label"})
+    widget._annotation_loop.send({"source": "", "value": "dummy label 2"})
+
+    assert widget.new_labels == ["dummy label", "dummy label 2"]
+
+
 def test_that_progressbar_value_is_updated_and_render_finished_called(mocker):
     mock_render_finished = mocker.patch(
         "superintendent.semisupervisor.SemiSupervisor._render_finished"
