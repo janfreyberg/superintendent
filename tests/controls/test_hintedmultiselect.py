@@ -53,9 +53,9 @@ def test_that_reset_sets_all_values_to_false():
     assert widget.value == []
 
 
-def test_that_enter_exit_for_output_get_called(mock):
-    mock_enter = mock.patch("ipywidgets.Output.__enter__")
-    mock_exit = mock.patch("ipywidgets.Output.__exit__")
+def test_that_enter_exit_for_output_get_called(mocker):
+    mock_enter = mocker.patch("ipywidgets.Output.__enter__")
+    mock_exit = mocker.patch("ipywidgets.Output.__exit__")
 
     widget = HintedMultiselect(["a", "b", "c"])
 

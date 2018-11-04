@@ -49,10 +49,10 @@ def test_that_options_are_converted_to_strings(options):
     assert widget.options == [str(option) for option in options]
 
 
-def test_that_updating_options_triggers_compose(mock):
+def test_that_updating_options_triggers_compose(mocker):
     options = ["a", "b", "c"]
     widget = controls.Submitter()
-    mock_compose = mock.patch.object(widget, "_compose")
+    mock_compose = mocker.patch.object(widget, "_compose")
     widget.options = options
     assert mock_compose.called_once()
 
@@ -69,17 +69,17 @@ def test_that_on_submission_fails_when_not_given_callable():
         widget.on_submission("dummy")
 
 
-def test_that_when_submitted_passes_correct_values_from_button(mock):
+def test_that_when_submitted_passes_correct_values_from_button(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.control_elements.buttons["a"])
     assert mock_function.call_args == (({"source": "button", "value": "a"},),)
 
 
-def test_that_when_submitted_passes_correct_values_from_skip(mock):
+def test_that_when_submitted_passes_correct_values_from_skip(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.skip_button)
     assert mock_function.call_args == (
@@ -87,9 +87,9 @@ def test_that_when_submitted_passes_correct_values_from_skip(mock):
     )
 
 
-def test_that_when_submitted_passes_correct_values_from_undo(mock):
+def test_that_when_submitted_passes_correct_values_from_undo(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.undo_button)
     assert mock_function.call_args == (
@@ -97,9 +97,9 @@ def test_that_when_submitted_passes_correct_values_from_undo(mock):
     )
 
 
-def test_that_when_submitted_passes_correct_values_from_text_box(mock):
+def test_that_when_submitted_passes_correct_values_from_text_box(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
 
     widget.other_widget.value = "dummy submission"
@@ -110,9 +110,9 @@ def test_that_when_submitted_passes_correct_values_from_text_box(mock):
     )
 
 
-def test_that_on_key_down_calls_when_submitted_correctly(mock):
+def test_that_on_key_down_calls_when_submitted_correctly(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_handler = mock.patch.object(widget, "_when_submitted")
+    mock_handler = mocker.patch.object(widget, "_when_submitted")
     widget._on_key_down(DUMMY_KEYUP_DICT_ONE)
 
     assert mock_handler.call_args == (
@@ -120,9 +120,9 @@ def test_that_on_key_down_calls_when_submitted_correctly(mock):
     )
 
 
-def test_that_when_submitted_passes_correct_values_from_keystroke(mock):
+def test_that_when_submitted_passes_correct_values_from_keystroke(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
 
     widget.other_widget.value = "dummy submission"
@@ -133,10 +133,10 @@ def test_that_when_submitted_passes_correct_values_from_keystroke(mock):
     )
 
 
-def test_that_sort_options_sorts_options(mock):
+def test_that_sort_options_sorts_options(mocker):
     options = ["d", "a", "b", "c"]
     widget = controls.Submitter(options)
-    mock_compose = mock.patch.object(widget, "_compose")
+    mock_compose = mocker.patch.object(widget, "_compose")
     widget._sort_options()
 
     assert widget.options == ["a", "b", "c", "d"]
@@ -163,9 +163,9 @@ def test_that_removing_added_options_works():
     assert widget.options == options
 
 
-def test_that_submitting_a_new_option_adds_it(mock):
+def test_that_submitting_a_new_option_adds_it(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
 
     widget.other_widget.value = "dummy submission"
@@ -212,10 +212,10 @@ def test_that_disabling_other_option_works():
     )
 
 
-def test_that_add_hint_calls_hint_function(mock):
+def test_that_add_hint_calls_hint_function(mocker):
     options = ["a", "b", "c", "d", "e", "f"]
 
-    mock_hint_function = mock.Mock()
+    mock_hint_function = mocker.Mock()
 
     widget = controls.Submitter(options, hint_function=mock_hint_function)
 
@@ -227,10 +227,10 @@ def test_that_add_hint_calls_hint_function(mock):
     assert mock_hint_function.call_args == (("test hint",),)
 
 
-def test_that_passing_hints_calls_hint_function(mock):
+def test_that_passing_hints_calls_hint_function(mocker):
     options = ["a", "b", "c", "d", "e", "f"]
 
-    mock_hint_function = mock.Mock()
+    mock_hint_function = mocker.Mock()
 
     widget = controls.Submitter(  # noqa
         options, hint_function=mock_hint_function, hints={"a": "test hint"}

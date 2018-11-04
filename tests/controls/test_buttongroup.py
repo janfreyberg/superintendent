@@ -27,9 +27,9 @@ def test_that_options_are_set(options):
     )
 
 
-def test_that_on_click_adds_callables_to_execution_list(mock):
+def test_that_on_click_adds_callables_to_execution_list(mocker):
 
-    mock_callable = mock.Mock()
+    mock_callable = mocker.Mock()
     widget = ButtonGroup(["a", "b"])
 
     widget.on_click(mock_callable)
@@ -60,9 +60,9 @@ def test_that_button_width_is_set_correctly():
         widget.button_width = {"test-set", "lol"}
 
 
-def test_that_enter_exit_for_output_get_called(mock):
-    mock_enter = mock.patch("ipywidgets.Output.__enter__")
-    mock_exit = mock.patch("ipywidgets.Output.__exit__")
+def test_that_enter_exit_for_output_get_called(mocker):
+    mock_enter = mocker.patch("ipywidgets.Output.__enter__")
+    mock_exit = mocker.patch("ipywidgets.Output.__exit__")
 
     button = ButtonWithHint("Hi", "50%")
 
