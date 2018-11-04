@@ -9,7 +9,6 @@ import ipywidgets as widgets
 import ipyevents
 import traitlets
 import numpy as np
-import pandas as pd
 
 from . import controls, display
 
@@ -38,9 +37,6 @@ class Labeller(traitlets.HasTraits):
     keyboard_shortcuts : bool, optional
         If you want to enable ipyevent-mediated keyboard capture to use the
         keyboard rather than the mouse to submit data.
-    use_hints : bool
-        Whether you want to use "hints", small displays of your data underneath
-        or alongside your labelling options.
     hint_function : func, optional
         The function to display these hints. By default, the same function as
         display_func is used.
@@ -57,7 +53,6 @@ class Labeller(traitlets.HasTraits):
         options: Tuple[str] = (),
         display_func: Callable = None,
         keyboard_shortcuts: bool = False,
-        use_hints: bool = False,
         hint_function: Optional[Callable] = None,
         hints: Optional[Dict[str, Any]] = None,
     ):
@@ -79,12 +74,6 @@ class Labeller(traitlets.HasTraits):
             ),
         )
 
-        if use_hints:
-            hint_function = (
-                hint_function if hint_function is not None else display_func
-            )
-        else:
-            hint_function = hints = None
         self.input_widget = controls.Submitter(
             hint_function=hint_function,
             hints=hints,
@@ -130,23 +119,6 @@ class Labeller(traitlets.HasTraits):
         pass
 
     @classmethod
-    def from_dataframe(cls, features, *args, **kwargs):
-        """Create a relabeller widget from a dataframe.
-        """
-        if not isinstance(features, pd.DataFrame):
-            raise ValueError(
-                "When using from_dataframe, input features "
-                "needs to be a dataframe."
-            )
-        # set the default display func for this method
-        kwargs["display_func"] = kwargs.get(
-            "display_func", display.functions["default"]
-        )
-        instance = cls(features, *args, **kwargs)
-
-        return instance
-
-    @classmethod
     def from_images(cls, *args, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
@@ -178,7 +150,7 @@ class Labeller(traitlets.HasTraits):
             else:
                 raise ValueError(
                     "If image_size is None, the image needs to be square, but "
-                    "yours has " + str(args[0].shape[1]) + " pixels."
+                    "yours has " + str(features.shape[1]) + " pixels."
                 )
         elif image_size is None and "features" not in kwargs:
             # just assume images will be square
@@ -208,17 +180,6 @@ class Labeller(traitlets.HasTraits):
         self.queue.undo()
         next(self._annotation_loop)
         self._compose()
-
-    def _onkeydown(self, event):
-
-        if event["type"] == "keyup":
-            pressed_option = self._key_option_mapping.get(
-                event.get("key"), None
-            )
-            if pressed_option is not None:
-                self._apply_annotation(pressed_option)
-        elif event["type"] == "keydown":
-            pass
 
     def _display(self, feature):
         if feature is not None:

@@ -5,3 +5,4 @@ exclude_lines =
     pragma: no cover
     pass
     __repr__
+    __version__

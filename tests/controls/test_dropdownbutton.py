@@ -5,7 +5,7 @@ from hypothesis import given, settings
 from superintendent.controls.dropdownbutton import DropdownButton
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.text(), unique=True))
 def test_that_options_are_set(options):
 
@@ -17,9 +17,9 @@ def test_that_options_are_set(options):
     assert widget.options == options == list(widget.dropdown.options)
 
 
-def test_that_on_click_adds_callables_to_execution_list(mock):
+def test_that_on_click_adds_callables_to_execution_list(mocker):
 
-    mock_callable = mock.Mock()
+    mock_callable = mocker.Mock()
     widget = DropdownButton(["a", "b"])
 
     widget.on_click(mock_callable)
@@ -40,9 +40,9 @@ def test_that_button_description_is_updated():
     assert widget.button.description == "b"
 
 
-def test_that_enter_exit_for_output_get_called(mock):
-    mock_enter = mock.patch("ipywidgets.Output.__enter__")
-    mock_exit = mock.patch("ipywidgets.Output.__exit__")
+def test_that_enter_exit_for_output_get_called(mocker):
+    mock_enter = mocker.patch("ipywidgets.Output.__enter__")
+    mock_exit = mocker.patch("ipywidgets.Output.__exit__")
 
     widget = DropdownButton(["a", "b"])
 

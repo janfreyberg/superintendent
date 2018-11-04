@@ -53,14 +53,14 @@ DUMMY_KEYUP_DICT_ONE = {
 }
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.text()))
 def test_that_options_are_set_correctly_when_instantiated(options):
     widget = controls.MulticlassSubmitter(options=options)
     assert widget.options == options
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.text()))
 def test_that_options_are_set_correctly_when_updated(options):
     widget = controls.MulticlassSubmitter()
@@ -70,17 +70,17 @@ def test_that_options_are_set_correctly_when_updated(options):
     assert widget.options == options
 
 
-@settings(deadline=1000)
+@settings(deadline=None)
 @given(options=st.lists(st.integers()))
 def test_that_options_are_converted_to_strings(options):
     widget = controls.MulticlassSubmitter(options=options)
     assert widget.options == [str(option) for option in options]
 
 
-def test_that_updating_options_triggers_compose(mock):
+def test_that_updating_options_triggers_compose(mocker):
     options = ["a", "b", "c"]
     widget = controls.MulticlassSubmitter()
-    mock_compose = mock.patch.object(widget, "_compose")
+    mock_compose = mocker.patch.object(widget, "_compose")
     widget.options = options
     assert mock_compose.called_once()
 
@@ -97,13 +97,13 @@ def test_that_on_submission_fails_when_not_given_callable():
         widget.on_submission("dummy")
 
 
-def test_that_when_submitted_passes_correct_values_from_button(mock):
+def test_that_when_submitted_passes_correct_values_from_button(mocker):
     options = ["a", "b", "c"]
     widget = controls.MulticlassSubmitter(options)
 
     widget.control_elements._toggle("a")
 
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.submission_button)
     assert mock_function.call_args == (
@@ -111,13 +111,13 @@ def test_that_when_submitted_passes_correct_values_from_button(mock):
     )
 
 
-def test_that_when_submitted_passes_correct_values_from_enter_key(mock):
+def test_that_when_submitted_passes_correct_values_from_enter_key(mocker):
     options = ["a", "b", "c"]
     widget = controls.MulticlassSubmitter(options)
 
     widget.control_elements._toggle("a")
 
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted({"source": "enter"})
     assert mock_function.call_args == (
@@ -125,11 +125,11 @@ def test_that_when_submitted_passes_correct_values_from_enter_key(mock):
     )
 
 
-def test_that_on_keydown_parses_ipyevents_correctly(mock):
+def test_that_on_keydown_parses_ipyevents_correctly(mocker):
     options = ["a", "b", "c"]
     widget = controls.MulticlassSubmitter(options)
 
-    mock_handler = mock.patch.object(widget, "_when_submitted")
+    mock_handler = mocker.patch.object(widget, "_when_submitted")
 
     widget._on_key_down(DUMMY_KEYUP_DICT_ENTER)
     assert mock_handler.call_args == (({"source": "enter"},),)
@@ -138,19 +138,19 @@ def test_that_on_keydown_parses_ipyevents_correctly(mock):
     assert mock_handler.call_args == (({"source": "backspace"},),)
 
 
-def test_that_on_keydown_toggles_options_correctly(mock):
+def test_that_on_keydown_toggles_options_correctly(mocker):
     options = ["a", "b", "c"]
     widget = controls.MulticlassSubmitter(options)
 
-    mock_toggler = mock.patch.object(widget, "_toggle_option")
+    mock_toggler = mocker.patch.object(widget, "_toggle_option")
 
     widget._on_key_down(DUMMY_KEYUP_DICT_ONE)
     assert mock_toggler.call_args == (("a",),)
 
 
-def test_that_when_submitted_passes_correct_values_from_skip(mock):
+def test_that_when_submitted_passes_correct_values_from_skip(mocker):
     widget = controls.MulticlassSubmitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.skip_button)
     assert mock_function.call_args == (
@@ -158,9 +158,9 @@ def test_that_when_submitted_passes_correct_values_from_skip(mock):
     )
 
 
-def test_that_when_submitted_passes_correct_values_from_undo(mock):
+def test_that_when_submitted_passes_correct_values_from_undo(mocker):
     widget = controls.MulticlassSubmitter(["a", "b"])
-    mock_function = mock.Mock()
+    mock_function = mocker.Mock()
     widget.on_submission(mock_function)
     widget._when_submitted(widget.undo_button)
     assert mock_function.call_args == (
@@ -168,7 +168,7 @@ def test_that_when_submitted_passes_correct_values_from_undo(mock):
     )
 
 
-def test_that_when_submitted_passes_correct_values_from_text_box(mock):
+def test_that_when_submitted_passes_correct_values_from_text_box(mocker):
     widget = controls.MulticlassSubmitter(["a", "b"])
 
     widget.other_widget.value = "c"
@@ -177,10 +177,10 @@ def test_that_when_submitted_passes_correct_values_from_text_box(mock):
     assert pytest.helpers.same_elements(widget.options, ["a", "b", "c"])
 
 
-def test_that_sort_options_sorts_options(mock):
+def test_that_sort_options_sorts_options(mocker):
     options = ["d", "a", "b", "c"]
     widget = controls.MulticlassSubmitter(options)
-    mock_compose = mock.patch.object(widget, "_compose")
+    mock_compose = mocker.patch.object(widget, "_compose")
     widget._sort_options()
 
     assert widget.options == ["a", "b", "c", "d"]

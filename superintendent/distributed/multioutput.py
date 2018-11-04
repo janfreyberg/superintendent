@@ -75,7 +75,7 @@ class MultiLabeller(SemiSupervisor):
         self.input_widget = controls.MulticlassSubmitter(
             hint_function=kwargs.get("hint_function"),
             hints=kwargs.get("hints"),
-            options=kwargs.get("options"),
+            options=kwargs.get("options", ()),
         )
         self.input_widget.on_submission(self._apply_annotation)
         if self.event_manager is not None:

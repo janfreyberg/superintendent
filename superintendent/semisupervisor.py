@@ -56,11 +56,6 @@ class SemiSupervisor(base.Labeller):
         "exploration vs exploitation" trade-off - the higher, the more you
         explore the feature space randomly, the lower, the more you exploit
         your current weak points.
-    use_hints : bool
-        Whether or not the widget should display "hints" - examples of past
-        data from a class - underneath each button. These can either be taken
-        from the data as you go through, or provided separately with the
-        `hints` argument.
     hints : dict, optional
         A dictionary mapping class labels to example data points from that
         class. Hints are displayed with the same function as the main data, so
@@ -78,7 +73,6 @@ class SemiSupervisor(base.Labeller):
         eval_method=None,
         reorder=None,
         shuffle_prop=0.1,
-        use_hints=False,
         hints=None,
         keyboard_shortcuts=False,
         *args,
@@ -99,7 +93,6 @@ class SemiSupervisor(base.Labeller):
             display_func=display_func,
             options=options,
             keyboard_shortcuts=keyboard_shortcuts,
-            use_hints=use_hints,
             hints=hints,
             *args,
             **kwargs

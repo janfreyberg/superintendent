@@ -69,6 +69,7 @@ def q_context():
             os.remove("testing.db")
 
 
+@settings(deadline=None)
 @given(input_=one_of(booleans(), floats(), integers(), text()))
 def test_enqueueing_and_popping(input_):
     with q_context() as q:
@@ -81,6 +82,7 @@ def test_enqueueing_and_popping(input_):
             )
 
 
+@settings(deadline=None)
 @given(inputs=lists(one_of(booleans(), floats(), integers(), text())))
 def test_enqueue_many(inputs):
     n = len(inputs)
@@ -94,7 +96,7 @@ def test_enqueue_many(inputs):
             q.pop()
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow,), deadline=None)
 @given(inputs=dataframe())
 def test_enqueue_dataframe(inputs):
     n = len(inputs)
@@ -120,7 +122,7 @@ def test_enqueue_dataframe(inputs):
             assert isinstance(X, pd.DataFrame) or len(X) == 0
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow,), deadline=None)
 @given(
     inputs=np_strategies.arrays(
         guaranteed_dtypes,
@@ -149,6 +151,7 @@ def test_enqueue_array(inputs):
             assert isinstance(X, np.ndarray)
 
 
+@settings(deadline=None)
 @given(
     inputs=lists(one_of(booleans(), floats(), integers(), text())),
     labels=lists(text()),
@@ -174,6 +177,7 @@ def test_enqueue_with_labels(inputs, labels):
 
 
 @pytest.mark.skip
+@settings(deadline=None)
 @given(inputs=lists(one_of(booleans(), floats(), integers(), text())))
 def test_enqueue_at_creation(inputs):
     n = len(inputs)
@@ -187,6 +191,7 @@ def test_enqueue_at_creation(inputs):
             q.pop()
 
 
+@settings(deadline=None)
 @given(label1=text(), label2=text())
 def test_submitting_text(label1, label2):
     with q_context() as q:
@@ -203,6 +208,7 @@ def test_submitting_text(label1, label2):
         assert q.list_labels() == {label1, label2}
 
 
+@settings(deadline=None)
 @given(label1=text(), label2=text())
 def test_submitting_list(label1, label2):
     with q_context() as q:
