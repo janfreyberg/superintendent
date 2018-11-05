@@ -40,7 +40,10 @@ testing_requirements = [
     "hypothesis",
     "pytest-helpers-namespace",
     "pytest-mock",
+    "docargs",
 ]
+
+example_requirements = ["requests", "bs4", "wordcloud"]
 
 setup(
     name="superintendent",
@@ -59,6 +62,8 @@ setup(
     keywords=["widgets", "labelling", "annotation"],
     install_requires=requirements,
     tests_require=testing_requirements,
-    extras_require={"test": testing_requirements},
-    # setup_requires=["pytest-runner"],
+    extras_require={
+        "tests": testing_requirements,
+        "examples": example_requirements,
+    },
 )
