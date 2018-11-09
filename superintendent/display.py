@@ -16,8 +16,6 @@ def default_display_func(feature):
     ----------
     feature : np.ndarray, pd.Series, pd.DataFrame
         The feature(s) you want to display
-    n_samples : int
-        How many you want to display.
     """
     # n_samples = min(n_samples, feature.shape[0])
     IPython.display.display(feature)
@@ -32,12 +30,10 @@ def image_display_func(image, imsize=None):
 
     Parameters
     ----------
-    feature : np.ndarray
+    image : np.ndarray
         The data, in the shape of n_samples, n_pixels
     imsize : tuple, optional
         A tuple of width, height that gets passed to np.reshape
-    n_samples : int
-        number of images to show.
     """
 
     fig, ax = plt.subplots(1, 1)
