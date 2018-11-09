@@ -10,4 +10,4 @@ script:
   - pip install -qq -e '.[tests,examples]'
   - coverage run --source=superintendent -m pytest
   - coveralls
-  - docargs superintendent
+  - docargs superintendent --ignore-ambiguous-signatures
