@@ -67,6 +67,19 @@ class SimpleLabellingQueue(BaseLabellingQueue):
             self.enqueue_many(features, labels)
 
     def enqueue(self, feature, label=None) -> None:
+        """Add a data point to the queue.
+
+        Parameters
+        ----------
+        feature : Any
+            A data point to be added to the queue
+        label : str, list, optional
+            The label, if you already have one (the default is None)
+
+        Returns
+        -------
+        None
+        """
 
         if len(self.data) > 0:
             idx = max(self.data.keys()) + 1
