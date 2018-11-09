@@ -30,6 +30,9 @@ class Labeller(traitlets.HasTraits):
         The input array for your model
     labels : np.array, pd.Series, pd.DataFrame, optional
         The labels for your data.
+    options : Tuple[str]
+        The label options you'd like the user to be shown. These will be
+        presented as either buttons or in a dropdown.
     display_func : str, func, optional
         Either a function that accepts one row of features and returns
         what should be displayed with IPython's `display`, or a string
@@ -173,6 +176,13 @@ class Labeller(traitlets.HasTraits):
 
         This inserts the data into the database, ready to be labelled by the
         workers.
+
+        Parameters
+        ----------
+        features : Any
+            The data you'd like to add to the labelling widget.
+        labels : Any, optional
+            The labels for the data you're adding; if you have labels.
         """
         self.queue.enqueue_many(features, labels=labels)
         # reset the iterator
