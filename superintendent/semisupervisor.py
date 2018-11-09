@@ -60,7 +60,8 @@ class SemiSupervisor(base.Labeller):
         A dictionary mapping class labels to example data points from that
         class. Hints are displayed with the same function as the main data, so
         should be in the same format.
-
+    keyboard_shortcuts : bool
+        Whether keyboard shortcuts should be enabled for this widget.
     """
 
     def __init__(
