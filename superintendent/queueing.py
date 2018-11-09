@@ -101,6 +101,20 @@ class SimpleLabellingQueue(BaseLabellingQueue):
         self.labels[id_] = label
 
     def reorder(self, new_order: Dict[int, int]) -> None:
+        """Reorder the data still in the queue
+
+        Parameters
+        ----------
+        new_order : Dict[int, int]
+            A mapping from ID of an item to the order of the item. For example,
+            a dictionary {1: 2, 2: 1, 3: 3} would place the item with ID 2
+            first, then the item with id 1, then the item with ID 3.
+
+        Returns
+        -------
+        None
+            [description]
+        """
         self.order = deque(
             [
                 idx
