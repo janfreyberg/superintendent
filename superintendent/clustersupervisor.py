@@ -12,7 +12,7 @@ class ClusterSupervisor(base.Labeller):
     ----------
     features : np.ndarray, pd.Series. pd.DataFrame
         Your features.
-    cluster_labels : np.ndarray, pd.Series
+    cluster_indices : np.ndarray, pd.Series
         The cluster label for each data point.
     representativeness : np.ndarray, pd.Series
         How representative of a cluster your data points are. This can be the
@@ -31,6 +31,8 @@ class ClusterSupervisor(base.Labeller):
         ignore=(-1,),
         **kwargs
     ):
+        """Create a labelling widget."""
+
         super().__init__(features, **kwargs)
 
         self.queue = ClusterLabellingQueue(
