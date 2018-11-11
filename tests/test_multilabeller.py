@@ -6,6 +6,7 @@ import ipywidgets
 import ipyevents
 from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
+from sklearn.multioutput import MultiOutputClassifier
 
 import pytest
 
@@ -30,7 +31,7 @@ from hypothesis.strategies import (
     text,
 )
 
-import superintendent.prioritisation
+import superintendent.multioutput.prioritisation
 from superintendent import MultiLabeller
 from superintendent.controls import MulticlassSubmitter
 
@@ -142,3 +143,147 @@ def test_that_the_keyboard_event_manager_is_updated(mocker):
 
     assert on_dom_event.call_count == 3
     assert on_dom_event.call_args == ((widget.input_widget._on_key_down,),)
+
+
+def test_that_reorder_is_set_correctly(mocker):
+    mock_reorder_method = mocker.Mock()
+
+    # test the default
+    widget = MultiLabeller()
+    assert widget.reorder is None
+
+    # test passing a string
+    widget = MultiLabeller(reorder="entropy")
+    assert widget.reorder is superintendent.multioutput.prioritisation.entropy
+
+    # test a function
+    widget = MultiLabeller(reorder=mock_reorder_method)
+    assert widget.reorder is mock_reorder_method
+
+    # test the unhappy case
+    with pytest.raises(NotImplementedError):
+        widget = MultiLabeller(reorder="dummy function name")
+
+    with pytest.raises(ValueError):
+        widget = MultiLabeller(reorder=1)
+
+
+def test_that_classifiers_get_wrapped_as_multioutputclassifiers():
+    test_array = np.vstack(20 * [np.array([1, 2, 3])])
+
+    widget = MultiLabeller(
+        features=test_array, classifier=LogisticRegression()
+    )
+
+    assert isinstance(widget.classifier, MultiOutputClassifier)
+
+
+def test_that_calling_retrain_without_classifier_breaks():
+    test_array = np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]])
+    widget = MultiLabeller(features=test_array)
+    with pytest.raises(ValueError):
+        widget.retrain()
+
+
+def test_that_retrain_with_no_labels_sets_warnings(mocker):
+
+    mock_eval_method = mocker.Mock(
+        return_value={"test_score": np.array([0.8])}
+    )
+
+    test_array = np.random.rand(20, 3)
+
+    widget = MultiLabeller(
+        features=test_array,
+        classifier=LogisticRegression(),
+        display_func=lambda x: None,
+        eval_method=mock_eval_method,
+    )
+
+    widget.retrain()
+    assert (
+        widget.model_performance.value
+        == "Score: Not enough labels to retrain."
+    )
+    assert mock_eval_method.call_count == 0
+
+
+def test_that_retrain_correctly_processes_multioutput():
+
+    test_array = np.random.rand(20, 3)
+
+    label_options = ["hi", "hello"]
+
+    test_labels = [
+        list(
+            np.random.choice(
+                label_options, size=np.random.randint(0, 2), replace=False
+            )
+        )
+        for i in range(20)
+    ]
+
+    widget = MultiLabeller(
+        features=test_array,
+        classifier=LogisticRegression(),
+        display_func=lambda x: None,
+    )
+
+    for i in range(15):
+        widget._apply_annotation({"source": "", "value": test_labels[i]})
+
+    widget.retrain()
+
+
+def test_that_retrain_calls_reorder_correctly(mocker):
+
+    test_array = np.random.rand(50, 3)
+
+    label_options = ["hi", "hello"]
+
+    test_labels = [
+        list(
+            np.random.choice(
+                label_options, size=np.random.randint(0, 2), replace=False
+            )
+        )
+        for i in range(45)
+    ]
+
+    test_probabilities = [np.random.rand(45, 2), np.random.rand(45, 2)]
+
+    mock_eval_method = mocker.Mock(
+        return_value={"test_score": np.array([0.8])}
+    )
+
+    mock_reordering = mocker.Mock(return_value=np.arange(5))
+
+    widget = MultiLabeller(
+        features=test_array,
+        classifier=LogisticRegression(),
+        eval_method=mock_eval_method,
+        reorder=mock_reordering,
+        shuffle_prop=0.2,
+    )
+
+    mocker.patch.object(
+        widget.classifier, "fit", return_value=LogisticRegression()
+    )
+    mocker.patch.object(
+        widget.classifier, "predict_proba", return_value=test_probabilities
+    )
+
+    for labels in test_labels:
+        widget._annotation_loop.send({"source": "", "value": labels})
+
+    widget.retrain()
+
+    assert mock_reordering.call_count == 1
+
+    call_args, call_kwargs = mock_reordering.call_args_list[0]
+
+    assert all(
+        (prob_array_1 == prob_array_2).all()
+        for prob_array_1, prob_array_2 in zip(call_args[0], test_probabilities)
+    )
+    assert call_kwargs["shuffle_prop"] == 0.2

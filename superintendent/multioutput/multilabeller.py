@@ -1,8 +1,15 @@
-from . import controls
-from .semisupervisor import SemiSupervisor
+import warnings
+from collections import OrderedDict
+
+from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.multioutput import MultiOutputClassifier
+
+from .. import controls
+from .. import semisupervisor
+from . import prioritisation
 
 
-class MultiLabeller(SemiSupervisor):
+class MultiLabeller(semisupervisor.SemiSupervisor):
     """
     A widget for assigning more than one label to each data point.
 
@@ -65,12 +72,37 @@ class MultiLabeller(SemiSupervisor):
         to label next based on your model's predictions.
 
         """
+        reorder = kwargs.pop("reorder", None)
+
         super().__init__(*args, **kwargs)
 
         if self.event_manager is not None:
             self.event_manager.on_dom_event(
                 self.input_widget._on_key_down, remove=True
             )
+
+        if (
+            not isinstance(self.classifier, MultiOutputClassifier)
+            and self.classifier is not None
+        ):
+            self.classifier = MultiOutputClassifier(self.classifier, n_jobs=-1)
+
+        if reorder is not None and isinstance(reorder, str):
+            if reorder not in prioritisation.functions:
+                raise NotImplementedError(
+                    "Unknown reordering function '{}'.".format(reorder)
+                )
+            self.reorder = prioritisation.functions[reorder]
+        elif reorder is not None and callable(reorder):
+            self.reorder = reorder
+        elif reorder is None:
+            self.reorder = None
+        else:
+            raise ValueError(
+                "The reorder argument needs to be either a function or the "
+                "name of a function listed in superintendent.prioritisation."
+            )
+
         self.input_widget = controls.MulticlassSubmitter(
             hint_function=kwargs.get("hint_function"),
             hints=kwargs.get("hints"),
@@ -81,3 +113,63 @@ class MultiLabeller(SemiSupervisor):
         if self.event_manager is not None:
             self.event_manager.on_dom_event(self.input_widget._on_key_down)
         self._compose()
+
+    def retrain(self, *args):
+        """Retrain the classifier you passed when creating this widget.
+
+        This calls the fit method of your class with the data that you've
+        labelled. It will also score the classifier and display the
+        performance.
+        """
+        if self.classifier is None:
+            raise ValueError("No classifier to retrain.")
+
+        if len(self.queue.list_labels()) < 1:
+            self.model_performance.value = (
+                "Score: Not enough labels to retrain."
+            )
+            return
+
+        _, labelled_X, labelled_y = self.queue.list_completed()
+
+        preprocessor = MultiLabelBinarizer()
+        labelled_y = preprocessor.fit_transform(labelled_y)
+
+        self._render_processing(message="Retraining... ")
+
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.performance = self.eval_method(
+                    self.classifier, labelled_X, labelled_y
+                )
+                self.model_performance.value = "Score: {:.2f}".format(
+                    self.performance["test_score"].mean()
+                )
+
+        except ValueError:  # pragma: no cover
+            self.performance = "Could not evaluate"
+            self.model_performance.value = "Score: {}".format(self.performance)
+
+        self.classifier.fit(labelled_X, labelled_y)
+
+        if self.reorder is not None:
+            ids, unlabelled_X = self.queue.list_uncompleted()
+
+            probabilities = self.classifier.predict_proba(unlabelled_X)
+
+            # if len(preprocessor.classes_) > 1:
+            #     probabilities = sum(probabilities) / len(probabilities)
+
+            reordering = list(
+                self.reorder(probabilities, shuffle_prop=self.shuffle_prop)
+            )
+
+            new_order = OrderedDict(
+                [(id_, index) for id_, index in zip(ids, list(reordering))]
+            )
+
+            self.queue.reorder(new_order)
+
+        self.queue.undo()
+        self._annotation_loop.send({"source": "__skip__"})
