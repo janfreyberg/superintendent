@@ -6,7 +6,7 @@ from .queueing import ClusterLabellingQueue
 
 class ClusterSupervisor(base.Labeller):
     """
-    A labelling tool for clusters.
+    A widget for labelling clusters.
 
     Parameters
     ----------

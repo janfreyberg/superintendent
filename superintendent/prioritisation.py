@@ -1,8 +1,5 @@
 """
 Functions to prioritise labelling data points (to drive active learning).
-
-This module implements a range of functions that produce ordering of data based
-on class probabilities.
 """
 
 import numpy as np

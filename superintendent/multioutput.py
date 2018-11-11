@@ -4,7 +4,7 @@ from .semisupervisor import SemiSupervisor
 
 class MultiLabeller(SemiSupervisor):
     """
-    A class for labelling your data.
+    A widget for assigning more than one label to each data point.
 
     This class is designed to label data for (semi-)supervised learning
     algorithms. It allows you to label data. In the future, it will also allow

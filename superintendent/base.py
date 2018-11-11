@@ -129,7 +129,7 @@ class Labeller(traitlets.HasTraits):
     def from_images(cls, *args, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
-        Params
+        Parameters
         ----------
         features : np.ndarray
             A numpy array of shape n_images, n_pixels
@@ -176,10 +176,10 @@ class Labeller(traitlets.HasTraits):
 
     def add_features(self, features, labels=None):
         """
-        Add features to the database.
+        Add data to the widget.
 
-        This inserts the data into the database, ready to be labelled by the
-        workers.
+        This adds the data provided to the queue of data to be labelled. You
+        Can optionally provide labels for each data point.
 
         Parameters
         ----------

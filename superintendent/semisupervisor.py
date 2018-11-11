@@ -15,7 +15,7 @@ from .queueing import SimpleLabellingQueue
 
 class SemiSupervisor(base.Labeller):
     """
-    A class for labelling your data.
+    A widget for labelling your data.
 
     This class is designed to label data for (semi-)supervised learning
     algorithms. It allows you to label data. In the future, it will also allow
