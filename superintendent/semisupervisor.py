@@ -15,7 +15,7 @@ from .queueing import SimpleLabellingQueue
 
 class SemiSupervisor(base.Labeller):
     """
-    A class for labelling your data.
+    A widget for labelling your data.
 
     This class is designed to label data for (semi-)supervised learning
     algorithms. It allows you to label data. In the future, it will also allow
@@ -60,7 +60,8 @@ class SemiSupervisor(base.Labeller):
         A dictionary mapping class labels to example data points from that
         class. Hints are displayed with the same function as the main data, so
         should be in the same format.
-
+    keyboard_shortcuts : bool
+        Whether keyboard shortcuts should be enabled for this widget.
     """
 
     def __init__(

@@ -11,7 +11,7 @@ from . import prioritisation
 
 class MultiLabeller(semisupervisor.SemiSupervisor):
     """
-    A class for labelling your data.
+    A widget for assigning more than one label to each data point.
 
     This class is designed to label data for (semi-)supervised learning
     algorithms. It allows you to label data. In the future, it will also allow
@@ -107,6 +107,7 @@ class MultiLabeller(semisupervisor.SemiSupervisor):
             hint_function=kwargs.get("hint_function"),
             hints=kwargs.get("hints"),
             options=kwargs.get("options", ()),
+            max_buttons=kwargs.get("max_buttons", 12),
         )
         self.input_widget.on_submission(self._apply_annotation)
         if self.event_manager is not None:

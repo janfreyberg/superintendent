@@ -8,19 +8,29 @@
 [![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
 [![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
+[![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
 
-Superintendent is designed to provide flexible `ipywidget`-based tools for
-labelling your data and growing your algorithm. At the moment this is restricted
-to simply giving you the ability to label your data, but in the future, the
-package will allow you to synergise with your algorithm and label only the data
-that's worth labelling.
+Superintendet provides two things: it allows you to interactively label your
+data, and it allows you to do this labelling "actively", i.e. with a
+statistical or machine learning model supporting you.
+
+`superintendent` is a set of `ipywidget`-based interactive labelling tools for
+your data. It allows you to flexibly label all kinds of data.
+
+It also allows you to combine your data-labelling task with a statistical or
+machine learning model to enable quick and practical active learning.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   Example use cases <narrative.md>
-   API Reference <api/modules.rst>
+   Installation <installation.md>
+   Labelling data <labelling-data.ipynb>
+   Active learning <active-learning.ipynb>
+   Distributed labelling <distributed-labelling.md>
+   API Reference <api/index.rst>
+   Examples <examples/index.md>
 
 ## Indices and tables
 

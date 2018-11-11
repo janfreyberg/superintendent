@@ -30,6 +30,15 @@ class Labeller(traitlets.HasTraits):
         The input array for your model
     labels : np.array, pd.Series, pd.DataFrame, optional
         The labels for your data.
+    options : Tuple[str]
+        The label options you'd like the user to be shown. These will be
+        presented as either buttons or in a dropdown.
+    other_option : bool
+        Whether or not a text field for supplying a different label should
+        be shown.
+    max_buttons : int
+        How many buttons should be displayed before it switches to a non-
+        button based interface.
     display_func : str, func, optional
         Either a function that accepts one row of features and returns
         what should be displayed with IPython's `display`, or a string
@@ -51,6 +60,8 @@ class Labeller(traitlets.HasTraits):
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
         options: Tuple[str] = (),
+        other_option: bool = True,
+        max_buttons: int = 12,
         display_func: Callable = None,
         keyboard_shortcuts: bool = False,
         hint_function: Optional[Callable] = None,
@@ -78,6 +89,8 @@ class Labeller(traitlets.HasTraits):
             hint_function=hint_function,
             hints=hints,
             options=options,
+            other_option=other_option,
+            max_buttons=max_buttons,
             shortcuts=keyboard_shortcuts,
         )
         self.input_widget.on_submission(self._apply_annotation)
@@ -122,7 +135,7 @@ class Labeller(traitlets.HasTraits):
     def from_images(cls, *args, image_size=None, **kwargs):
         """Generate a labelling widget from an image array.
 
-        Params
+        Parameters
         ----------
         features : np.ndarray
             A numpy array of shape n_images, n_pixels
@@ -169,10 +182,17 @@ class Labeller(traitlets.HasTraits):
 
     def add_features(self, features, labels=None):
         """
-        Add features to the database.
+        Add data to the widget.
 
-        This inserts the data into the database, ready to be labelled by the
-        workers.
+        This adds the data provided to the queue of data to be labelled. You
+        Can optionally provide labels for each data point.
+
+        Parameters
+        ----------
+        features : Any
+            The data you'd like to add to the labelling widget.
+        labels : Any, optional
+            The labels for the data you're adding; if you have labels.
         """
         self.queue.enqueue_many(features, labels=labels)
         # reset the iterator

@@ -40,6 +40,17 @@ testing_requirements = [
     "hypothesis",
     "pytest-helpers-namespace",
     "pytest-mock",
+    "docargs",
+    "nbconvert",
+]
+
+example_requirements = ["requests", "bs4", "html5lib", "wordcloud"]
+
+documentation_requirements = example_requirements + [
+    "m2r",
+    "sphinx_rtd_theme",
+    "jupyter_sphinx",
+    "nbsphinx",
 ]
 
 setup(
@@ -59,6 +70,9 @@ setup(
     keywords=["widgets", "labelling", "annotation"],
     install_requires=requirements,
     tests_require=testing_requirements,
-    extras_require={"test": testing_requirements},
-    # setup_requires=["pytest-runner"],
+    extras_require={
+        "tests": testing_requirements,
+        "examples": example_requirements,
+        "documentation": documentation_requirements,
+    },
 )
