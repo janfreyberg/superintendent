@@ -4,7 +4,11 @@ notifications:
 python:
   - "3.5"
   - "3.6"
-  - "3.7"
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 script:
   - pip install -qq flake8 coverage coveralls
   - flake8 superintendent
