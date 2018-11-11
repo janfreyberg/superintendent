@@ -11,15 +11,26 @@
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
 
-**`superintendent`** provides an `ipywidget`-based interactive labelling tool for your data. It allows you to flexibly label all kinds of data. It also allows you to combine your data-labelling task with a statistical or machine learning model to enable quick and practical active learning.
+Superintendet provides two things: it allows you to interactively label your
+data, and it allows you to do this labelling "actively", i.e. with a
+statistical or machine learning model supporting you.
+
+`superintendent` is a set of `ipywidget`-based interactive labelling tools for
+your data. It allows you to flexibly label all kinds of data.
+
+It also allows you to combine your data-labelling task with a statistical or
+machine learning model to enable quick and practical active learning.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    Installation <installation.md>
-   Example use cases <examples.md>
-   API Reference <api/modules.rst>
+   Labelling data <labelling-data.ipynb>
+   Active learning <active-learning.ipynb>
+   Distributed labelling <distributed-labelling.md>
+   API Reference <api/index.rst>
+   Examples <examples/index.md>
 
 ## Indices and tables
 

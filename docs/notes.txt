@@ -1,0 +1,26 @@
+SUPERINTENDENT README
+
+superintendent is a python library for labelling data using active learning
+
+this means a human and a machine learning algorithm can interact, with the
+human labelling cases the machine learning algorithm is most unsure about you
+label a few cases and then run the algorithm again so it can learn about the
+new cases you have labelled (?)
+
+labelling the cases your algorithm is unsure about is more efficient than labelling data at random 
+you can reach a better model performance faster
+in some cases, model performance plateaus at a higher level
+
+superintendent is designed to be run as a widget in a juypter notebook (or as a standalone webapp using voila)
+superintendent will show you an interactive labelling widget which can be used to add new labels and label your data
+
+superintendent is very flexible and suitable for most types of data e.g.:
+- sentences in sentiment analysis
+- categorising types of emails
+- labelling MNIST images with 0-9
+(Currently it does not have a function to label parts of an image)
+
+It will work with any model that produces confidence/probability estimates on the classes. superintendent accepts an argument of <zklearn>. 
+It could be used with other types of models as long as you pass the model outputs in in the sklearn format.
+How many data points you label before retraining the model and how many times you retrain are up to you.
+Currently superintendent retrains the model from scratch so frequent retraining works best wiht models that are quick to train.
