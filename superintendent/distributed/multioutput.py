@@ -1,8 +1,8 @@
-from .. import controls
+from ..multioutput import MultiLabeller as NonDistributedMultiLabeller
 from .semisupervisor import SemiSupervisor
 
 
-class MultiLabeller(SemiSupervisor):
+class MultiLabeller(NonDistributedMultiLabeller, SemiSupervisor):
     """
     A class for labelling your data.
 
@@ -55,29 +55,4 @@ class MultiLabeller(SemiSupervisor):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        """
-        A class for labelling your data.
-
-        This class is designed to label data for (semi-)supervised learning
-        algorithms. It allows you to label data, periodically re-train your
-        algorithm and assess its performance, and determine which data points
-        to label next based on your model's predictions.
-
-        """
-        super().__init__(*args, **kwargs)
-
-        if self.event_manager is not None:
-            self.event_manager.on_dom_event(
-                self.input_widget._on_key_down, remove=True
-            )
-        del self.input_widget
-        self.input_widget = controls.MulticlassSubmitter(
-            hint_function=kwargs.get("hint_function"),
-            hints=kwargs.get("hints"),
-            options=kwargs.get("options", ()),
-        )
-        self.input_widget.on_submission(self._apply_annotation)
-        if self.event_manager is not None:
-            self.event_manager.on_dom_event(self.input_widget._on_key_down)
-        self._compose()
+    pass
