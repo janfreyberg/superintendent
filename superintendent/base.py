@@ -33,6 +33,12 @@ class Labeller(traitlets.HasTraits):
     options : Tuple[str]
         The label options you'd like the user to be shown. These will be
         presented as either buttons or in a dropdown.
+    other_option : bool
+        Whether or not a text field for supplying a different label should
+        be shown.
+    max_buttons : int
+        How many buttons should be displayed before it switches to a non-
+        button based interface.
     display_func : str, func, optional
         Either a function that accepts one row of features and returns
         what should be displayed with IPython's `display`, or a string
