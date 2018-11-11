@@ -75,6 +75,7 @@ class MultiLabeller(SemiSupervisor):
             hint_function=kwargs.get("hint_function"),
             hints=kwargs.get("hints"),
             options=kwargs.get("options", ()),
+            max_buttons=kwargs.get("max_buttons", 12),
         )
         self.input_widget.on_submission(self._apply_annotation)
         if self.event_manager is not None:

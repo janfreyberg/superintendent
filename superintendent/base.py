@@ -54,6 +54,8 @@ class Labeller(traitlets.HasTraits):
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
         options: Tuple[str] = (),
+        other_option: bool = True,
+        max_buttons: int = 12,
         display_func: Callable = None,
         keyboard_shortcuts: bool = False,
         hint_function: Optional[Callable] = None,
@@ -81,6 +83,8 @@ class Labeller(traitlets.HasTraits):
             hint_function=hint_function,
             hints=hints,
             options=options,
+            other_option=other_option,
+            max_buttons=max_buttons,
             shortcuts=keyboard_shortcuts,
         )
         self.input_widget.on_submission(self._apply_annotation)
