@@ -44,7 +44,7 @@ testing_requirements = [
     "nbconvert",
 ]
 
-example_requirements = ["requests", "bs4", "wordcloud"]
+example_requirements = ["requests", "bs4", "html5lib", "wordcloud"]
 
 documentation_requirements = example_requirements + [
     "m2r",
