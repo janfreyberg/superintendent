@@ -4,7 +4,8 @@ gh-pages:
 	git checkout gh-pages
 	rm -rf *
 	git checkout master docs superintendent README.md
-	make -C docs/ api html
+	# make -C docs/ api html
+	make -C docs/ html
 	mv ./docs/_build/html/* ./
 	rm -rf docs superintendent
 	echo "baseurl: /superintendent" > _config.yml

@@ -29,7 +29,7 @@ machine learning model to enable quick and practical active learning.
    Labelling data <labelling-data.ipynb>
    Active learning <active-learning.ipynb>
    Distributed labelling <distributing-labelling.ipynb>
-   API Reference <api/index.rst>
+   API Reference <api/index.md>
    Examples <examples/index.md>
 
 ## Indices and tables
