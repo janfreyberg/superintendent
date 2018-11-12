@@ -2,6 +2,8 @@
 
 import time
 
+from typing import Optional
+
 import ipywidgets as widgets
 import traitlets
 
@@ -121,17 +123,64 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
             self._compose()
 
     def _run_orchestration(
-        self, interval_seconds: int = 30, shuffle_prop: float = 0.1
+        self,
+        interval_seconds: int = 30,
+        interval_n_labels: Optional[int] = 0,
+        shuffle_prop: float = 0.1,
     ):
-        self.shuffle_prop = shuffle_prop
-        self.retrain()
-        print(self.model_performance.value)
-        time.sleep(interval_seconds)
+
+        if (
+            not hasattr(self, "_last_n_labelled")
+            or interval_n_labels
+            >= self.queue._labelled_count() - self._last_n_labelled
+        ):
+            self._last_n_labelled = self.queue._labelled_count
+            self.shuffle_prop = shuffle_prop
+            self.retrain()
+            print(self.model_performance.value)
+            time.sleep(interval_seconds)
 
     def orchestrate(
-        self, interval_seconds: int = 30, shuffle_prop: float = 0.1
+        self,
+        interval_seconds: Optional[int] = 60,
+        interval_n_labels: Optional[int] = 0,
+        shuffle_prop: float = 0.1,
     ):
-        while True:  # pragma: no cover
+        """Orchestrate the active learning process.
+
+        This method can either re-train the classifier and re-order the data
+        once, or it can run a never-ending loop to re-train the model at
+        regular intervals, both in time and in the size of labelled data.
+
+        Parameters
+        ----------
+        interval_seconds : int, optional
+            How often the retraining should occur, in seconds. If this is None,
+            the retraining only happens once, then returns (this is suitable)
+            if you want the retraining schedule to be maintained e.g. by a cron
+            job). The default is 60 seconds.
+        interval_n_labels : int, optional
+            How many new data points need to have been labelled in between runs
+            in order for the re-training to occur.
+        shuffle_prop : float
+            What proportion of the data should be randomly sampled on each re-
+            training run.
+
+        Returns
+        -------
+        None
+
+        """
+        if interval_seconds is None:
             self._run_orchestration(
-                interval_seconds, shuffle_prop=shuffle_prop
+                interval_seconds=0,
+                interval_n_labels=interval_n_labels,
+                shuffle_prop=shuffle_prop,
             )
+        else:
+            while True:  # pragma: no cover
+                self._run_orchestration(
+                    interval_seconds=interval_seconds,
+                    interval_n_labels=interval_n_labels,
+                    shuffle_prop=shuffle_prop,
+                )
