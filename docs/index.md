@@ -28,7 +28,7 @@ machine learning model to enable quick and practical active learning.
    Installation <installation.md>
    Labelling data <labelling-data.ipynb>
    Active learning <active-learning.ipynb>
-   Distributed labelling <distributed-labelling.md>
+   Distributed labelling <distributing-labelling.ipynb>
    API Reference <api/index.rst>
    Examples <examples/index.md>
 
