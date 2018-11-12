@@ -13,6 +13,14 @@
 
 **`superintendent`** provides an `ipywidget`-based interactive labelling tool for your data. It allows you to flexibly label all kinds of data. It also allows you to combine your data-labelling task with a statistical or machine learning model to enable quick and practical active learning.
 
+## Getting started
+
+Take a look at the documentation: http://www.janfreyberg.com/superintendent/
+
+It has some explanations of how the library works, and it also has many examples.
+
+If you'd like to try the library without installing it, check out the [repository on binder](https://mybinder.org/v2/gh/janfreyberg/superintendent/master?filepath=examples.ipynb).
+
 ## Installation
 
 ```
