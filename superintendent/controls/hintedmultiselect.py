@@ -10,6 +10,14 @@ class HintedMultiselect(widgets.HBox):
     value = traitlets.List(list())
 
     def __init__(self, options, *args, **kwargs):
+        """Created a Multi-select widget
+
+        Parameters
+        ----------
+        options : Sequence[str]
+            The options to show in the multi-select widget.
+        """
+
         super().__init__([])
 
         self.options = [str(option) for option in options]

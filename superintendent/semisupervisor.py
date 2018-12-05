@@ -129,7 +129,7 @@ class SemiSupervisor(base.Labeller):
             self.eval_method = partial(
                 sklearn.model_selection.cross_validate,
                 cv=3,
-                n_jobs=-1,
+                # n_jobs=-1,
                 return_train_score=False,
             )
         elif not callable(eval_method):

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable
+from typing import Callable, Sequence
 
 import ipywidgets as widgets
 import traitlets
@@ -12,7 +12,15 @@ class DropdownButton(widgets.VBox):
     )
     submission_functions = traitlets.List(list(), allow_none=True)
 
-    def __init__(self, options, *args, **kwargs):
+    def __init__(self, options: Sequence[str], *args, **kwargs):
+        """Create a dropdown button.
+
+        Parameters
+        ----------
+        options : Sequence[str]
+            The options to display in the widget.
+        """
+
         super().__init__(*args, **kwargs)
 
         self.options = options
@@ -39,6 +47,13 @@ class DropdownButton(widgets.VBox):
         ]
 
     def on_click(self, func: Callable) -> None:
+        """Add a function to the list of calls made after a click.
+
+        Parameters
+        ----------
+        func : Callable
+            The function to call when the button is clicked.
+        """
         if not callable(func):
             raise ValueError(
                 "You need to provide a callable object, but you provided "

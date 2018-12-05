@@ -36,7 +36,9 @@ class Submitter(widgets.VBox):
     hints : dict
         A dictionary with each element of options as a key, and the data that
         gets passed to hint_function as input.
-
+    update_hints : bool
+        Whether to update hints as you go through - for options that don't
+        have any hints yet.
     """
 
     other_option = traitlets.Bool(True)
@@ -48,11 +50,10 @@ class Submitter(widgets.VBox):
         options: Optional[Union[List[str], Tuple[str]]] = (),
         max_buttons: int = 12,
         other_option: bool = True,
-        update: bool = True,
         hint_function: Optional[Callable] = None,
         hints: Optional[Dict[str, Any]] = None,
         update_hints: bool = True,
-        shortcuts=None,
+        # shortcuts=None,
     ):
         """
         Create a widget that will render submission options.
@@ -64,7 +65,7 @@ class Submitter(widgets.VBox):
         super().__init__([])
         self.submission_functions = []
         self.hint_function = hint_function
-        self.shortcuts = shortcuts
+        # self.shortcuts = shortcuts
 
         self.hints = dict() if hints is None else hints
         if hint_function is not None:
@@ -129,6 +130,15 @@ class Submitter(widgets.VBox):
                 )
 
     def add_hint(self, value, hint):
+        """Add a hint to the widget.
+
+        Parameters
+        ----------
+        value : str
+            The label for which this hint applies.
+        hint : Any
+            The data point to use for the hint.
+        """
         if (
             self.hint_function is not None
             and self.hints is not None
@@ -138,6 +148,14 @@ class Submitter(widgets.VBox):
                 self.hint_function(hint)
 
     def remove_options(self, values):
+        """Remove options from the widget.
+
+        Parameters
+        ----------
+        values : Sequence[str]
+            The options to remove.
+        """
+
         self.options = [
             option
             for option in self.options
