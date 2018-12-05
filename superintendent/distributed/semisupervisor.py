@@ -1,7 +1,6 @@
 """Tools to supervise classification."""
 
 import time
-
 from typing import Optional
 
 import ipywidgets as widgets

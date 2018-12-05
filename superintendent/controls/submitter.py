@@ -5,9 +5,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ipywidgets as widgets
 import traitlets
 
-from .keycapture import DEFAULT_SHORTCUTS
 from .buttongroup import ButtonGroup, ButtonWithHint
 from .dropdownbutton import DropdownButton
+from .keycapture import DEFAULT_SHORTCUTS
 
 
 class Submitter(widgets.VBox):

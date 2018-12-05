@@ -1,11 +1,11 @@
 import configparser
 import itertools
-import warnings
-from functools import reduce
 import operator
+import warnings
 from collections import deque, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from functools import reduce
 from typing import Any, Dict, Sequence, Set, Tuple
 
 import sqlalchemy as sa
@@ -13,8 +13,8 @@ import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads

@@ -1,10 +1,10 @@
 import ipywidgets as widgets
 import traitlets
 
+from .hintedmultiselect import HintedMultiselect
 from .keycapture import DEFAULT_SHORTCUTS
 from .submitter import Submitter
 from .togglebuttongroup import ToggleButtonGroup
-from .hintedmultiselect import HintedMultiselect
 
 
 class MulticlassSubmitter(Submitter):

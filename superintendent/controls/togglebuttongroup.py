@@ -1,5 +1,5 @@
 from numbers import Number
-from typing import Dict, List, Optional, Union, Text
+from typing import Dict, List, Optional, Text, Union
 
 import ipywidgets as widgets
 import traitlets

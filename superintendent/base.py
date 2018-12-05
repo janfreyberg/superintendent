@@ -4,14 +4,13 @@ import abc
 from functools import partial
 from typing import Any, Callable, Dict, Optional, Tuple
 
+import ipyevents
 import IPython.display
 import ipywidgets as widgets
-import ipyevents
-import traitlets
 import numpy as np
+import traitlets
 
 from . import controls, display
-
 
 # class AbstractTraitletMetaclass(traitlets.HasTraits, metaclass=abc.ABCMeta):
 #     pass
