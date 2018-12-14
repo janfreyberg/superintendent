@@ -12,7 +12,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
 ![Python versions](https://img.shields.io/badge/python-3.5%2B-blue.svg)
 
-Superintendet provides two things: it allows you to interactively label your
+Superintendent provides two things: it allows you to interactively label your
 data, and it allows you to do this labelling "actively", i.e. with a
 statistical or machine learning model supporting you.
 
