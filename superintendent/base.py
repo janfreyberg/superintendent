@@ -90,7 +90,6 @@ class Labeller(traitlets.HasTraits):
             options=options,
             other_option=other_option,
             max_buttons=max_buttons,
-            shortcuts=keyboard_shortcuts,
         )
         self.input_widget.on_submission(self._apply_annotation)
         self.options = self.input_widget.options
