@@ -1,8 +1,8 @@
 import abc
 import itertools
-from functools import reduce
 import operator
-from collections import deque, namedtuple, defaultdict
+from collections import defaultdict, deque, namedtuple
+from functools import reduce
 from random import shuffle
 from typing import Any, Dict, Set
 

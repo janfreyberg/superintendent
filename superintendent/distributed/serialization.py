@@ -9,6 +9,11 @@ class DataEncoder(json.JSONEncoder):
     def default(self, obj):
         """
         Serialize numpy or pandas objects to json.
+
+        Parameters
+        ----------
+        obj : Any
+            The object to serialise.
         """
         if isinstance(obj, np.ndarray):
             return {"__type__": "__np.ndarray__", "__content__": obj.tolist()}
@@ -30,6 +35,14 @@ class DataEncoder(json.JSONEncoder):
 
 
 def data_decoder(obj):
+    """Deserialise an object.
+
+    Parameters
+    ----------
+    obj : Any
+        The object to serialise.
+    """
+
     if "__type__" in obj:
         if obj["__type__"] == "__np.ndarray__":
             return np.array(obj["__content__"])
@@ -41,12 +54,26 @@ def data_decoder(obj):
 
 
 def data_dumps(obj: Any) -> Optional[str]:
+    """Serialise an object.
+
+    Parameters
+    ----------
+    obj : Any
+        The object to serialise.
+    """
     if obj is None:
         return None
     return json.dumps(obj, cls=DataEncoder)
 
 
 def data_loads(obj: Optional[str]) -> Any:
+    """Serialise an object.
+
+    Parameters
+    ----------
+    obj : str
+        The string to deserialise.
+    """
     if obj is None:
         return None
     return json.loads(obj, object_hook=data_decoder)

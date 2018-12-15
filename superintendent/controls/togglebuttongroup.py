@@ -1,5 +1,5 @@
 from numbers import Number
-from typing import Dict, List, Optional, Union, Text
+from typing import Dict, List, Optional, Text, Union
 
 import ipywidgets as widgets
 import traitlets
@@ -46,6 +46,13 @@ class ToggleButtonGroup(widgets.HBox):
 
     @traitlets.observe("options")
     def rearrange_buttons(self, change):
+        """Rearrange the button layout.
+
+        Parameters
+        ----------
+        change : Any
+            Any ol' change.
+        """
 
         self.buttons = self.hints = {
             option: ToggleButtonWithHint(option, self.button_width)
@@ -87,6 +94,16 @@ class ToggleButtonWithHint(widgets.VBox):
     description = traitlets.Unicode()
 
     def __init__(self, label: str, button_width: str, *args, **kwargs):
+        """Create a Toggle-button.
+
+        Parameters
+        ----------
+        label : str
+            The button label.
+        button_width : str
+            The width of the button.
+        """
+
         kwargs["layout"] = kwargs.get(
             "layout", widgets.Layout(width=button_width)
         )

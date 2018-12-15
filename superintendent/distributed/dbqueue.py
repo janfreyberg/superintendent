@@ -1,20 +1,20 @@
 import configparser
 import itertools
-import warnings
-from functools import reduce
 import operator
+import warnings
 from collections import deque, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, Sequence, Set
+from functools import reduce
+from typing import Any, Dict, Sequence, Set, Tuple
 
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import cachetools
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads
@@ -25,8 +25,8 @@ def _construct_orm_object(table_name):
 
     class Superintendent(DeclarativeBase):
         __tablename__ = table_name
-        id = sa.Column(sa.Integer, primary_key=True)
-        input = sa.Column(sa.Text)
+        id = sa.Column(sa.Integer, primary_key=True)  # noqa: A003
+        input = sa.Column(sa.Text)  # noqa: A003
         output = sa.Column(sa.Text, nullable=True)
         inserted_at = sa.Column(sa.DateTime)
         priority = sa.Column(sa.Integer)
@@ -74,6 +74,8 @@ class DatabaseQueue(BaseLabellingQueue):
         connection_string : str, optional
             dialect+driver://username:password@host:port/database. Default:
             'sqlite:///:memory:' (NB: Use only for debugging purposes)
+        table_name : str
+            The name of the table in SQL where to store the data.
         storage_type : str, optional
             One of 'integer_index', 'pickle' (default) or 'json'.
         """
@@ -119,8 +121,6 @@ class DatabaseQueue(BaseLabellingQueue):
         ----------
         config_path : str
             Path to database configuration file.
-        storage_type : str, optional
-            One of 'integer_index', 'pickle' (default) or 'json'.
         """
         config = configparser.ConfigParser()
         config.read(config_path)
@@ -147,6 +147,19 @@ class DatabaseQueue(BaseLabellingQueue):
             session.close()
 
     def enqueue(self, feature, label=None, priority=None):
+        """Add a feature to the queue.
+
+        Parameters
+        ----------
+        feature : Any
+            The feature to add.
+        label : Any, optional
+            The label for the feature.
+        priority : int, optional
+            The priority of this label in relation to all other priorities in
+            the queue.
+        """
+
         now = datetime.now()
         with self.session() as session:
             session.add(
@@ -163,6 +176,15 @@ class DatabaseQueue(BaseLabellingQueue):
         """
         Add items to the queue.
 
+        Parameters
+        ----------
+        features : Any
+            The features to add.
+        labels : Any, optional
+            The labels for the features.
+        priorities : Sequence[int], optional
+            The priorities of this label in relation to all other priorities in
+            the queue.
         """
         now = datetime.now()
         if isinstance(features, pd.DataFrame):
@@ -186,18 +208,57 @@ class DatabaseQueue(BaseLabellingQueue):
                 )
 
     def reorder(self, priorities: Dict[int, int]) -> None:
+        """Re-assign priorities for labels.
+
+        Parameters
+        ----------
+        priorities : Dict[int, int]
+            A mapping from id -> priority.
+        """
+
         self.set_priorities(
             [int(id_) for id_ in priorities.keys()],
             [int(priority) for priority in priorities.values()],
         )
 
     def set_priorities(self, ids: Sequence[int], priorities: Sequence[int]):
+        """Set the priorities for data points.
+
+        Parameters
+        ----------
+        ids : Sequence[int]
+            The IDs for which to change the priority.
+        priorities : Sequence[int]
+            The priorities.
+        """
+
         with self.session() as session:
             rows = session.query(self.data).filter(self.data.id.in_(ids)).all()
             for row in rows:
                 row.priority = priorities[ids.index(row.id)]
 
-    def pop(self, timeout: int = 600) -> (int, Any):
+    def pop(self, timeout: int = 600) -> Tuple[int, Any]:
+        """Pop an item from the queue.
+
+        Parameters
+        ----------
+        timeout : int
+            How long ago an item must have been popped in order for it to be
+            popped again.
+
+        Raises
+        ------
+        IndexError
+            If there are no more items to pop.
+
+        Returns
+        -------
+        id : int
+            The ID of the popped data point
+        data : Any
+            The datapoint.
+        """
+
         with self.session() as session:
             row = (
                 session.query(self.data)
@@ -224,6 +285,21 @@ class DatabaseQueue(BaseLabellingQueue):
                 return id_, self.deserialiser(value)
 
     def submit(self, id_: int, label: str) -> None:
+        """Submit a label for a data point.
+
+        Parameters
+        ----------
+        id_ : int
+            The ID for which you are submitting a data point.
+        label : str
+            The label you want to submit.
+
+        Raises
+        ------
+        ValueError
+            If you haven't popped an item yet.
+        """
+
         if id_ not in self._popped:
             raise ValueError("This item was not popped; you cannot label it.")
         with self.session() as session:
@@ -233,6 +309,8 @@ class DatabaseQueue(BaseLabellingQueue):
             row.completed_at = datetime.now()
 
     def undo(self) -> None:
+        """Undo the most recently popped item."""
+
         if len(self._popped) > 0:
             id_ = self._popped.pop()
             self._reset(id_)
@@ -334,7 +412,7 @@ class DatabaseQueue(BaseLabellingQueue):
         with self.session() as session:
             session.query(self.data).delete()
 
-    def drop_table(self, sure=False):
+    def drop_table(self, sure=False):  # noqa: D001
         if sure:
             self.data.metadata.drop_all(bind=self.engine)
         else:

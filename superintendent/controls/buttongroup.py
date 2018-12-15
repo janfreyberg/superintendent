@@ -1,5 +1,5 @@
 from numbers import Number
-from typing import Callable, Dict, List, Optional, Union, Text
+from typing import Callable, Dict, List, Optional, Text, Union
 
 import ipywidgets as widgets
 import traitlets
@@ -46,6 +46,14 @@ class ButtonGroup(widgets.HBox):
 
     @traitlets.observe("options")
     def rearrange_buttons(self, change):
+        """Rearrange the buttons.
+
+        Parameters
+        ----------
+        change : Any
+            Any ol' change.
+
+        """
 
         self.buttons = self.hints = {
             option: ButtonWithHint(option, self.button_width)
@@ -58,6 +66,13 @@ class ButtonGroup(widgets.HBox):
         self.children = [self.buttons[option] for option in self.options]
 
     def on_click(self, func: Callable) -> None:
+        """Add a function to the list of calls made after a click.
+
+        Parameters
+        ----------
+        func : Callable
+            The function to call when the button is clicked.
+        """
         if not callable(func):
             raise ValueError(
                 "You need to provide a callable object, but you provided "
@@ -89,6 +104,17 @@ class ButtonWithHint(widgets.VBox):
     description = traitlets.Unicode()
 
     def __init__(self, label: str, button_width: str, *args, **kwargs):
+        """Create a button.
+
+        Parameters
+        ----------
+        label : str
+            The label for this button.
+        button_width : str
+            How wide you'd like this button to be.
+
+        """
+
         kwargs["layout"] = kwargs.get(
             "layout", widgets.Layout(width=button_width)
         )
@@ -105,6 +131,13 @@ class ButtonWithHint(widgets.VBox):
         widgets.link((self, "description"), (self.button, "description"))
 
     def on_click(self, func: Callable):
+        """Add a function to the list of calls made after a click.
+
+        Parameters
+        ----------
+        func : Callable
+            The function to call when the button is clicked.
+        """
         self.button.on_click(func)
 
     def __enter__(self):

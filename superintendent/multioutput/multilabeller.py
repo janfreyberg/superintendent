@@ -1,12 +1,11 @@
 import warnings
 from collections import OrderedDict
 
-from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.multioutput import MultiOutputClassifier
+from sklearn.preprocessing import MultiLabelBinarizer
 
-from .. import controls
-from .. import semisupervisor
 from . import prioritisation
+from .. import controls, semisupervisor
 
 
 class MultiLabeller(semisupervisor.SemiSupervisor):

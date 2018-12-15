@@ -40,7 +40,6 @@ testing_requirements = [
     "hypothesis",
     "pytest-helpers-namespace",
     "pytest-mock",
-    "docargs",
     "nbconvert",
 ]
 

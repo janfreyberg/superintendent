@@ -4,14 +4,13 @@ import abc
 from functools import partial
 from typing import Any, Callable, Dict, Optional, Tuple
 
+import ipyevents
 import IPython.display
 import ipywidgets as widgets
-import ipyevents
-import traitlets
 import numpy as np
+import traitlets
 
 from . import controls, display
-
 
 # class AbstractTraitletMetaclass(traitlets.HasTraits, metaclass=abc.ABCMeta):
 #     pass
@@ -91,7 +90,6 @@ class Labeller(traitlets.HasTraits):
             options=options,
             other_option=other_option,
             max_buttons=max_buttons,
-            shortcuts=keyboard_shortcuts,
         )
         self.input_widget.on_submission(self._apply_annotation)
         self.options = self.input_widget.options

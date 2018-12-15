@@ -10,7 +10,7 @@ matrix:
       dist: xenial
       sudo: true
 script:
-  - pip install -qq flake8 coverage coveralls
+  - pip install -qq flake8 docargs coverage coveralls
   - flake8 superintendent
   - pip install -qq -e '.[tests,examples]'
   # run the test suite
@@ -18,5 +18,3 @@ script:
   - coveralls
   # test that all documentation notebooks can still be run:
   - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
-  # test that all arguments have been documented
-  - docargs superintendent --ignore-ambiguous-signatures
