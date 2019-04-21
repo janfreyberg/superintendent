@@ -1,19 +1,30 @@
 dist: xenial
 language: python
-notifications:
-  email: false
+stages:
+  - "Static code analysis"
+  - test
 python:
   - "3.5"
   - "3.6"
   - "3.7"
-script:
-  - pip install -qq --upgrade pip
-  - pip install -qq flake8 docargs coverage coveralls black
-  - flake8 src/
-  - black --check src/
+notifications:
+  email: false
+install:
+  - pip install -qq --upgrade pip docargs coverage coveralls
   - pip install -qq '.[tests,examples]'
-  # run the test suite
+script:
   - coverage run --source=superintendent -m pytest
-  - coveralls
-  # test that all documentation notebooks can still be run:
   - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
+  - coveralls
+jobs:
+  include:
+    - stage: "Static code analysis"
+      script:
+        - pip install -qq black
+        - black --check src/
+      python: "3.7"
+    - stage: "Static code analysis"
+      script:
+        - pip install -qq flake8 docargs
+        - flake8 src/
+      python: "3.7"
