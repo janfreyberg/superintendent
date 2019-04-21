@@ -19,12 +19,16 @@ script:
 jobs:
   include:
     - stage: "Static code analysis"
+      name: "black formatting test"
       script:
         - pip install -qq black
         - black --check src/
       python: "3.7"
+      install: skip
     - stage: "Static code analysis"
+      name: "flake8 check"
       script:
         - pip install -qq flake8 docargs
         - flake8 src/
       python: "3.7"
+      install: skip
