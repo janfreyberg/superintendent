@@ -32,3 +32,15 @@ jobs:
         - flake8 src/
       python: "3.7"
       install: skip
+
+before_deploy:
+  - pip install --upgrade pip
+  - pip install poetry
+  - poetry build
+deploy:
+  provider: script
+  script: poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
