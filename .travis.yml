@@ -8,9 +8,10 @@ python:
   - "3.7"
 script:
   - pip install -qq --upgrade pip
-  - pip install -qq flake8 docargs coverage coveralls
+  - pip install -qq flake8 docargs coverage coveralls black
   - flake8 src/
-  - pip install '.[tests,examples]'
+  - black --check src/
+  - pip install -qq '.[tests,examples]'
   # run the test suite
   - coverage run --source=superintendent -m pytest
   - coveralls
