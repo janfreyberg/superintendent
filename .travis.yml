@@ -1,18 +1,15 @@
+dist: xenial
 language: python
 notifications:
   email: false
 python:
   - "3.5"
   - "3.6"
-matrix:
-  include:
-    - python: 3.7
-      dist: xenial
-      sudo: true
+  - "3.7"
 script:
   - pip install -qq flake8 docargs coverage coveralls
   - flake8 superintendent
-  - pip install -qq -e '.[tests,examples]'
+  - pip install -qq '.[tests,examples]'
   # run the test suite
   - coverage run --source=superintendent -m pytest
   - coveralls
