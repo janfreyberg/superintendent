@@ -1,2 +1,54 @@
-[tool.black]
-line-length = 79
+[tool.poetry]
+name = "superintendent"
+version = "0.1.1"
+description = "Interactive machine learning supervision."
+authors = ["Jan Freyberg <jan.freyberg@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://www.janfreyberg.com/superintendent"
+repository = "https://github.com/janfreyberg/superintendent"
+keywords = ["widgets", "labelling", "annotation"]
+classifiers = [
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Framework :: Jupyter",
+]
+
+[tool.poetry.dependencies]
+python = "^3.5"
+ipywidgets = "^7.4"
+ipyevents = "^0.4.1"
+numpy = "^1.16"
+pandas = "^0.24.2"
+matplotlib = "^3.0"
+scikit-learn = "^0.20.3"
+scipy = "^1.2"
+schedule = "^0.6.0"
+sqlalchemy = "^1.3"
+cachetools = "^3.1"
+psycopg2-binary = "^2.8"
+flask = "^1.0"
+pytest = {version = "^4.4", extras = ["tests"]}
+hypothesis = {version = "^4.17", extras = ["tests"]}
+pytest-helpers-namespace = {version = "^2019.1", extras = ["tests"]}
+pytest-mock = {version = "^1.10", extras = ["tests"]}
+nbconvert = {version = "^5.4", extras = ["tests"]}
+requests = {version = "^2.21", extras = ["examples"]}
+html5lib = {version = "^1.0", extras = ["examples"]}
+bs4 = {version = "^0.0.1", extras = ["examples"]}
+wordcloud = {version = "^1.5", extras = ["examples"]}
+m2r = {version = "^0.2.1", extras = ["documentation"]}
+sphinx_rtd_theme = {version = "^0.4.3", extras = ["documentation"]}
+jupyter_sphinx = {version = "^0.1.4", extras = ["documentation"]}
+sphinx = {version = "^2.0", extras = ["documentation"]}
+nbsphinx = {version = "^0.4.2", extras = ["documentation"]}
+
+[tool.poetry.dev-dependencies]
+jupyterlab = "^0.35.4"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
