@@ -1,8 +1,10 @@
 dist: xenial
 language: python
 stages:
-  - "Static code analysis"
-  - test
+  - name: "Static code analysis"
+  - name: test
+  - name: deploy
+    if: branch = master AND tag IS present
 python:
   - "3.5"
   - "3.6"
@@ -32,15 +34,10 @@ jobs:
         - flake8 src/
       python: "3.7"
       install: skip
-
-before_deploy:
-  - pip install --upgrade pip
-  - pip install poetry
-  - poetry build
-deploy:
-  provider: script
-  script: poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
-  skip_cleanup: true
-  on:
-    tags: true
-    all_branches: true
+    - stage: deploy
+      name: "Deploy to pypi"
+      script:
+        - pip install poetry
+        - poetry build
+        - poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
+      python: "3.7"
