@@ -10,7 +10,7 @@ script:
   - pip install -qq --upgrade pip
   - pip install -qq flake8 docargs coverage coveralls
   - flake8 src/
-  - pip install -qq '.[tests,examples]'
+  - pip install '.[tests,examples]'
   # run the test suite
   - coverage run --source=superintendent -m pytest
   - coveralls
