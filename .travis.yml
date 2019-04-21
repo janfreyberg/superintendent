@@ -1,20 +1,46 @@
+dist: xenial
 language: python
-notifications:
-  email: false
+stages:
+  - "Static code analysis"
+  - test
 python:
   - "3.5"
   - "3.6"
-matrix:
-  include:
-    - python: 3.7
-      dist: xenial
-      sudo: true
+  - "3.7"
+notifications:
+  email: false
+install:
+  - pip install -qq --upgrade pip docargs coverage coveralls
+  - pip install -qq '.[tests,examples]'
 script:
-  - pip install -qq flake8 docargs coverage coveralls
-  - flake8 superintendent
-  - pip install -qq -e '.[tests,examples]'
-  # run the test suite
   - coverage run --source=superintendent -m pytest
-  - coveralls
-  # test that all documentation notebooks can still be run:
   - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
+  - coveralls
+jobs:
+  include:
+    - stage: "Static code analysis"
+      name: "black formatting test"
+      script:
+        - pip install -qq black
+        - black --check src/
+      python: "3.7"
+      install: skip
+    - stage: "Static code analysis"
+      name: "flake8 check"
+      script:
+        - pip install -qq flake8 docargs
+        - flake8 src/
+      python: "3.7"
+      install: skip
+
+before_deploy:
+  - pip install --upgrade pip
+  - pip install poetry
+  - poetry build
+deploy:
+  provider: script
+  script: poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
