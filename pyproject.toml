@@ -3,7 +3,7 @@ line-length = 79
 
 [tool.poetry]
 name = "superintendent"
-version = "0.4.1"
+version = "0.4.2"
 description = "Interactive machine learning supervision."
 authors = ["Jan Freyberg <jan.freyberg@gmail.com>"]
 readme = "README.md"
