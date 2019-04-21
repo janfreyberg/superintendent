@@ -1,6 +1,8 @@
 pytest_plugins = ["helpers_namespace"]  # noqa
 
 # fix matplotlib import errors on Mac OS:
+import sys
+
 if sys.platform == "darwin":  # noqa
     import matplotlib  # noqa
 

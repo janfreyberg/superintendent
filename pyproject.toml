@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "superintendent"
-version = "0.1.1"
+version = "0.4.1"
 description = "Interactive machine learning supervision."
 authors = ["Jan Freyberg <jan.freyberg@gmail.com>"]
 readme = "README.md"
@@ -45,6 +45,7 @@ sphinx_rtd_theme = {version = "^0.4.3", extras = ["documentation"]}
 jupyter_sphinx = {version = "^0.1.4", extras = ["documentation"]}
 sphinx = {version = "^2.0", extras = ["documentation"]}
 nbsphinx = {version = "^0.4.2", extras = ["documentation"]}
+jupyter = {version = "^1.0",extras = ["tests"]}
 
 [tool.poetry.dev-dependencies]
 jupyterlab = "^0.35.4"
