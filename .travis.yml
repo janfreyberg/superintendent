@@ -11,11 +11,15 @@ python:
 notifications:
   email: false
 install:
-  - pip install -qq --upgrade pip docargs coverage coveralls
-  - pip install -qq '.[tests,examples]'
+  - pip install --upgrade pip
+  - pip install poetry
+  - poetry install
 script:
-  - coverage run --source=src/ -m pytest
-  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
+  # run tests, and get coverage:
+  - poetry run python -m pytest --cov=src/
+  # test that the notebooks all run smoothly
+  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs poetry jupyter nbconvert --to notebook --execute
+  # submit coverage report to coveralls
   - coveralls
 jobs:
   include:
@@ -37,7 +41,6 @@ jobs:
       name: "Deploy to pypi"
       if: tag IS present
       script:
-        - pip install poetry
         - poetry build
         - poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
       python: "3.7"
