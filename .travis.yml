@@ -35,7 +35,7 @@ jobs:
       install: skip
     - stage: deploy
       name: "Deploy to pypi"
-      if: (branch = master) AND (tag IS present)
+      if: tag IS present
       script:
         - pip install poetry
         - poetry build
