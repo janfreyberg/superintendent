@@ -16,3 +16,4 @@ tests/database.ini
 api/config.ini
 scratchpad.ipynb
 .mypy_cache/
+.coverage*
