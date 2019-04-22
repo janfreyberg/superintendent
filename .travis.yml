@@ -18,9 +18,9 @@ script:
   # run tests, and get coverage:
   - poetry run python -m pytest --cov=src/
   # test that the notebooks all run smoothly
-  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs poetry jupyter nbconvert --to notebook --execute
+  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs poetry run jupyter nbconvert --to notebook --execute
   # submit coverage report to coveralls
-  - coveralls
+  - poetry run coveralls
 jobs:
   include:
     - stage: "Static code analysis"
