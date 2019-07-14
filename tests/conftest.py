@@ -4,9 +4,9 @@ pytest_plugins = ["helpers_namespace"]  # noqa
 import sys
 
 if sys.platform == "darwin":  # noqa
-    import matplotlib  # noqa
+    import matplotlib  # isort:skip
 
-    matplotlib.use("PS")  # noqa
+    matplotlib.use("PS")  # isort:skip
 
 import warnings
 import collections
@@ -48,10 +48,17 @@ def exact_element_match(a, b):
     elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
         a = a.reset_index(drop=True)
         b = b.reset_index(drop=True)
-        return ((a == b) | (a.isnull() & b.isnull())).all().all() or a.empty or b.empty
+        return (
+            ((a == b) | (a.isnull() & b.isnull())).all().all()
+            or a.empty
+            or b.empty
+        )
     else:
         return all(
-            [a_ == b_ or (np.isnan(a_) and np.isnan(b_)) for a_, b_ in zip(a, b)]
+            [
+                a_ == b_ or (np.isnan(a_) and np.isnan(b_))
+                for a_, b_ in zip(a, b)
+            ]
         )
 
 
@@ -60,7 +67,9 @@ def recursively_list_widget_children(parent):
     childless = [
         widget for widget in parent.children if not hasattr(widget, "children")
     ]
-    parents = [widget for widget in parent.children if hasattr(widget, "children")]
+    parents = [
+        widget for widget in parent.children if hasattr(widget, "children")
+    ]
     for widget in parents:
         childless += recursively_list_widget_children(widget)
 

@@ -1,13 +1,11 @@
 from collections import namedtuple
+from time import time
 
+import ipywidgets
 import numpy as np
 import pandas as pd
-import ipywidgets
-from sklearn.model_selection import cross_validate
-from sklearn.linear_model import LogisticRegression
-
 import pytest
-
+import superintendent.prioritisation
 from hypothesis import given, settings
 from hypothesis.extra.numpy import (
     array_shapes,
@@ -28,8 +26,8 @@ from hypothesis.strategies import (
     recursive,
     text,
 )
-
-import superintendent.prioritisation
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_validate
 from superintendent.distributed import SemiSupervisor
 
 primitive_strategy = text() | integers() | floats(allow_nan=False) | booleans()
@@ -401,4 +399,50 @@ def test_that_run_orchestration_calls_retrain_and_prints(mocker):
 
     mock_retrain.assert_called_once_with()
     mock_print.assert_called_once_with("test model performance")
-    mock_sleep.assert_called_once_with(30)
+    mock_sleep.assert_called_once_with(60)
+
+
+def test_that_run_orchestration_with_none_runs_orchestrator_once(mocker):
+
+    widget = SemiSupervisor()
+    mocker.patch.object(widget, "_run_orchestration", return_value=1)
+
+    dummy_html_widget = namedtuple("dummy_html_widget", ["value"])
+    widget.model_performance = dummy_html_widget(
+        value="test model performance"
+    )
+    # t0 = time()
+    widget.orchestrate(interval_seconds=0.1, max_runs=2)
+    assert widget._run_orchestration.call_count == 2
+
+
+def test_that_run_orchestration_doesnt_rerun_if_not_enough_new_labels(mocker):
+    widget = SemiSupervisor()
+    # patch the nr of provided labels:
+    mocker.patch.object(widget, "queue")
+    widget.queue.configure_mock(**{"_labelled_count.side_effect": [0, 5, 10]})
+    # patch methods not to be used:
+    mocker.patch.object(widget, "retrain")
+    widget.model_performance = mocker.MagicMock(
+        **{"model_performance.value": "nice"}
+    )
+    # print([widget.queue._labelled_count() for i in range(3)])
+    # raise ValueError
+    widget.orchestrate(max_runs=2, interval_seconds=0, interval_n_labels=10)
+
+    assert widget.queue._labelled_count.call_count == 3
+    assert widget.retrain.call_count == 2
+
+
+def test_that_orchestration_sleeps_enough(mocker):
+    widget = SemiSupervisor()
+    # patch methods not to be used:
+    mocker.patch.object(widget, "retrain")
+    widget.model_performance = mocker.MagicMock(
+        **{"model_performance.value": "nice"}
+    )
+    t0 = time()
+    widget.orchestrate(max_runs=2, interval_seconds=0.01, interval_n_labels=0)
+    t1 = time()
+
+    assert t1 - t0 > 0.02

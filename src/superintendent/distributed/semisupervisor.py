@@ -1,7 +1,8 @@
 """Tools to supervise classification."""
 
 import time
-from typing import Optional
+from math import inf
+from typing import Optional, Union
 
 import ipywidgets as widgets
 import traitlets
@@ -129,27 +130,33 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
 
     def _run_orchestration(
         self,
-        interval_seconds: int = 30,
-        interval_n_labels: Optional[int] = 0,
+        interval_seconds: float = 60,
+        interval_n_labels: int = 0,
         shuffle_prop: float = 0.1,
-    ):
+    ) -> bool:
 
-        if (
-            not hasattr(self, "_last_n_labelled")
-            or interval_n_labels
-            >= self.queue._labelled_count() - self._last_n_labelled
-        ):
-            self._last_n_labelled = self.queue._labelled_count
+        first_orchestration = not hasattr(self, "_last_n_labelled")
+
+        if first_orchestration:
+            self._last_n_labelled = 0
+
+        n_new_labels = self.queue._labelled_count() - self._last_n_labelled
+        if first_orchestration or n_new_labels >= interval_n_labels:
+            self._last_n_labelled += n_new_labels
             self.shuffle_prop = shuffle_prop
             self.retrain()
             print(self.model_performance.value)
             time.sleep(interval_seconds)
+            return True
+        else:
+            return False
 
     def orchestrate(
         self,
-        interval_seconds: Optional[int] = 60,
-        interval_n_labels: Optional[int] = 0,
+        interval_seconds: Optional[float] = None,
+        interval_n_labels: int = 0,
         shuffle_prop: float = 0.1,
+        max_runs: Union[int, float] = inf,
     ):
         """Orchestrate the active learning process.
 
@@ -174,7 +181,6 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
         Returns
         -------
         None
-
         """
         if interval_seconds is None:
             self._run_orchestration(
@@ -183,8 +189,9 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
                 shuffle_prop=shuffle_prop,
             )
         else:
-            while True:  # pragma: no cover
-                self._run_orchestration(
+            runs = 0
+            while runs < max_runs:
+                runs += self._run_orchestration(
                     interval_seconds=interval_seconds,
                     interval_n_labels=interval_n_labels,
                     shuffle_prop=shuffle_prop,
