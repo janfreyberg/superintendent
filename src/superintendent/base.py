@@ -58,7 +58,7 @@ class Labeller(traitlets.HasTraits):
         self,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
-        options: Tuple[str] = (),
+        options: Tuple[str, ...] = (),
         other_option: bool = True,
         max_buttons: int = 12,
         display_func: Callable = None,
