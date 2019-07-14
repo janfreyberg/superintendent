@@ -1,0 +1,9 @@
+.venv/*
+.hypothesis/*
+.pytest_cache/*
+.vscode/*
+htmlcov/*
+pip-wheel-metadata/*
+dist/*
+*Dockerfile
+postgres-data

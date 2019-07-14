@@ -17,3 +17,6 @@ api/config.ini
 scratchpad.ipynb
 .mypy_cache/
 .coverage*
+postgres-data/
+
+.DS_Store
