@@ -177,6 +177,8 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
         shuffle_prop : float
             What proportion of the data should be randomly sampled on each re-
             training run.
+        max_runs : int
+            How many orchestration runs to do at most.
 
         Returns
         -------
