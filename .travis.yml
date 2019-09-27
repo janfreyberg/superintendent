@@ -6,6 +6,9 @@ stages:
   - deploy
 notifications:
   email: false
+python:
+  - "3.6"
+  - "3.7"
 jobs:
   include:
     - stage: "Static code analysis"
@@ -38,9 +41,6 @@ jobs:
         - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
         # submit coverage report to coveralls
         - python -m coveralls
-      python:
-        - "3.6"
-        - "3.7"
       install:
         - pip install -qq --upgrade pip
         - pip install -q '.[test,examples]'
