@@ -11,7 +11,7 @@ notifications:
   email: false
 install:
   - pip install --upgrade pip
-  - pip install '.[test]'
+  - pip install '.[test,examples]'
 script:
   # run tests, and get coverage:
   - python -m pytest --cov=src/
