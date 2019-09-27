@@ -24,7 +24,7 @@ keywords = "widgets labelling annotation"
 requires-python = ">=3.5"
 requires = [
     "ipywidgets>=7.4",
-    "numpy>=1.16",
+    "numpy>=1.15",
     "pandas>=0.24.0",
     "matplotlib>=3.0",
     "scikit-learn>=0.20.3",
@@ -47,7 +47,7 @@ dev = [
 ]
 test = [
     "isort>=4.3.21",
-    "pytest>=4.4",
+    "pytest>=4.1",
     "pytest-cov>=2.6",
     "hypothesis>=4.17",
     "pytest-helpers-namespace>=2019.1",
