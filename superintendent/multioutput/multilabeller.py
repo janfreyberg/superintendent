@@ -4,8 +4,8 @@ from collections import OrderedDict
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from . import prioritisation
 from .. import controls, semisupervisor
+from . import prioritisation
 
 
 class MultiLabeller(semisupervisor.SemiSupervisor):
