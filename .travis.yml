@@ -35,10 +35,10 @@ jobs:
         - flake8 src/
       python: "3.7"
       install: skip
-    # - stage: deploy
-    #   name: "Deploy to pypi"
-    #   if: tag IS present
-    #   script:
-    #     - poetry build
-    #     - poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
-    #   python: "3.7"
+    - stage: deploy
+      name: "Deploy to pypi"
+      if: tag IS present
+      script:
+        - poetry build
+        - poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
+      python: "3.7"
