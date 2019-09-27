@@ -27,7 +27,7 @@ jobs:
       name: "black formatting test"
       script:
         - pip install -qq black
-        - black --check src/
+        - black --check superintendent/
       python: "3.7"
       install: skip
     - stage: "Static code analysis"
