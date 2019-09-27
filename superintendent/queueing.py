@@ -4,7 +4,7 @@ import operator
 from collections import defaultdict, deque, namedtuple
 from functools import reduce
 from random import shuffle
-from typing import Any, Dict, Set
+from typing import Any, DefaultDict, Deque, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,23 +12,23 @@ import pandas as pd
 
 class BaseLabellingQueue(abc.ABC):  # pragma: no cover
     @abc.abstractmethod
-    def enqueue(self):
+    def enqueue(self, feature: Any, label: Optional[Any] = None) -> None:
         pass
 
     @abc.abstractmethod
-    def pop(self):
+    def pop(self) -> Tuple[int, Any]:
         pass
 
     @abc.abstractmethod
-    def submit(self):
+    def submit(self, id_: int, label: str) -> None:
         pass
 
     @abc.abstractmethod
-    def reorder(self):
+    def reorder(self, new_order: Dict[int, int]) -> None:
         pass
 
     @abc.abstractmethod
-    def undo(self):
+    def undo(self) -> None:
         pass
 
     @abc.abstractmethod
@@ -70,16 +70,16 @@ class SimpleLabellingQueue(BaseLabellingQueue):
             (the default is None).
         """
 
-        self.data = dict()
-        self.labels = dict()
+        self.data: Dict[int, Any] = dict()
+        self.labels: Dict[int, Any] = dict()
 
-        self.order = deque([])
-        self._popped = deque([])
+        self.order: Deque[int] = deque([])
+        self._popped: Deque[int] = deque([])
 
         if features is not None:
             self.enqueue_many(features, labels)
 
-    def enqueue(self, feature, label=None) -> None:
+    def enqueue(self, feature: Any, label: Optional[Any] = None) -> None:
         """Add a data point to the queue.
 
         Parameters
@@ -131,7 +131,7 @@ class SimpleLabellingQueue(BaseLabellingQueue):
         for feature, label in zip(features, labels):
             self.enqueue(feature, label)
 
-    def pop(self) -> (int, Any):
+    def pop(self) -> Tuple[int, Any]:
         """Pop an item off the queue.
 
         Returns
@@ -201,8 +201,9 @@ class SimpleLabellingQueue(BaseLabellingQueue):
         -------
         None
         """
-
-        shuffle(self.order)
+        _order = list(self.order)
+        shuffle(_order)
+        self.order = deque(_order)
 
     def undo(self) -> None:
         """Un-pop the latest item.
@@ -340,12 +341,14 @@ class ClusterLabellingQueue(BaseLabellingQueue):
             membership, or a similar metric.
         """
 
-        self.data = defaultdict(list)
-        self.representativeness = defaultdict(list)
-        self.cluster_labels = dict()
+        self.data: DefaultDict[Any, List[Any]] = defaultdict(list)
+        self.representativeness: DefaultDict[Any, List[Any]] = defaultdict(
+            list
+        )
+        self.cluster_labels: Dict[Any, str] = dict()
 
-        self.order = deque([])
-        self._popped = deque([])
+        self.order: Deque[int] = deque([])
+        self._popped: Deque[int] = deque([])
 
         if features is not None:
             self.enqueue_many(features, cluster_indices, representativeness)
@@ -452,9 +455,11 @@ class ClusterLabellingQueue(BaseLabellingQueue):
 
     def shuffle(self) -> None:
         """Shuffle the queue."""
-        shuffle(self.order)
+        _order = list(self.order)
+        shuffle(_order)
+        self.order = deque(_order)
 
-    def undo(self):
+    def undo(self) -> None:
         """Unpop the most recently popped item."""
         if len(self._popped) > 0:
             cluster_index = self._popped.pop()

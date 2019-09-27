@@ -77,10 +77,10 @@ class ToggleButtonGroup(widgets.HBox):
         ]
 
     @traitlets.validate("button_width")
-    def _valid_value(self, proposal: Dict):
-        if isinstance(proposal["value"], Number) and proposal["value"] <= 1:
+    def _valid_value(self, proposal: Dict[str, Union[float, int, Text]]):
+        if isinstance(proposal["value"], float) and proposal["value"] <= 1:
             return "{}%".format(int(100 * proposal["value"]))
-        elif isinstance(proposal["value"], Number):
+        elif isinstance(proposal["value"], (int, float)):
             return "{}px".format(int(proposal["value"]))
         elif isinstance(proposal["value"], str):
             return proposal["value"]

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Sequence
+from typing import Callable, DefaultDict, Sequence
 
 import ipywidgets as widgets
 import traitlets
@@ -41,7 +41,9 @@ class DropdownButton(widgets.VBox):
         )
         self.button.on_click(self._handle_click)
 
-        self.hints = defaultdict(widgets.Output)
+        self.hints: DefaultDict[str, widgets.Output] = defaultdict(
+            widgets.Output
+        )
 
         self.children = [
             widgets.HBox([self.dropdown, self.button]),
