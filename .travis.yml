@@ -4,21 +4,8 @@ stages:
   - "Static code analysis"
   - test
   - deploy
-python:
-  - "3.6"
-  - "3.7"
 notifications:
   email: false
-install:
-  - pip install --upgrade pip
-  - pip install '.[test,examples]'
-script:
-  # run tests, and get coverage:
-  - python -m pytest --cov=src/
-  # test that the notebooks all run smoothly
-  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
-  # submit coverage report to coveralls
-  - python -m coveralls
 jobs:
   include:
     - stage: "Static code analysis"
@@ -32,9 +19,31 @@ jobs:
       name: "flake8 check"
       script:
         - pip install -qq flake8 docargs
-        - flake8 src/
+        - flake8 superintendent/
       python: "3.7"
       install: skip
+    - stage: "Static code analysis"
+      name: "mypy check"
+      script:
+        - pip install -qq mypy
+        - mypy --ignore-missing-imports superintendent/
+      python: "3.7"
+      install: skip
+    - stage: test
+      name: "Unit tests"
+      script:
+        # run tests, and get coverage:
+        - python -m pytest --cov=src/
+        # test that the notebooks all run smoothly
+        - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
+        # submit coverage report to coveralls
+        - python -m coveralls
+      python:
+        - "3.6"
+        - "3.7"
+      install:
+        - pip install -qq --upgrade pip
+        - pip install -q '.[test,examples]'
     - stage: deploy
       name: "Deploy to pypi"
       if: tag IS present
