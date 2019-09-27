@@ -8,9 +8,11 @@ import traitlets
 class DropdownButton(widgets.VBox):
 
     options = traitlets.List(
-        trait=traitlets.Unicode(), default=list(), allow_none=True
+        trait=traitlets.Unicode(), default_value=list(), allow_none=True
     )
-    submission_functions = traitlets.List(list(), allow_none=True)
+    submission_functions = traitlets.List(
+        default_value=list(), allow_none=True
+    )
 
     def __init__(self, options: Sequence[str], *args, **kwargs):
         """Create a dropdown button.

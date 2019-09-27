@@ -1,6 +1,7 @@
 import ipywidgets as widgets
 import traitlets
 
+from .._compatibility import ignore_widget_on_submit_warning
 from .hintedmultiselect import HintedMultiselect
 from .keycapture import DEFAULT_SHORTCUTS
 from .submitter import Submitter
@@ -75,7 +76,8 @@ class MulticlassSubmitter(Submitter):
                 description="Other:",
                 placeholder="Hit enter to submit.",
             )
-            self.other_widget.on_submit(self._when_submitted)
+            with ignore_widget_on_submit_warning():
+                self.other_widget.on_submit(self._when_submitted)
         else:
             self.other_widget = widgets.HBox([])
 

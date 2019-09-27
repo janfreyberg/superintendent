@@ -111,7 +111,7 @@ class SemiSupervisor(base.Labeller):
                 icon="refresh",
             )
             self.retrain_button.on_click(self.retrain)
-            self.model_performance = widgets.HTML("")
+            self.model_performance = widgets.HTML(value="")
             self.top_bar.children = (
                 widgets.HBox(
                     [*self.top_bar.children],

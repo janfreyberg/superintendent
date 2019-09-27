@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ipywidgets as widgets
 import traitlets
 
+from .._compatibility import ignore_widget_on_submit_warning
 from .buttongroup import ButtonGroup, ButtonWithHint
 from .dropdownbutton import DropdownButton
 from .keycapture import DEFAULT_SHORTCUTS
@@ -203,7 +204,8 @@ class Submitter(widgets.VBox):
                 description="Other:",
                 placeholder="Hit enter to submit.",
             )
-            self.other_widget.on_submit(self._when_submitted)
+            with ignore_widget_on_submit_warning():
+                self.other_widget.on_submit(self._when_submitted)
         else:
             self.other_widget = widgets.HBox([])
 

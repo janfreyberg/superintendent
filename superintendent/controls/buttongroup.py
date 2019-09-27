@@ -19,9 +19,9 @@ class ButtonGroup(widgets.HBox):
         """
 
     options = traitlets.List(
-        trait=traitlets.Unicode(), default=list(), allow_none=True
+        default_value=[], trait=traitlets.Unicode(), allow_none=True
     )
-    submission_functions = traitlets.List(list(), allow_none=True)
+    submission_functions = traitlets.List(default_value=[], allow_none=True)
     button_width = traitlets.Union(
         [traitlets.Float(), traitlets.Integer(), traitlets.Unicode()],
         allow_none=True,

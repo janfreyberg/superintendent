@@ -222,9 +222,11 @@ class Labeller(traitlets.HasTraits):
             IPython.display.clear_output(wait=True)
             IPython.display.display(
                 widgets.HTML(
-                    "<h1>{}".format(message)
-                    + '<i class="fa fa-spinner fa-spin"'
-                    + ' aria-hidden="true"></i>'
+                    value=(
+                        "<h1>{}".format(message)
+                        + '<i class="fa fa-spinner fa-spin"'
+                        + ' aria-hidden="true"></i>'
+                    )
                 )
             )
 
@@ -234,7 +236,9 @@ class Labeller(traitlets.HasTraits):
 
         with self.feature_output:
             IPython.display.clear_output(wait=True)
-            IPython.display.display(widgets.HTML(u"<h1>Finished labelling 🎉!"))
+            IPython.display.display(
+                widgets.HTML(value=u"<h1>Finished labelling 🎉!")
+            )
 
         self.layout.children = [self.progressbar, self.feature_display]
         return self

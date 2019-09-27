@@ -13,6 +13,7 @@ import traitlets
 #
 # from . import base
 from .. import semisupervisor
+from .._compatibility import ignore_widget_on_submit_warning
 from .dbqueue import DatabaseQueue
 
 
@@ -109,7 +110,7 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
             placeholder="Please enter your name or ID."
         )
         self.layout.children = [
-            widgets.HTML("<h2>Please enter your name:</h2>"),
+            widgets.HTML(value="<h2>Please enter your name:</h2>"),
             widgets.Box(
                 children=[worker_id_field],
                 layout=widgets.Layout(
@@ -121,7 +122,8 @@ class SemiSupervisor(semisupervisor.SemiSupervisor):
                 ),
             ),
         ]
-        worker_id_field.on_submit(self._set_worker_id)
+        with ignore_widget_on_submit_warning():
+            worker_id_field.on_submit(self._set_worker_id)
 
     def _set_worker_id(self, worker_id_field):
         if len(worker_id_field.value) > 0:
