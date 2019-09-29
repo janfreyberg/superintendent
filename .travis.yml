@@ -9,45 +9,43 @@ notifications:
 python:
   - "3.6"
   - "3.7"
+script:
+  # run tests, and get coverage:
+  - python -m pytest --cov=superintendent/
+  # test that the notebooks all run smoothly
+  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
+  # submit coverage report to coveralls
+  - python -m coveralls
+install:
+  - pip install -qq --upgrade pip
+  - pip install -q '.[test,examples]'
 jobs:
   include:
     - stage: "Static code analysis"
       name: "black formatting test"
-      script:
+      install:
         - pip install -qq black
+      script:
         - black --check superintendent/
       python: "3.7"
-      install: skip
     - stage: "Static code analysis"
       name: "flake8 check"
-      script:
+      install:
         - pip install -qq flake8 docargs
+      script:
         - flake8 superintendent/
       python: "3.7"
-      install: skip
     - stage: "Static code analysis"
       name: "mypy check"
       script:
-        - pip install -qq mypy
         - mypy --ignore-missing-imports superintendent/
       python: "3.7"
-      install: skip
-    - stage: test
-      name: "Unit tests"
-      script:
-        # run tests, and get coverage:
-        - python -m pytest --cov=src/
-        # test that the notebooks all run smoothly
-        - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
-        # submit coverage report to coveralls
-        - python -m coveralls
       install:
-        - pip install -qq --upgrade pip
-        - pip install -q '.[test,examples]'
+        - pip install -qq mypy
     - stage: deploy
       name: "Deploy to pypi"
       if: tag IS present
       script:
-        - poetry build
-        - poetry publish --username $PYPI_USER --password $PYPI_PASSWORD
+        - flit build
+        - env FLIT_USERNAME=$PYPI_USER FLIT_PASSWORD=$PYPI_PASSWORD flit publish
       python: "3.7"
