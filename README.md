@@ -12,15 +12,20 @@
 
 ![](logo.png)
 
-**`superintendent`** provides an `ipywidget`-based interactive labelling tool for your data. It allows you to flexibly label all kinds of data. It also allows you to combine your data-labelling task with a statistical or machine learning model to enable quick and practical active learning.
+**`superintendent`** provides an `ipywidget`-based interactive labelling tool
+for your data. It allows you to flexibly label all kinds of data. It also allows
+you to combine your data-labelling task with a statistical or machine learning
+model to enable quick and practical active learning.
 
 ## Getting started
 
 Take a look at the documentation: http://www.janfreyberg.com/superintendent/
 
-It has some explanations of how the library works, and it also has many examples.
+It has some explanations of how the library works, and it also has many
+examples.
 
-If you'd like to try the library without installing it, check out the [repository on binder](https://mybinder.org/v2/gh/janfreyberg/superintendent/master?filepath=examples.ipynb).
+If you'd like to try the library without installing it, check out the
+[repository on binder](https://mybinder.org/v2/gh/janfreyberg/superintendent/master?filepath=examples.ipynb).
 
 ## Installation
 
@@ -35,10 +40,13 @@ also have to enable the ipyevents jupyter extension:
 jupyter nbextension enable --py --sys-prefix ipyevents
 ```
 
-If you also want to run the examples, you need three additional packages: `requests`, `bs4` and `wordcloud`. You can install them via pip by running:
+If you also want to run the examples, you need three additional packages:
+`requests`, `bs4` and `wordcloud`. You can install them via pip by running:
 
 ```
 pip install superintendent[examples]
 ```
 
-If you want to contribute to `superintendent`, you will need to install the test dependencies as well. You can do so with `pip install superintendent[tests,examples]`
+If you want to contribute to `superintendent`, you will need to install the test
+dependencies as well. You can do so with
+`pip install superintendent[tests,examples]`

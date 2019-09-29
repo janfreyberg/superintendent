@@ -1,10 +1,11 @@
 """Input and timing control widgets."""
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import ipywidgets as widgets
 import traitlets
 
+from .._compatibility import ignore_widget_on_submit_warning
 from .buttongroup import ButtonGroup, ButtonWithHint
 from .dropdownbutton import DropdownButton
 from .keycapture import DEFAULT_SHORTCUTS
@@ -47,7 +48,7 @@ class Submitter(widgets.VBox):
 
     def __init__(
         self,
-        options: Optional[Union[List[str], Tuple[str]]] = (),
+        options: Sequence[str] = (),
         max_buttons: int = 12,
         other_option: bool = True,
         hint_function: Optional[Callable] = None,
@@ -63,12 +64,12 @@ class Submitter(widgets.VBox):
 
         """
         super().__init__([])
-        self.submission_functions = []
+        self.submission_functions: Sequence[Callable] = []
         self.hint_function = hint_function
         # self.shortcuts = shortcuts
 
         self.hints = dict() if hints is None else hints
-        if hint_function is not None:
+        if self.hint_function is not None:
             for option, feature in self.hints.items():
                 self.hints[option] = widgets.Output()
                 with self.hints[option]:
@@ -203,7 +204,8 @@ class Submitter(widgets.VBox):
                 description="Other:",
                 placeholder="Hit enter to submit.",
             )
-            self.other_widget.on_submit(self._when_submitted)
+            with ignore_widget_on_submit_warning():
+                self.other_widget.on_submit(self._when_submitted)
         else:
             self.other_widget = widgets.HBox([])
 

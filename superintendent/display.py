@@ -1,4 +1,5 @@
 """Helper functions for displaying types of data."""
+from typing import Callable, Dict
 
 import IPython.display
 import numpy as np
@@ -49,7 +50,7 @@ def image_display_func(image, imsize=None):
     plt.show()
 
 
-functions = {
+functions: Dict[str, Callable] = {
     "default": default_display_func,
     "image": image_display_func,
     "img": image_display_func,

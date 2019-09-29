@@ -8,13 +8,12 @@ from datetime import datetime, timedelta
 from functools import reduce
 from typing import Any, Dict, Sequence, Set, Tuple
 
-import sqlalchemy as sa
-import sqlalchemy.ext.declarative
-from sqlalchemy.exc import OperationalError, ProgrammingError
-
 import cachetools
 import numpy as np
 import pandas as pd
+import sqlalchemy as sa
+import sqlalchemy.ext.declarative
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from ..queueing import BaseLabellingQueue, _features_to_array
 from .serialization import data_dumps, data_loads
@@ -418,7 +417,7 @@ class DatabaseQueue(BaseLabellingQueue):
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
-    def _unlabelled_count(self):
+    def _unlabelled_count(self) -> int:
         with self.session() as session:
             return (
                 session.query(self.data)
@@ -429,7 +428,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 .count()
             )
 
-    def _labelled_count(self):
+    def _labelled_count(self) -> int:
         with self.session() as session:
             return (
                 session.query(self.data)

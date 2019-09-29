@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Sequence
+from typing import Callable, DefaultDict, Sequence
 
 import ipywidgets as widgets
 import traitlets
@@ -8,9 +8,11 @@ import traitlets
 class DropdownButton(widgets.VBox):
 
     options = traitlets.List(
-        trait=traitlets.Unicode(), default=list(), allow_none=True
+        trait=traitlets.Unicode(), default_value=list(), allow_none=True
     )
-    submission_functions = traitlets.List(list(), allow_none=True)
+    submission_functions = traitlets.List(
+        default_value=list(), allow_none=True
+    )
 
     def __init__(self, options: Sequence[str], *args, **kwargs):
         """Create a dropdown button.
@@ -39,7 +41,9 @@ class DropdownButton(widgets.VBox):
         )
         self.button.on_click(self._handle_click)
 
-        self.hints = defaultdict(widgets.Output)
+        self.hints: DefaultDict[str, widgets.Output] = defaultdict(
+            widgets.Output
+        )
 
         self.children = [
             widgets.HBox([self.dropdown, self.button]),

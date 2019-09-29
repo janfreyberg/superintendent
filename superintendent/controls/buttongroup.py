@@ -1,11 +1,11 @@
 from numbers import Number
-from typing import Dict, List, Optional, Text, Union
+from typing import Callable, Dict, List, Optional, Text, Union
 
 import ipywidgets as widgets
 import traitlets
 
 
-class ToggleButtonGroup(widgets.HBox):
+class ButtonGroup(widgets.HBox):
     """A group of buttons with output widgets underneath.
 
         Parameters
@@ -19,9 +19,9 @@ class ToggleButtonGroup(widgets.HBox):
         """
 
     options = traitlets.List(
-        trait=traitlets.Unicode(), default=list(), allow_none=True
+        default_value=[], trait=traitlets.Unicode(), allow_none=True
     )
-    submission_functions = traitlets.List(list(), allow_none=True)
+    submission_functions = traitlets.List(default_value=[], allow_none=True)
     button_width = traitlets.Union(
         [traitlets.Float(), traitlets.Integer(), traitlets.Unicode()],
         allow_none=True,
@@ -46,39 +46,50 @@ class ToggleButtonGroup(widgets.HBox):
 
     @traitlets.observe("options")
     def rearrange_buttons(self, change):
-        """Rearrange the button layout.
+        """Rearrange the buttons.
 
         Parameters
         ----------
         change : Any
             Any ol' change.
+
         """
 
         self.buttons = self.hints = {
-            option: ToggleButtonWithHint(option, self.button_width)
+            option: ButtonWithHint(option, self.button_width)
             for option in self.options
         }
 
+        for button in self.buttons.values():
+            button.on_click(self._handle_click)
+
         self.children = [self.buttons[option] for option in self.options]
 
-    def _toggle(self, option: str):
-        self.buttons[option].value = not self.buttons[option].value
+    def on_click(self, func: Callable) -> None:
+        """Add a function to the list of calls made after a click.
 
-    def _reset(self):
-        for button in self.buttons.values():
-            button.value = False
+        Parameters
+        ----------
+        func : Callable
+            The function to call when the button is clicked.
+        """
+        if not callable(func):
+            raise ValueError(
+                "You need to provide a callable object, but you provided "
+                + str(func)
+                + "."
+            )
+        self.submission_functions.append(func)
 
-    @property
-    def value(self):
-        return [
-            option for option, button in self.buttons.items() if button.value
-        ]
+    def _handle_click(self, owner: widgets.Button) -> None:
+        for func in self.submission_functions:
+            func(owner)
 
     @traitlets.validate("button_width")
-    def _valid_value(self, proposal: Dict):
-        if isinstance(proposal["value"], Number) and proposal["value"] <= 1:
+    def _valid_value(self, proposal: Dict[str, Union[float, int, Text]]):
+        if isinstance(proposal["value"], float) and proposal["value"] <= 1:
             return "{}%".format(int(100 * proposal["value"]))
-        elif isinstance(proposal["value"], Number):
+        elif isinstance(proposal["value"], (int, float)):
             return "{}px".format(int(proposal["value"]))
         elif isinstance(proposal["value"], str):
             return proposal["value"]
@@ -88,20 +99,20 @@ class ToggleButtonGroup(widgets.HBox):
             )
 
 
-class ToggleButtonWithHint(widgets.VBox):
+class ButtonWithHint(widgets.VBox):
 
-    value = traitlets.Bool(default_value=False)
     description = traitlets.Unicode()
 
     def __init__(self, label: str, button_width: str, *args, **kwargs):
-        """Create a Toggle-button.
+        """Create a button.
 
         Parameters
         ----------
         label : str
-            The button label.
+            The label for this button.
         button_width : str
-            The width of the button.
+            How wide you'd like this button to be.
+
         """
 
         kwargs["layout"] = kwargs.get(
@@ -109,16 +120,25 @@ class ToggleButtonWithHint(widgets.VBox):
         )
 
         super().__init__(children=[], *args, **kwargs)
-        self.button = widgets.ToggleButton(
+        self.button = widgets.Button(
             description=str(label), layout=widgets.Layout(width="95%")
         )
-        widgets.link((self, "value"), (self.button, "value"))
 
         self.hint = widgets.Output()
         self.children = [self.button, self.hint]
 
         self.description = label
         widgets.link((self, "description"), (self.button, "description"))
+
+    def on_click(self, func: Callable):
+        """Add a function to the list of calls made after a click.
+
+        Parameters
+        ----------
+        func : Callable
+            The function to call when the button is clicked.
+        """
+        self.button.on_click(func)
 
     def __enter__(self):
         return self.hint.__enter__()
