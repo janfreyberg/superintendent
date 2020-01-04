@@ -162,23 +162,12 @@ class SemiSupervisor(base.Labeller):
         for id_, datapoint in self.queue:
 
             self._display(datapoint)
-            sender = yield
+            data = yield
 
-            if sender["source"] == "__undo__":
-                # unpop the current item:
-                self.queue.undo()
-                # unpop and unlabel the previous item:
-                self.queue.undo()
-                # try to remove any labels not in the assigned labels:
-                self.input_widget.remove_options(
-                    set(self.input_widget.options) - self.queue.list_labels()
-                )
-            elif sender["source"] == "__skip__":
+            if data is None:
                 pass
             else:
-                new_label = sender["value"]
-                self.queue.submit(id_, new_label)
-                # self.input_widget.add_hint(new_label, datapoint)
+                self.queue.submit(id_, data)
 
             self.progressbar.value = self.queue.progress
 
@@ -186,6 +175,18 @@ class SemiSupervisor(base.Labeller):
             self.event_manager.close()
 
         yield self._render_finished()
+
+    def _undo(self):
+        # unpop the current item:
+        self.queue.undo()
+        # unpop and unlabel the previous item:
+        self.queue.undo()
+        # try to remove any labels not in the assigned labels:
+        self.input_widget.remove_options(
+            set(self.input_widget.options) - self.queue.list_labels()
+        )
+        # send None into the iterator; returning to the loop
+        self._annotation_loop.send(None)
 
     def retrain(self, *args):
         """Retrain the classifier you passed when creating this widget.

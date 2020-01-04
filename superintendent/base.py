@@ -12,9 +12,6 @@ import traitlets
 
 from . import controls, display
 
-# class AbstractTraitletMetaclass(traitlets.HasTraits, metaclass=abc.ABCMeta):
-#     pass
-
 
 class Labeller(traitlets.HasTraits):
     """
@@ -91,7 +88,8 @@ class Labeller(traitlets.HasTraits):
             other_option=other_option,
             max_buttons=max_buttons,
         )
-        self.input_widget.on_submission(self._apply_annotation)
+        self.input_widget.on_submit(self._apply_annotation)
+        self.input_widget.on_undo(self._undo)
         self.options = self.input_widget.options
         traitlets.link((self, "options"), (self.input_widget, "options"))
 

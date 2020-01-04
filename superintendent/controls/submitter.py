@@ -1,17 +1,18 @@
 """Input and timing control widgets."""
 
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import ipywidgets as widgets
 import traitlets
 
 from .._compatibility import ignore_widget_on_submit_warning
+from .base import SubmissionWidgetMixin
 from .buttongroup import ButtonGroup, ButtonWithHint
 from .dropdownbutton import DropdownButton
 from .keycapture import DEFAULT_SHORTCUTS
 
 
-class Submitter(widgets.VBox):
+class Submitter(SubmissionWidgetMixin, widgets.VBox):
     """
     A flexible data submission widget.
 
@@ -64,9 +65,11 @@ class Submitter(widgets.VBox):
 
         """
         super().__init__([])
-        self.submission_functions: Sequence[Callable] = []
+        self.submission_functions: List[Callable[[Any], None]] = []
+        self.skip_functions: List[Callable[[Any], None]] = []
+        self.undo_functions: List[Callable[[], None]] = []
+
         self.hint_function = hint_function
-        # self.shortcuts = shortcuts
 
         self.hints = dict() if hints is None else hints
         if self.hint_function is not None:
@@ -83,11 +86,11 @@ class Submitter(widgets.VBox):
         self.skip_button = widgets.Button(
             description="Skip", icon="fast-forward"
         )
-        self.skip_button.on_click(self._when_submitted)
+        self.skip_button.on_click(self._skip)
         self.undo_button = widgets.Button(description="Undo", icon="undo")
-        self.undo_button.on_click(self._when_submitted)
+        self.undo_button.on_click(self._undo)
         self.options = [str(option) for option in options]
-        self.fixed_options = [str(option) for option in options]
+        self.fixed_options = [option for option in self.options]
 
         self.max_buttons = max_buttons
 
@@ -163,22 +166,62 @@ class Submitter(widgets.VBox):
             if option not in values or option in self.fixed_options
         ]
 
-    def on_submission(self, func):
+    def on_submit(self, callback: Callable[[Any], None]):
         """
         Add a function to call when the user submits a value.
 
         Parameters
         ----------
-        func : callable
+        callback : callable
             The function to be called when the widget is submitted.
         """
-        if not callable(func):
+        if not callable(callback):
             raise ValueError(
                 "You need to provide a callable object, but you provided "
-                + str(func)
+                + str(callback)
                 + "."
             )
-        self.submission_functions.append(func)
+        self.submission_functions.append(callback)
+
+    def _submit(self, sender):
+        """The function that gets called by submitting an option.
+
+        This is called by the button / text field elements and shouldn't be
+        called directly.
+        """
+        # figure out if it's a button or the text field
+        if isinstance(sender, widgets.Text):
+            value = sender.value
+            # source = "textfield"
+        else:
+            value = sender.description
+            # source = "button"
+
+        if value is not None and value not in self.options:
+            self.options = self.options + [value]
+
+        for callback in self.submission_functions:
+            callback(value)
+
+        self._compose()
+
+    def _skip(self, sender):
+        for callback in self.submission_functions:
+            callback(None)
+
+    def on_undo(self, callback: Callable[[], None]):
+        """Provide a function that will be called when the user presses "undo".
+
+        Parameters
+        ----------
+        callback : Callable[[], None]
+            The function to be called. Takes no arguments and returns nothing.
+        """
+        self.undo_functions.append(callback)
+
+    def _undo(self, sender):
+        for callback in self.undo_functions:
+            callback()
 
     def _sort_options(self, change=None):
         self.options = list(sorted(self.options))
@@ -196,7 +239,7 @@ class Submitter(widgets.VBox):
         else:
             self.control_elements = DropdownButton(self.options)
 
-        self.control_elements.on_click(self._when_submitted)
+        self.control_elements.on_click(self._submit)
 
         if self.other_option:
             self.other_widget = widgets.Text(
@@ -205,7 +248,7 @@ class Submitter(widgets.VBox):
                 placeholder="Hit enter to submit.",
             )
             with ignore_widget_on_submit_warning():
-                self.other_widget.on_submit(self._when_submitted)
+                self.other_widget.on_submit(self._submit)
         else:
             self.other_widget = widgets.HBox([])
 
