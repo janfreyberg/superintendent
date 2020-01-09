@@ -1,4 +1,5 @@
 import time
+from math import nan
 from functools import total_ordering
 
 
@@ -22,13 +23,20 @@ class Timer:
     """
 
     def __init__(self):
-        self._time = 0
+        self._time = nan
+        self._t0 = nan
 
-    def __enter__(self):
+    def start(self):
         self._t0 = time.time()
 
-    def __exit__(self, *args):
+    def stop(self):
         self._time = time.time() - self._t0
+
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, *args):
+        self.stop()
 
     def __eq__(self, other):
         return self._time == other
