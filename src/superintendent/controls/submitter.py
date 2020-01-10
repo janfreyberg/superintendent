@@ -7,9 +7,8 @@ import traitlets
 
 from .._compatibility import ignore_widget_on_submit_warning
 from .base import SubmissionWidgetMixin
-from .buttongroup import ButtonGroup, ButtonWithHint
+from .buttongroup import ButtonGroup
 from .dropdownbutton import DropdownButton
-from .keycapture import DEFAULT_SHORTCUTS
 
 
 class Submitter(SubmissionWidgetMixin, widgets.VBox):
@@ -98,41 +97,6 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
 
         self._compose()
 
-    def _when_submitted(self, sender):
-
-        if sender is self.skip_button:
-            value = None
-            source = "__skip__"
-        elif sender is self.undo_button:
-            value = None
-            source = "__undo__"
-        elif isinstance(sender, (widgets.Button, ButtonWithHint)):
-            value = sender.description
-            source = "button"
-        elif isinstance(sender, widgets.Text):
-            value = sender.value
-            source = "textfield"
-        elif isinstance(sender, dict) and sender.get("source") == "keystroke":
-            value = sender.get("value")
-            source = "keystroke"
-
-        if value is not None and value not in self.options:
-            self.options = self.options + [value]
-
-        for func in self.submission_functions:
-            func({"value": value, "source": source})
-
-        self._compose()
-
-    def _on_key_down(self, event):
-        if event["type"] == "keyup":
-            pressed_option = self._key_option_mapping.get(event.get("key"))
-
-            if pressed_option is not None:
-                self._when_submitted(
-                    {"value": pressed_option, "source": "keystroke"}
-                )
-
     def add_hint(self, value, hint):
         """Add a hint to the widget.
 
@@ -203,10 +167,6 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
 
         self._compose()
 
-    def _skip(self, sender):
-        for callback in self.skip_functions:
-            callback()
-
     def on_undo(self, callback: Callable[[], None]):
         """Provide a function that will be called when the user presses "undo".
 
@@ -216,6 +176,10 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
             The function to be called. Takes no arguments and returns nothing.
         """
         self.undo_functions.append(callback)
+
+    def _undo(self, sender=None):
+        for callback in self.undo_functions:
+            callback()
 
     def on_skip(self, callback: Callable[[], None]):
         """Provide a function that will be called when the user presses "Skip".
@@ -227,8 +191,8 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
         """
         self.skip_functions.append(callback)
 
-    def _undo(self, sender):
-        for callback in self.undo_functions:
+    def _skip(self, sender=None):
+        for callback in self.skip_functions:
             callback()
 
     def _sort_options(self, change=None):
@@ -236,11 +200,6 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
 
     @traitlets.observe("other_option", "options", "max_buttons")
     def _compose(self, change=None):
-
-        # self.options = [str(option) for option in self.options]
-        self._key_option_mapping = {
-            key: option for key, option in zip(DEFAULT_SHORTCUTS, self.options)
-        }
 
         if len(self.options) <= self.max_buttons:
             self.control_elements = ButtonGroup(self.options)
