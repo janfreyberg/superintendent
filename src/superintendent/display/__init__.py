@@ -7,7 +7,7 @@ import ipywidgets as widgets
 from .image import image_display_function
 
 
-def default_display_func(feature):
+def default_display_function(feature):
     """
     A default function that displays the feature and adds some padding.
 
@@ -23,7 +23,7 @@ def default_display_func(feature):
 
 
 functions: Dict[str, Callable] = {
-    "default": default_display_func,
+    "default": default_display_function,
     "image": image_display_function,
     "img": image_display_function,
 }

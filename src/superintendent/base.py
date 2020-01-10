@@ -289,7 +289,7 @@ class Labeller(traitlets.HasTraits):
         processing_display = widgets.HTML(value=message)
         with self.feature_output:
             IPython.display.clear_output()
-            display.default_display_func(processing_display)
+            display.default_display_function(processing_display)
 
     def _render_finished(self):
 
