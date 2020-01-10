@@ -115,7 +115,12 @@ class MultiClassLabeller(Labeller):
 
 
 def preprocess_wrapper(fn):
-    @functools.wrap
+    """Wrap a preprocessing function to *also* binarise multi-labels."""
+
+    if fn is None:
+        return preprocess_multioutput
+
+    @functools.wraps(fn)
     def preprocess(X, y=None):
         X, y = fn(X, y)
         X, y = preprocess_multioutput(X, y)
