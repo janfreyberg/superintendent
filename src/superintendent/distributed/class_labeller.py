@@ -1,7 +1,7 @@
 """Tools to supervise classification."""
 
-from .mixin import DistributedMixin
 from .. import class_labeller
+from .mixin import DistributedMixin
 
 
 class ClassLabeller(DistributedMixin, class_labeller.ClassLabeller):

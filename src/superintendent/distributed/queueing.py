@@ -15,8 +15,8 @@ import sqlalchemy as sa
 import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-from ..queueing.utils import _features_to_array
 from ..queueing.base import BaseLabellingQueue
+from ..queueing.utils import _features_to_array
 from .serialization import data_dumps, data_loads
 
 

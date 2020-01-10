@@ -1,5 +1,6 @@
 """Tools to supervise classification."""
 import functools
+
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from .base import Labeller

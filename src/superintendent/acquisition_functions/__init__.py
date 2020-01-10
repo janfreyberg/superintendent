@@ -6,7 +6,6 @@ import scipy.stats
 
 from .decorators import make_acquisition_function
 
-
 __all__ = ["entropy", "margin", "certainty"]
 
 

@@ -1,8 +1,9 @@
-from typing import Tuple
+import pathlib
 from functools import singledispatch
+from typing import Tuple
+
 import IPython.display
 import numpy as np
-import pathlib
 from PIL import Image, ImageOps
 
 

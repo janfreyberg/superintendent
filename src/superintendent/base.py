@@ -1,20 +1,18 @@
 """Base class to inherit from."""
 
+from collections import OrderedDict
 from functools import partial
 from typing import Any, Callable, Optional
-
-from sklearn.base import BaseEstimator
-import sklearn.model_selection
 
 # import ipyevents
 import IPython.display
 import ipywidgets as widgets
 import numpy as np
+import sklearn.model_selection
 import traitlets
+from sklearn.base import BaseEstimator
 
-from collections import OrderedDict
-
-from . import controls, display, acquisition_functions
+from . import acquisition_functions, controls, display
 from .queueing import BaseLabellingQueue, SimpleLabellingQueue
 
 

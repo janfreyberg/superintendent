@@ -1,5 +1,6 @@
-import typing
 import functools
+import typing
+
 import numpy as np
 
 

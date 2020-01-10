@@ -1,6 +1,6 @@
 import time
-from math import nan
 from functools import total_ordering
+from math import nan
 
 
 @total_ordering
