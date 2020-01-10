@@ -1,17 +1,16 @@
 """
 Functions to prioritise labelling data points (to drive active learning).
 """
-
 import numpy as np
 import scipy.stats
 
-
-def _shuffle_subset(data: np.ndarray, shuffle_prop: float) -> np.ndarray:
-    to_shuffle = np.nonzero(np.random.rand(data.shape[0]) < shuffle_prop)[0]
-    data[to_shuffle, ...] = data[np.random.permutation(to_shuffle), ...]
-    return data
+from .decorators import make_acquisition_function
 
 
+__all__ = ["entropy", "margin", "certainty"]
+
+
+@make_acquisition_function(handle_multioutput=None)
 def entropy(
     probabilities: np.ndarray, shuffle_prop: float = 0.1
 ) -> np.ndarray:
@@ -30,11 +29,12 @@ def entropy(
         classifies as a different label.
 
     """
-    ordered = np.argsort(-scipy.stats.entropy(probabilities.T))
-    return _shuffle_subset(ordered.argsort(), shuffle_prop)
+    neg_entropy = -scipy.stats.entropy(probabilities.T)
+    return neg_entropy
 
 
-def margin(probabilities, shuffle_prop=0.1):
+@make_acquisition_function(handle_multioutput="mean")
+def margin(probabilities: np.ndarray):
     """
     Sort by the margin between the top two predictions (low to high).
 
@@ -48,16 +48,16 @@ def margin(probabilities, shuffle_prop=0.1):
         means the sorting retains some randomness, to avoid biasing your
         new labels and catching any minority classes the algorithm currently
         classifies as a different label.
-
     """
-    ordered = np.argsort(
+    margin = (
         np.sort(probabilities, axis=1)[:, -1]
         - np.sort(probabilities, axis=1)[:, -2]
     )
-    return _shuffle_subset(ordered.argsort(), shuffle_prop)
+    return margin
 
 
-def certainty(probabilities, shuffle_prop=0.1):
+@make_acquisition_function(handle_multioutput="mean")
+def certainty(probabilities: np.ndarray):
     """
     Sort by the certainty of the maximum prediction.
 
@@ -73,8 +73,8 @@ def certainty(probabilities, shuffle_prop=0.1):
         classifies as a different label.
 
     """
-    ordered = np.argsort(np.max(probabilities, axis=1))
-    return _shuffle_subset(ordered.argsort(), shuffle_prop)
+    certainty = probabilities.max(axis=-1)
+    return certainty
 
 
 functions = {"entropy": entropy, "margin": margin, "certainty": certainty}

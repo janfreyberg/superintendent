@@ -1,32 +1,25 @@
 """Functions to validate arguments."""
-from typing import Any
-
-# import numpy as np
-# import pandas as pd
+# from typing import Any
 
 
-def valid_classifier(classifier: Any):
-    """
-    Check if an object conforms to sklearns fit / predict interface.
+# def valid_classifier(classifier: Any):
+#     """
+#     Check if an object conforms to sklearns fit / predict interface.
 
-    Parameters
-    ----------
-    classifier : sklearn.base.ClassifierMixin
-        A classification model compliant with sklearn interfaces.
-    """
-    if (
-        classifier is not None
-        and hasattr(classifier, "fit")
-        and hasattr(classifier, "predict_proba")
-    ):
-        return classifier
-    elif classifier is None:
-        return None
-    else:
-        raise ValueError(
-            "The classifier needs to conform to "
-            "the sklearn interface (fit/predict_proba)."
-        )
+#     Parameters
+#     ----------
+#     classifier : sklearn.base.ClassifierMixin
+#         A classification model compliant with sklearn interfaces.
+#     """
+#     if classifier is None:
+#         return None
+#     elif hasattr(classifier, "fit") and hasattr(classifier, "predict_proba"):
+#         return classifier
+#     else:
+#         raise ValueError(
+#             "The classifier needs to conform to "
+#             "the sklearn interface (fit/predict_proba)."
+#         )
 
 
 # def valid_data(features: Optional[Any]):

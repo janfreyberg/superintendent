@@ -192,10 +192,8 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
         # figure out if it's a button or the text field
         if isinstance(sender, widgets.Text):
             value = sender.value
-            # source = "textfield"
         else:
             value = sender.description
-            # source = "button"
 
         if value is not None and value not in self.options:
             self.options = self.options + [value]
@@ -206,8 +204,8 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
         self._compose()
 
     def _skip(self, sender):
-        for callback in self.submission_functions:
-            callback(None)
+        for callback in self.skip_functions:
+            callback()
 
     def on_undo(self, callback: Callable[[], None]):
         """Provide a function that will be called when the user presses "undo".
@@ -218,6 +216,16 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
             The function to be called. Takes no arguments and returns nothing.
         """
         self.undo_functions.append(callback)
+
+    def on_skip(self, callback: Callable[[], None]):
+        """Provide a function that will be called when the user presses "Skip".
+
+        Parameters
+        ----------
+        callback : Callable[[], None]
+            The function to be called. Takes no arguments and returns nothing.
+        """
+        self.skip_functions.append(callback)
 
     def _undo(self, sender):
         for callback in self.undo_functions:

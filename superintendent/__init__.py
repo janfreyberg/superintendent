@@ -1,6 +1,6 @@
 """Interactive machine learning supervision."""
-from .clustersupervisor import ClusterSupervisor  # noqa
-from .multioutput import MultiLabeller  # noqa
-from .semisupervisor import SemiSupervisor  # noqa
+from .class_labeller import ClassLabeller
+from .multiclass_labeller import MultiClassLabeller
 
-__version__ = "0.4.3"  # noqa
+__all__ = ["MultiClassLabeller", "ClassLabeller"]
+__version__ = "0.4.3"

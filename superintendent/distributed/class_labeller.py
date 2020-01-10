@@ -1,8 +1,10 @@
-from ..multioutput import MultiLabeller as NonDistributedMultiLabeller
-from .semisupervisor import SemiSupervisor
+"""Tools to supervise classification."""
+
+from .mixin import DistributedMixin
+from .. import class_labeller
 
 
-class MultiLabeller(NonDistributedMultiLabeller, SemiSupervisor):
+class ClassLabeller(DistributedMixin, class_labeller.ClassLabeller):
     """
     A class for labelling your data.
 
@@ -12,7 +14,7 @@ class MultiLabeller(NonDistributedMultiLabeller, SemiSupervisor):
 
     Parameters
     ----------
-    connection_string: str
+    connection_string : str
         A SQLAlchemy-compatible database connection string. This is where the
         data for this widget will be stored, and where it will be retrieved
         from for labelling.
@@ -23,6 +25,13 @@ class MultiLabeller(NonDistributedMultiLabeller, SemiSupervisor):
     labels : list, np.ndarray, pd.Series, pd.DataFrame, optional
         If you already have some labels, but would like to re-label some, then
         you can pass these in as labels.
+    worker_id : bool, str
+        Whether or not to prompt for a worker_id (if it's boolean), or a
+        specific worker_id for this widget (if it's a string). The default is
+        False, which means worker_id will not be recorded at all.
+    table_name : str
+        The name for the table in the SQL database. If the table doesn't exist,
+        it will be created.
     options : tuple, list
         The options presented for labelling.
     classifier : sklearn.base.ClassifierMixin, optional
@@ -52,7 +61,6 @@ class MultiLabeller(NonDistributedMultiLabeller, SemiSupervisor):
     keyboard_shortcuts : bool, optional
         If you want to enable ipyevent-mediated keyboard capture to use the
         keyboard rather than the mouse to submit data.
-
     """
 
     pass

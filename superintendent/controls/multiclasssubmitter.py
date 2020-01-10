@@ -27,27 +27,8 @@ class MulticlassSubmitter(Submitter):
 
         value = self.control_elements.value
 
-        if sender is self.skip_button:
-            value = None
-            source = "__skip__"
-        elif sender is self.undo_button or (
-            isinstance(sender, dict) and sender.get("source") == "backspace"
-        ):
-            value = None
-            source = "__undo__"
-        elif sender is self.submission_button:
-            source = "multi-selector"
-
-        elif isinstance(sender, widgets.Text):
-            if sender.value is not None and sender.value not in self.options:
-                self.options = self.options + [sender.value]
-                self._toggle_option(sender.value)
-            return
-        elif isinstance(sender, dict) and sender.get("source") == "enter":
-            source = "multi-selector"
-
         for func in self.submission_functions:
-            func({"value": value, "source": source})
+            func(value)
 
         self.control_elements._reset()
 
