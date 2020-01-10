@@ -25,7 +25,6 @@ requires = [
     "ipywidgets>=7.4",
     "numpy>=1.15",
     "pandas>=0.24.0",
-    "matplotlib>=3.0",
     "scikit-learn>=0.20.3",
     "scipy>=1.2",
     "schedule>=0.6.0",
