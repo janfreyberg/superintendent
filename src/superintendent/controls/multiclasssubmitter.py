@@ -23,14 +23,24 @@ class MulticlassSubmitter(Submitter):
     def _toggle_option(self, option):
         self.control_elements._toggle(option)
 
-    def _when_submitted(self, sender):
+    def _submit(self, sender=None):
 
         value = self.control_elements.value
+
+        if value is not None and value not in self.options:
+            self.options = self.options + [value]
 
         for func in self.submission_functions:
             func(value)
 
         self.control_elements._reset()
+
+    def _handle_new_option(self, sender: widgets.Text):
+        new_option = sender.value
+        if new_option in self.options:
+            return
+        self.options = self.options + [new_option]
+        self._toggle_option(new_option)
 
     @traitlets.observe("other_option", "options", "max_buttons")
     def _compose(self, change=None):
@@ -49,7 +59,7 @@ class MulticlassSubmitter(Submitter):
         self.submission_button = widgets.Button(
             description="Apply", button_style="success"
         )
-        self.submission_button.on_click(self._when_submitted)
+        self.submission_button.on_click(self._submit)
 
         if self.other_option:
             self.other_widget = widgets.Text(
@@ -58,7 +68,7 @@ class MulticlassSubmitter(Submitter):
                 placeholder="Hit enter to submit.",
             )
             with ignore_widget_on_submit_warning():
-                self.other_widget.on_submit(self._when_submitted)
+                self.other_widget.on_submit(self._handle_new_option)
         else:
             self.other_widget = widgets.HBox([])
 
