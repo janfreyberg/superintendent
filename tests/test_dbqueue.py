@@ -20,7 +20,7 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from superintendent.distributed.dbqueue import DatabaseQueue
+from superintendent.distributed.queueing import DatabaseQueue
 
 guaranteed_dtypes = one_of(
     np_strategies.scalar_dtypes(),
