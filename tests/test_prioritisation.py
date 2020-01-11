@@ -1,11 +1,8 @@
 import numpy as np
 
-from superintendent.prioritisation import (
-    _shuffle_subset,
-    margin,
-    entropy,
-    certainty,
-)
+from superintendent.acquisition_functions import margin, entropy, certainty
+
+from superintendent.acquisition_functions.decorators import _shuffle_subset
 
 
 def test_no_shuffling():
