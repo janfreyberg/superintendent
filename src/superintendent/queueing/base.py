@@ -21,6 +21,12 @@ class BaseLabellingQueue(abc.ABC):  # pragma: no cover
         pass
 
     @abc.abstractmethod
+    def enqueue_many(
+        self, features: Any, labels: Optional[Any] = None
+    ) -> None:
+        pass
+
+    @abc.abstractmethod
     def pop(self) -> Tuple[int, Any]:
         """Pop an item off the queue.
 

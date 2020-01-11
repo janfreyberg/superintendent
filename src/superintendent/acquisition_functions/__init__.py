@@ -1,6 +1,7 @@
 """
 Functions to prioritise labelling data points (to drive active learning).
 """
+from typing import Dict, Callable
 import numpy as np
 import scipy.stats
 
@@ -76,5 +77,9 @@ def certainty(probabilities: np.ndarray):
     return certainty
 
 
-functions = {"entropy": entropy, "margin": margin, "certainty": certainty}
+functions: Dict[str, Callable] = {
+    "entropy": entropy,
+    "margin": margin,
+    "certainty": certainty,
+}
 """A dictionary of functions to prioritise data."""

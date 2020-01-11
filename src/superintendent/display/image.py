@@ -16,21 +16,27 @@ def image_display_function(image, fit_into=(500, 500)) -> None:
 
 
 @image_display_function.register
-def _(image: pathlib.Path, fit_into: Tuple[int, int] = (500, 500)) -> None:
+def _image_display_function_path(
+    image: pathlib.Path, fit_into: Tuple[int, int] = (500, 500)
+) -> None:
     """Path -> Image"""
     image = Image.open(image)
     image_display_function(image)
 
 
 @image_display_function.register
-def _(image: str, fit_into: Tuple[int, int] = (500, 500)) -> None:
+def _image_display_function_str(
+    image: str, fit_into: Tuple[int, int] = (500, 500)
+) -> None:
     """str -> Path"""
-    image = pathlib.Path(image)
-    image_display_function(image, fit_into=fit_into)
+    path_image: pathlib.Path = pathlib.Path(image)
+    image_display_function(path_image, fit_into=fit_into)
 
 
 @image_display_function.register
-def _(image: np.ndarray, fit_into: Tuple[int, int] = (500, 500)) -> None:
+def _image_display_function_array(
+    image: np.ndarray, fit_into: Tuple[int, int] = (500, 500)
+) -> None:
     """np.ndarray -> Image"""
     image = 255 * image / image.max()
     image = image.astype(np.uint8)
@@ -40,7 +46,9 @@ def _(image: np.ndarray, fit_into: Tuple[int, int] = (500, 500)) -> None:
 
 
 @image_display_function.register
-def _(image: Image.Image, fit_into: Tuple[int, int] = (500, 500)):
+def _image_display_function_pillow(
+    image: Image.Image, fit_into: Tuple[int, int] = (500, 500)
+):
     """Image -> display & finish"""
     if image.size < fit_into:
         factor = max(s1 / s2 for s1, s2 in zip(image.size, fit_into))

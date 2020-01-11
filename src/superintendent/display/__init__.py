@@ -1,5 +1,6 @@
 """Helper functions for displaying types of data."""
-from typing import Callable, Dict
+from typing import Callable, Dict, Union
+from typing_extensions import Literal
 
 import IPython.display
 import ipywidgets as widgets
@@ -27,3 +28,5 @@ functions: Dict[str, Callable] = {
     "image": image_display_function,
     "img": image_display_function,
 }
+
+Names = Union[Literal["default"], Literal["image"], Literal["img"]]

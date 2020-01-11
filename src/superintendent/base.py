@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 # import ipyevents
 import IPython.display
@@ -30,9 +30,9 @@ class Labeller(traitlets.HasTraits):
         *,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
-        queue: Optional[BaseLabellingQueue] = SimpleLabellingQueue,
+        queue: BaseLabellingQueue = SimpleLabellingQueue(),
         input_widget: Optional[widgets.Widget] = None,
-        display_func: Callable = "default",
+        display_func: Union[display.Names, Callable] = "default",
         model: Optional[BaseEstimator] = None,
         eval_method: Optional[Callable] = None,
         acquisition_function: Optional[Callable] = None,
@@ -140,12 +140,13 @@ class Labeller(traitlets.HasTraits):
 
         self.model = model
         self.eval_method = eval_method
+
+        self.acquisition_function = acquisition_function
         if isinstance(acquisition_function, str):
             self.acquisition_function = acquisition_functions.functions[
                 acquisition_function
             ]
-        else:
-            self.acquisition_function = acquisition_function
+
         self.shuffle_prop = shuffle_prop
         self.model_preprocess = model_preprocess
 

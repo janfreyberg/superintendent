@@ -133,8 +133,8 @@ class DistributedMixin:
         if first_orchestration or n_new_labels >= interval_n_labels:
             self._last_n_labelled += n_new_labels
             self.shuffle_prop = shuffle_prop
-            self.retrain()
-            print(self.model_performance.value)
+            self.retrain()  # type: ignore
+            print(self.model_performance.value)  # type: ignore
             time.sleep(interval_seconds)
             return True
         else:

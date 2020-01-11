@@ -61,11 +61,10 @@ class Submitter(SubmissionWidgetMixin, widgets.VBox):
 
         Note that all parameters can also be changed through assignment after
         you create the widget.
-
         """
         super().__init__([])
         self.submission_functions: List[Callable[[Any], None]] = []
-        self.skip_functions: List[Callable[[Any], None]] = []
+        self.skip_functions: List[Callable[[], None]] = []
         self.undo_functions: List[Callable[[], None]] = []
 
         self.hint_function = hint_function
