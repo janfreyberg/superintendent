@@ -323,15 +323,6 @@ def test_list_completed(inputs, labels):
     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
     labels=lists(text(), min_size=5),
 )
-def test_list_completed(inputs, labels):
-    with q_context() as q:
-        q.enqueue_many(inputs)
-
-
-@given(
-    inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
-    labels=lists(text(), min_size=5),
-)
 def test_list_uncompleted(inputs, labels):
     with q_context() as q:
         q.enqueue_many(inputs)
