@@ -1,5 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.skip
+
 # from sklearn.linear_model import LogisticRegression
 # from superintendent.validation import valid_classifier  # , valid_data
 

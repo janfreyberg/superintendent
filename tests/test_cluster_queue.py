@@ -53,7 +53,8 @@ pytestmark = pytest.mark.skip
 #     )
 #     colnames = draw(
 #         lists(
-#             text() | integers(), min_size=n_cols, max_size=n_cols, unique=True
+#             text() | integers(), min_size=n_cols, max_size=n_cols,
+#             unique=True
 #         )
 #     )
 #     df = draw(
@@ -77,7 +78,8 @@ pytestmark = pytest.mark.skip
 #     )
 #     colnames = draw(
 #         lists(
-#             text() | integers(), min_size=n_cols, max_size=n_cols, unique=True
+#             text() | integers(), min_size=n_cols, max_size=n_cols,
+#             unique=True
 #         )
 #     )
 #     df = draw(
@@ -136,7 +138,8 @@ pytestmark = pytest.mark.skip
 
 
 # @given(
-#     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=1),
+#     inputs=lists(one_of(booleans(), floats(), integers(), text()),
+# min_size=1),
 #     cluster_index=integers(),
 # )
 # def test_enqueue_many(inputs, cluster_index):
@@ -348,7 +351,8 @@ pytestmark = pytest.mark.skip
 
 
 # @given(
-#     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
+#     inputs=lists(one_of(booleans(), floats(), integers(), text()),
+# min_size=5),
 #     labels=lists(text(), min_size=5),
 # )
 # def test_list_completed(inputs, labels):
@@ -369,11 +373,13 @@ pytestmark = pytest.mark.skip
 #     assert len(set(cluster_indices)) == n_clusters // 2
 #     # test that the popped IDs and completed IDs have the same members
 #     assert pytest.helpers.same_elements(set(cluster_indices), popped_ids)
-#     assert pytest.helpers.same_elements(set(y), set(labels[: n_clusters // 2]))
+#     assert pytest.helpers.same_elements(
+# set(y), set(labels[: n_clusters // 2]))
 
 
 # @given(
-#     inputs=lists(one_of(booleans(), floats(), integers(), text()), min_size=5),
+#     inputs=lists(one_of(booleans(), floats(), integers(), text()),
+# min_size=5),
 #     labels=lists(text(), min_size=5),
 # )
 # def test_list_uncompleted(inputs, labels):

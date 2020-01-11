@@ -1,12 +1,11 @@
-import itertools
-
 import pytest
 
 pytestmark = pytest.mark.skip
 
-import numpy as np
-import pandas as pd
-import ipyevents
+# import itertools
+# import numpy as np
+# import pandas as pd
+# import ipyevents
 
 # from superintendent import ClusterSupervisor
 
@@ -83,7 +82,9 @@ import ipyevents
 #     assert mock_submit.call_count == 0
 
 
-# def test_that_progressbar_value_is_updated_and_render_finished_called(mocker):
+# def test_that_progressbar_value_is_updated_and_render_finished_called(
+#   mocker
+# ):
 #     mock_render_finished = mocker.patch(
 #         "superintendent.clustersupervisor."
 #         "ClusterSupervisor._render_finished"
