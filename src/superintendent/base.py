@@ -330,18 +330,18 @@ class Labeller(traitlets.HasTraits):
         if self.model is None:
             raise ValueError("No model to retrain.")
 
-        if len(self.queue.labels) < 10:
-            self.model_performance.value = (
-                "Score: Not enough labels to retrain."
-            )
-            return
-
         if not self.model_fit_timer < 0.5:
             self._render_processing(message="Retraining... ")
 
         self.model_fit_timer.start()
 
         _, labelled_X, labelled_y = self.queue.list_completed()
+
+        if len(labelled_y) < 10:
+            self.model_performance.value = (
+                "Score: Not enough labels to retrain."
+            )
+            return
 
         if self.model_preprocess is not None:
             labelled_X, labelled_y = self.model_preprocess(

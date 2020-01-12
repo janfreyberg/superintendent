@@ -26,6 +26,7 @@ class Timer(ContextDecorator):
         self._t0 = nan
 
     def start(self):
+        self._time = nan
         self._t0 = time.time()
 
     def stop(self):
@@ -38,19 +39,19 @@ class Timer(ContextDecorator):
         self.stop()
 
     def __eq__(self, other):
-        return self._value == other
+        return self._time == other
 
     def __lt__(self, other):
-        return self._value < other
+        return self._time < other
 
     def __le__(self, other):
-        return self._value <= other
+        return self._time <= other
 
     def __gt__(self, other):
-        return self._value > other
+        return self._time > other
 
     def __ge__(self, other):
-        return self._value >= other
+        return self._time >= other
 
     def __repr__(self):
         return "{} s".format(self._time)
