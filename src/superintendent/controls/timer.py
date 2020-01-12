@@ -1,10 +1,9 @@
 import time
-from functools import total_ordering
 from math import nan
+from contextlib import ContextDecorator
 
 
-@total_ordering
-class Timer:
+class Timer(ContextDecorator):
     """
     A timer object. Use as a context manager to time operations, and compare to
     numerical values (seconds) to run conditional code.
@@ -39,10 +38,19 @@ class Timer:
         self.stop()
 
     def __eq__(self, other):
-        return self._time == other
+        return self._value == other
 
     def __lt__(self, other):
-        return self._time < other
+        return self._value < other
+
+    def __le__(self, other):
+        return self._value <= other
+
+    def __gt__(self, other):
+        return self._value > other
+
+    def __ge__(self, other):
+        return self._value >= other
 
     def __repr__(self):
         return "{} s".format(self._time)
