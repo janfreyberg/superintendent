@@ -321,6 +321,11 @@ class Labeller(traitlets.HasTraits):
         This calls the fit method of your class with the data that you've
         labelled. It will also score the classifier and display the
         performance.
+
+        Parameters
+        ----------
+        button : widget.Widget, optional
+            Optional & ignored; this is passed when invoked by a button.
         """
         if self.model is None:
             raise ValueError("No model to retrain.")

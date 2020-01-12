@@ -1,5 +1,6 @@
 """Tools to supervise classification."""
 import functools
+from typing import Callable, Any, Tuple, Optional
 
 from sklearn.preprocessing import MultiLabelBinarizer
 
@@ -114,8 +115,22 @@ class MultiClassLabeller(Labeller):
         )
 
 
-def preprocess_wrapper(fn):
-    """Wrap a preprocessing function to *also* binarise multi-labels."""
+def preprocess_wrapper(
+    fn: Callable[[Any, Optional[Any]], Tuple[Any, Optional[Any]]]
+) -> Callable[[Any, Optional[Any]], Tuple[Any, Optional[Any]]]:
+    """
+    Wrap a preprocessing function to *also* binarise multi-labels.
+
+    Parameters
+    ----------
+    fn : callable(featuers, labels=None)
+        the preprocessing function to wrap.
+
+    Returns
+    -------
+    callable(featuers, labels=None)
+        The wrapped preprocessor.
+    """
 
     if fn is None:
         return preprocess_multioutput
