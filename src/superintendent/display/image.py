@@ -9,6 +9,17 @@ from PIL import Image, ImageOps
 
 @singledispatch
 def image_display_function(image, fit_into=(500, 500)) -> None:
+    """Display an image.
+
+    Parameters
+    ----------
+    image : Pillow.Image.Image, np.ndarray, str, pathlib.Path
+        a Pillow / PIL image, or the array data for it, or a path to an image.
+    fit_into : tuple, optional
+        What size the image should fit into, by default (500, 500). The image
+        is scaled so that no side is larger than the corresponding pixels given
+        here.
+    """
     raise NotImplementedError(
         "You passed an object of type {}, but image_display_function "
         "expects a path, URL or numpy array."
