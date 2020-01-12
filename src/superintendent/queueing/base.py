@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple
 
 class BaseLabellingQueue(abc.ABC):  # pragma: no cover
     @abc.abstractmethod
-    def enqueue(self, feature: Any, label: Optional[Any] = None) -> None:
+    def enqueue(self, feature: Any, label: Optional[Any] = None):
         """Add a data point to the queue.
 
         Parameters
@@ -21,9 +21,20 @@ class BaseLabellingQueue(abc.ABC):  # pragma: no cover
         pass
 
     @abc.abstractmethod
-    def enqueue_many(
-        self, features: Any, labels: Optional[Any] = None
-    ) -> None:
+    def enqueue_many(self, features: Any, labels: Optional[Any] = None):
+        """Add multiple data points to the queue.
+
+        Parameters
+        ----------
+        features : Any
+            A set of data points to be added to the queue.
+        labels : str, list, optional
+            The labels for this data point.
+
+        Returns
+        -------
+        None
+        """
         pass
 
     @abc.abstractmethod
