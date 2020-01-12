@@ -10,10 +10,8 @@ from .decorators import make_acquisition_function
 __all__ = ["entropy", "margin", "certainty"]
 
 
-@make_acquisition_function(handle_multioutput=None)
-def entropy(
-    probabilities: np.ndarray, shuffle_prop: float = 0.1
-) -> np.ndarray:
+@make_acquisition_function(handle_multioutput=None)  # noqa: D002
+def entropy(probabilities: np.ndarray) -> np.ndarray:
     """
     Sort by the entropy of the probabilities (high to low).
 
@@ -33,8 +31,8 @@ def entropy(
     return neg_entropy
 
 
-@make_acquisition_function(handle_multioutput="mean")
-def margin(probabilities: np.ndarray):
+@make_acquisition_function(handle_multioutput="mean")  # noqa: D002
+def margin(probabilities: np.ndarray) -> np.ndarray:
     """
     Sort by the margin between the top two predictions (low to high).
 
@@ -56,7 +54,7 @@ def margin(probabilities: np.ndarray):
     return margin
 
 
-@make_acquisition_function(handle_multioutput="mean")
+@make_acquisition_function(handle_multioutput="mean")  # noqa: D002
 def certainty(probabilities: np.ndarray):
     """
     Sort by the certainty of the maximum prediction.

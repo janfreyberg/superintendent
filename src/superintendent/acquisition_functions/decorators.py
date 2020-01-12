@@ -38,6 +38,18 @@ def _is_multioutput(
 
 
 def make_acquisition_function(handle_multioutput="mean"):
+    """Wrap an acquisition function.
+
+    This ensures the function can accept a shuffle proportion and ensures it
+    handles multi_output.
+
+    Parameters
+    ----------
+    handle_multioutput : str, optional
+        How the acquisition function should handle multioutput data, which
+        comes as a list of binary classifier outputs.
+    """
+
     def decorator(fn):
         if handle_multioutput == "mean":  # define fn where scores are avgd
 
