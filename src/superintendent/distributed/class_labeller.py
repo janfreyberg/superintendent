@@ -1,10 +1,10 @@
 """Tools to supervise classification."""
 
 from .. import class_labeller
-from .mixin import DistributedMixin
+from .mixin import _DistributedMixin
 
 
-class ClassLabeller(DistributedMixin, class_labeller.ClassLabeller):
+class ClassLabeller(_DistributedMixin, class_labeller.ClassLabeller):
     """
     A class for labelling your data.
 

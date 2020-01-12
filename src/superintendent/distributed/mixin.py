@@ -9,7 +9,7 @@ from .._compatibility import ignore_widget_on_submit_warning
 from .queueing import DatabaseQueue
 
 
-class DistributedMixin:
+class _DistributedMixin:
 
     worker_id = traitlets.Unicode(allow_none=True)
 

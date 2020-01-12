@@ -1,9 +1,9 @@
 from .. import multiclass_labeller
-from .mixin import DistributedMixin
+from .mixin import _DistributedMixin
 
 
 class MultiClassLabeller(
-    DistributedMixin, multiclass_labeller.MultiClassLabeller
+    _DistributedMixin, multiclass_labeller.MultiClassLabeller
 ):
     """
     A class for labelling your data.
