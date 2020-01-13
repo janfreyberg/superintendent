@@ -62,7 +62,7 @@ doc = [
     "wordcloud>=1.5",
     "m2r>=0.2.1",
     "sphinx_rtd_theme>=0.4.3",
-    "jupyter_sphinx>=0.1.4",
+    "jupyter-sphinx>=0.1.4",
     "nbsphinx>=0.4.2",
 ]
 examples = [
