@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = superintendent
 SOURCEDIR     = .
 BUILDDIR      = _build
-PROJDIR       = "../$(SPHINXPROJ)"
+PROJDIR       = "../src/$(SPHINXPROJ)"
 GH_PAGES_SOURCES = Makefile docs superintendent README.md
 
 # Put it first so that "make" without argument is like "make help".
@@ -16,10 +16,6 @@ help:
 
 server:
 	(cd _build/html && python -m http.server)
-
-api:
-	rm -f api/*
-	sphinx-apidoc -o api $(PROJDIR) $(PROJDIR)/version.py $(PROJDIR)/base.py
 
 .PHONY: help Makefile api server gh-pages
 
