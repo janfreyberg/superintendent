@@ -17,9 +17,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import pathlib
 
-import sphinx_rtd_theme
+import pkg_resources
+
 
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
@@ -44,7 +44,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    "jupyter_sphinx.embed_widgets",
+    "jupyter_sphinx.execute",
     "sphinx_automodapi.automodapi",
     "nbsphinx",
     "m2r",
@@ -52,7 +52,7 @@ extensions = [
 ]
 
 numpydoc_show_class_members = False
-autosummary_generate = False
+# autosummary_generate = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -75,12 +75,13 @@ author = "Jan Freyberg"
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-#
 # The short X.Y version.
-version_ns = {}
-version_file = pathlib.Path("..").resolve() / "superintendent" / "version.py"
-exec(version_file.read_text(), version_ns)
-version = version_ns["version"]
+version = pkg_resources.get_distribution("superintendent").version
+
+# version_ns = {}
+# version_file = pathlib.Path("..").resolve() / "superintendent" / "version.py"
+# exec(version_file.read_text(), version_ns)
+# version = version_ns["version"]
 
 # The full version, including alpha/beta/rc tags.
 release = version
@@ -110,10 +111,13 @@ todo_include_todos = True
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+html_css_files = [
+    "css/hide-double-widgets.css",
+]
 
 html_favicon = "favicon.ico"
-html_logo = "logo.png"
+html_logo = "img/logo.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -142,37 +146,6 @@ html_sidebars = {
 htmlhelp_basename = "superintendentdoc"
 
 
-# -- Options for LaTeX output ---------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "superintendent.tex",
-        "superintendent Documentation",
-        "Jan Freyberg",
-        "manual",
-    )
-]
-
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -182,23 +155,6 @@ man_pages = [
 ]
 
 
-# -- Options for Texinfo output -------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "superintendent",
-        "superintendent Documentation",
-        author,
-        "superintendent",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
-
 # -- Options for nbsphinx -------------------------------------------------
 
 nbsphinx_prolog = """
@@ -206,6 +162,11 @@ nbsphinx_prolog = """
     This page will display what superintendent widgets look like, but not
     respond to user input (as it's not connected to a backend).
 """
+
+# if this is not set to empty string, widgets get displayed twice, see:
+# https://nbsphinx.readthedocs.io/en/0.5.0/usage.html#nbsphinx_widgets_path
+# https://github.com/spatialaudio/nbsphinx/issues/378
+nbsphinx_widgets_path = ""
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
