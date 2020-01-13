@@ -10,7 +10,7 @@
 
 ---
 
-![](logo.png)
+![](docs/img/logo.png)
 
 **`superintendent`** provides an `ipywidget`-based interactive labelling tool
 for your data. It allows you to flexibly label all kinds of data. It also allows
