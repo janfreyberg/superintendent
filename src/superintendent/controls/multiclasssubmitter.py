@@ -1,5 +1,6 @@
 import ipywidgets as widgets
 import traitlets
+from collections import deque
 
 from .._compatibility import ignore_widget_on_submit_warning
 from .hintedmultiselect import HintedMultiselect
@@ -27,9 +28,6 @@ class MulticlassSubmitter(Submitter):
 
         value = self.control_elements.value
 
-        if value is not None and value not in self.options:
-            self.options = self.options + [value]
-
         for func in self.submission_functions:
             func(value)
 
@@ -41,9 +39,19 @@ class MulticlassSubmitter(Submitter):
             return
         self.options = self.options + [new_option]
         self._toggle_option(new_option)
+        self._undo_queue.append(lambda: self.remove_options((new_option,)))
+
+    def _undo(self, sender=None):
+        if self._undo_queue:
+            callback = self._undo_queue.pop()
+            callback()
+        else:
+            super()._undo(sender=sender)
 
     @traitlets.observe("other_option", "options", "max_buttons")
     def _compose(self, change=None):
+
+        self._undo_queue = deque([])
 
         self.options = [str(option) for option in self.options]
         self._key_option_mapping = {
