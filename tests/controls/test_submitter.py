@@ -54,83 +54,52 @@ def test_that_updating_options_triggers_compose(mocker):
     widget = controls.Submitter()
     mock_compose = mocker.patch.object(widget, "_compose")
     widget.options = options
-    assert mock_compose.called_once()
+    mock_compose.assert_called_once()
 
 
-def test_that_on_submission_updates_submissions_functions():
+def test_that_on_submit_updates_submissions_functions():
     widget = controls.Submitter()
-    widget.on_submission(print)
-    assert widget.submission_functions == [print]
+    widget.on_submit(print)
+    assert print in widget.submission_functions
 
 
-def test_that_on_submission_fails_when_not_given_callable():
+def test_that_on_submit_fails_when_not_given_callable():
     widget = controls.Submitter()
     with pytest.raises(ValueError):
-        widget.on_submission("dummy")
+        widget.on_submit("dummy")
 
 
-def test_that_when_submitted_passes_correct_values_from_button(mocker):
+def test_that_submit_passes_correct_values(mocker):
     widget = controls.Submitter(["a", "b"])
     mock_function = mocker.Mock()
-    widget.on_submission(mock_function)
-    widget._when_submitted(widget.control_elements.buttons["a"])
-    assert mock_function.call_args == (({"source": "button", "value": "a"},),)
-
-
-def test_that_when_submitted_passes_correct_values_from_skip(mocker):
-    widget = controls.Submitter(["a", "b"])
-    mock_function = mocker.Mock()
-    widget.on_submission(mock_function)
-    widget._when_submitted(widget.skip_button)
-    assert mock_function.call_args == (
-        ({"source": "__skip__", "value": None},),
-    )
-
-
-def test_that_when_submitted_passes_correct_values_from_undo(mocker):
-    widget = controls.Submitter(["a", "b"])
-    mock_function = mocker.Mock()
-    widget.on_submission(mock_function)
-    widget._when_submitted(widget.undo_button)
-    assert mock_function.call_args == (
-        ({"source": "__undo__", "value": None},),
-    )
-
-
-def test_that_when_submitted_passes_correct_values_from_text_box(mocker):
-    widget = controls.Submitter(["a", "b"])
-    mock_function = mocker.Mock()
-    widget.on_submission(mock_function)
+    widget.on_submit(mock_function)
 
     widget.other_widget.value = "dummy submission"
-    widget._when_submitted(widget.other_widget)
+    widget._submit(widget.other_widget)
+    assert mock_function.call_args[0] == ("dummy submission",)
 
-    assert mock_function.call_args == (
-        ({"source": "textfield", "value": "dummy submission"},),
-    )
+    widget._submit(list(widget.control_elements.buttons.values())[0])
+    assert mock_function.call_args[0] == ("a",)
 
 
-def test_that_on_key_down_calls_when_submitted_correctly(mocker):
+def test_on_undo_args_get_called(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_handler = mocker.patch.object(widget, "_when_submitted")
-    widget._on_key_down(DUMMY_KEYUP_DICT_ONE)
+    mock_undo = mocker.MagicMock()
+    widget.on_undo(mock_undo)
+    widget._undo("dummy")
 
-    assert mock_handler.call_args == (
-        ({"value": "a", "source": "keystroke"},),
-    )
+    mock_undo.assert_called_once()
+    assert mock_undo.call_args[0] == tuple()
 
 
-def test_that_when_submitted_passes_correct_values_from_keystroke(mocker):
+def test_on_skip_args_get_called(mocker):
     widget = controls.Submitter(["a", "b"])
-    mock_function = mocker.Mock()
-    widget.on_submission(mock_function)
+    mock_skip = mocker.MagicMock()
+    widget.on_skip(mock_skip)
+    widget._skip("dummy")
 
-    widget.other_widget.value = "dummy submission"
-    widget._when_submitted({"source": "keystroke", "value": "dummy"})
-
-    assert mock_function.call_args == (
-        ({"source": "keystroke", "value": "dummy"},),
-    )
+    mock_skip.assert_called_once()
+    assert mock_skip.call_args[0] == tuple()
 
 
 def test_that_sort_options_sorts_options(mocker):
@@ -140,7 +109,7 @@ def test_that_sort_options_sorts_options(mocker):
     widget._sort_options()
 
     assert widget.options == ["a", "b", "c", "d"]
-    assert mock_compose.called_once()
+    mock_compose.assert_called_once()
 
 
 def test_that_removing_core_options_fails():
@@ -166,10 +135,10 @@ def test_that_removing_added_options_works():
 def test_that_submitting_a_new_option_adds_it(mocker):
     widget = controls.Submitter(["a", "b"])
     mock_function = mocker.Mock()
-    widget.on_submission(mock_function)
+    widget.on_submit(mock_function)
 
     widget.other_widget.value = "dummy submission"
-    widget._when_submitted(widget.other_widget)
+    widget._submit(widget.other_widget)
 
     assert "dummy submission" in widget.options
 
@@ -196,10 +165,7 @@ def test_that_by_default_other_option_is_enabled():
     options = ["a", "b", "c", "d", "e", "f"]
     widget = controls.Submitter(options)
 
-    assert any(
-        isinstance(item, ipywidgets.Text)
-        for item in widget.children[-1].children
-    )
+    assert isinstance(widget.other_widget, ipywidgets.Text)
 
 
 def test_that_disabling_other_option_works():

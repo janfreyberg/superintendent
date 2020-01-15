@@ -31,6 +31,10 @@ machine learning model to enable quick and practical active learning.
    Active learning <active-learning.ipynb>
    Distributed labelling <distributing-labelling.ipynb>
    API Reference <api/index.md>
+
+.. toctree::
+   :caption: Example gallery:
+
    Examples <examples/index.md>
 
 ## Indices and tables

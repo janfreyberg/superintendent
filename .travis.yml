@@ -11,14 +11,17 @@ python:
   - "3.7"
 script:
   # run tests, and get coverage:
-  - python -m pytest --cov=superintendent/
+  - python -m pytest --cov=src/
   # test that the notebooks all run smoothly
-  - find docs -name '*.ipynb' -o -name 'examples/*.ipynb' | xargs jupyter nbconvert --to notebook --execute
+  - find docs -name '*.ipynb' -maxdepth 2 | xargs jupyter nbconvert --to notebook --execute
   # submit coverage report to coveralls
   - python -m coveralls
 install:
-  - pip install -qq --upgrade pip
-  - pip install -q '.[test,examples]'
+  - pip install --upgrade -qq pip flit
+  - flit install --symlink --extras=test,examples
+  # - pip install --upgrade -q '.[test,examples]'
+  # seems to be required for this not to break??
+  - pip install --upgrade -qq attrs>=19.3.0
 jobs:
   include:
     - stage: "Static code analysis"
@@ -26,19 +29,19 @@ jobs:
       install:
         - pip install -qq black
       script:
-        - black --check superintendent/
+        - black --check src/
       python: "3.7"
     - stage: "Static code analysis"
       name: "flake8 check"
       install:
         - pip install -qq flake8 docargs
       script:
-        - flake8 superintendent/
+        - flake8 src/
       python: "3.7"
     - stage: "Static code analysis"
       name: "mypy check"
       script:
-        - mypy --ignore-missing-imports superintendent/
+        - mypy --ignore-missing-imports src/
       python: "3.7"
       install:
         - pip install -qq mypy

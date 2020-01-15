@@ -6,11 +6,12 @@
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
 ![Python versions](https://img.shields.io/badge/python-3.5%2B-blue.svg)
+[![Documentation Status](https://readthedocs.org/projects/superintendent/badge/?version=latest)](https://superintendent.readthedocs.io/en/latest/?badge=latest)
 
 
 ---
 
-![](logo.png)
+![](docs/img/logo.png)
 
 **`superintendent`** provides an `ipywidget`-based interactive labelling tool
 for your data. It allows you to flexibly label all kinds of data. It also allows
@@ -50,3 +51,9 @@ pip install superintendent[examples]
 If you want to contribute to `superintendent`, you will need to install the test
 dependencies as well. You can do so with
 `pip install superintendent[tests,examples]`
+
+
+## Acknowledgements
+
+Much of the initial work on `superintendent` was done during my time at
+[Faculty AI](https://faculty.ai/).

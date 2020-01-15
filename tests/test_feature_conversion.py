@@ -27,7 +27,7 @@ from hypothesis.extra.numpy import (
 
 from hypothesis import HealthCheck
 
-from superintendent.queueing import _features_to_array
+from superintendent.queueing.utils import _features_to_array
 
 
 guaranteed_dtypes = one_of(

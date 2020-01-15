@@ -7,6 +7,8 @@ import pytest
 from superintendent.base import Labeller
 from superintendent import display
 
+pytestmark = pytest.mark.skip
+
 
 def test_that_creating_a_base_widget_works():
     widget = Labeller()  # noqa

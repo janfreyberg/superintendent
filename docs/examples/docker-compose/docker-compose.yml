@@ -1,0 +1,46 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment: &environment
+      POSTGRES_USER: superintendent
+      POSTGRES_PASSWORD: superintendent
+      POSTGRES_DB: labelling
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: tensorflow.Dockerfile
+    restart: always
+    depends_on:
+      - "db"
+    environment: *environment
+    entrypoint: python /app/orchestrate.py
+    volumes:
+      - ./orchestrate.py:/app/orchestrate.py
+
+  notebook:
+    build:
+      context: .
+      dockerfile: voila.Dockerfile
+    restart: always
+    depends_on:
+      - "db"
+    environment: *environment
+    volumes:
+      - ./voila-interface.ipynb:/home/anaconda/app/app.ipynb
+    ports:
+      - 8866:8866
