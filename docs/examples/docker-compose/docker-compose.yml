@@ -1,4 +1,3 @@
-# Use postgres/example user/password credentials
 version: '3.1'
 
 services:
@@ -6,7 +5,7 @@ services:
   db:
     image: postgres
     restart: always
-    environment:
+    environment: &environment
       POSTGRES_USER: superintendent
       POSTGRES_PASSWORD: superintendent
       POSTGRES_DB: labelling
@@ -20,18 +19,28 @@ services:
     restart: always
     ports:
       - 8080:8080
-  
-  notebook:
-    image: voila
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: tensorflow.Dockerfile
     restart: always
+    depends_on:
+      - "db"
+    environment: *environment
+    entrypoint: python /app/orchestrate.py
+    volumes:
+      - ./orchestrate.py:/app/orchestrate.py
+
+  notebook:
+    build:
+      context: .
+      dockerfile: voila.Dockerfile
+    restart: always
+    depends_on:
+      - "db"
+    environment: *environment
     volumes:
       - ./voila-interface.ipynb:/home/anaconda/app/app.ipynb
     ports:
       - 8866:8866
-
-  orchestrator:
-    image: voila
-    restart: always
-    entrypoint: /opt/conda/bin/python orchestrate.py
-    volumes:
-      - ./orchestrate.py:/home/anaconda/app/orchestrate.py

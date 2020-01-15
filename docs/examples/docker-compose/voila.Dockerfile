@@ -5,15 +5,9 @@ RUN /opt/conda/bin/pip install --upgrade pip
 RUN mkdir /home/anaconda/app
 WORKDIR /home/anaconda/app
 
-# install superintendent
+# install some extra dependencies
+RUN /opt/conda/bin/pip install voila>=0.1.2
 RUN /opt/conda/bin/pip install superintendent
 
-# install some extra dependencies
-COPY docker-requirements.txt docker-requirements.txt
-RUN /opt/conda/bin/pip install -r docker-requirements.txt
-
-ONBUILD COPY . .
-ONBUILD RUN if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-ENTRYPOINT ["/opt/conda/bin/voila"]
+ENTRYPOINT ["/opt/conda/bin/voila", "--debug"]
 CMD ["app.ipynb"]
