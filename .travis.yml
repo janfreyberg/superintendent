@@ -17,8 +17,8 @@ script:
   # submit coverage report to coveralls
   - python -m coveralls
 install:
-  - pip install -qq --upgrade pip
-  - pip install -q '.[test,examples]'
+  - pip install --upgrade -qq pip
+  - pip install --upgrade -q '.[test,examples]'
 jobs:
   include:
     - stage: "Static code analysis"
