@@ -21,12 +21,14 @@ def image_display_function(image, fit_into=(500, 500)) -> None:
         here.
     """
     raise NotImplementedError(
-        "You passed an object of type {}, but image_display_function "
-        "expects a path, URL or numpy array."
+        "You passed an object of type {}, but image_display_function ".format(
+            type(image)
+        )
+        + " expects a path, URL or numpy array."
     )
 
 
-@image_display_function.register
+@image_display_function.register(pathlib.Path)
 def _image_display_function_path(
     image: pathlib.Path, fit_into: Tuple[int, int] = (500, 500)
 ) -> None:
@@ -35,7 +37,7 @@ def _image_display_function_path(
     image_display_function(image)
 
 
-@image_display_function.register
+@image_display_function.register(str)
 def _image_display_function_str(
     image: str, fit_into: Tuple[int, int] = (500, 500)
 ) -> None:
@@ -44,7 +46,7 @@ def _image_display_function_str(
     image_display_function(path_image, fit_into=fit_into)
 
 
-@image_display_function.register
+@image_display_function.register(np.ndarray)
 def _image_display_function_array(
     image: np.ndarray, fit_into: Tuple[int, int] = (500, 500)
 ) -> None:
@@ -56,7 +58,7 @@ def _image_display_function_array(
     image_display_function(image, fit_into=fit_into)
 
 
-@image_display_function.register
+@image_display_function.register(Image.Image)
 def _image_display_function_pillow(
     image: Image.Image, fit_into: Tuple[int, int] = (500, 500)
 ):
