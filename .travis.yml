@@ -19,6 +19,8 @@ script:
 install:
   - pip install --upgrade -qq pip
   - pip install --upgrade -q '.[test,examples]'
+  # seems to be required for this not to break??
+  - pip install --upgrade -qq attrs>=19.3.0
 jobs:
   include:
     - stage: "Static code analysis"
