@@ -44,7 +44,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    "jupyter_sphinx.execute",
+    # "jupyter_sphinx.execute",
     "sphinx_automodapi.automodapi",
     "nbsphinx",
     "m2r",
@@ -166,7 +166,7 @@ nbsphinx_prolog = """
 # if this is not set to empty string, widgets get displayed twice, see:
 # https://nbsphinx.readthedocs.io/en/0.5.0/usage.html#nbsphinx_widgets_path
 # https://github.com/spatialaudio/nbsphinx/issues/378
-nbsphinx_widgets_path = ""
+# nbsphinx_widgets_path = ""
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
