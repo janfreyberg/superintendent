@@ -48,7 +48,7 @@ extensions = [
     "sphinx_automodapi.automodapi",
     "nbsphinx",
     "m2r",
-    "numpydoc",
+    "sphinx.ext.napoleon",
 ]
 
 numpydoc_show_class_members = False
