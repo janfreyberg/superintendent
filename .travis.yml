@@ -49,6 +49,8 @@ jobs:
     - stage: deploy
       name: "Deploy to pypi"
       # if: tag IS present
+      install:
+        - pip install flit
       script:
         - ls -la
         - flit build
