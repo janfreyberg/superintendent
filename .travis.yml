@@ -22,7 +22,7 @@ install:
   - flit install --symlink --extras=test,examples
   # - pip install --upgrade -q '.[test,examples]'
   # seems to be required for this not to break??
-  - pip install --upgrade -qq attrs>=19.3.0
+  - pip install --upgrade -qq 'attrs>=19.3.0'
 jobs:
   include:
     - stage: "Static code analysis"
