@@ -11,11 +11,12 @@ python:
   - "3.7"
 script:
   # run tests, and get coverage:
-  - python -m pytest --cov=src/
+  - python -m pytest -k 'button' --cov=src/
   # test that the notebooks all run smoothly
-  - find docs -name '*.ipynb' -maxdepth 2 | xargs jupyter nbconvert --to notebook --execute
+  # - find docs -name '*.ipynb' -maxdepth 2 | xargs jupyter nbconvert --to notebook --execute
   # submit coverage report to coveralls
   - python -m coveralls
+  # - ls -la
 install:
   - pip install --upgrade -qq pip flit
   - flit install --symlink --extras=test,examples
@@ -47,8 +48,9 @@ jobs:
         - pip install -qq mypy
     - stage: deploy
       name: "Deploy to pypi"
-      if: tag IS present
+      # if: tag IS present
       script:
+        - ls -la
         - flit build
-        - env FLIT_USERNAME=$PYPI_USER FLIT_PASSWORD=$PYPI_PASSWORD flit publish
+        # - env FLIT_USERNAME=$PYPI_USER FLIT_PASSWORD=$PYPI_PASSWORD flit publish
       python: "3.7"
