@@ -30,7 +30,7 @@ class Labeller(widgets.VBox):
         *,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
-        queue: BaseLabellingQueue = SimpleLabellingQueue(),
+        queue: Optional[BaseLabellingQueue] = None,
         input_widget: Optional[widgets.Widget] = None,
         display_func: Union[display.Names, Callable] = "default",
         model: Optional[BaseEstimator] = None,
@@ -115,7 +115,7 @@ class Labeller(widgets.VBox):
         traitlets.link((self, "options"), (self.input_widget, "options"))
 
         if queue is None:
-            raise ValueError("No queue implementation was provided.")
+            queue = SimpleLabellingQueue()
 
         self.queue = queue
 
