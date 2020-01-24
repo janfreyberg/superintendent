@@ -16,7 +16,7 @@ from . import acquisition_functions, controls, display
 from .queueing import BaseLabellingQueue, SimpleLabellingQueue
 
 
-class Labeller(traitlets.HasTraits):
+class Labeller(widgets.VBox):
     """
     Data point labelling.
 
@@ -30,7 +30,7 @@ class Labeller(traitlets.HasTraits):
         *,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
-        queue: BaseLabellingQueue = SimpleLabellingQueue(),
+        queue: Optional[BaseLabellingQueue] = None,
         input_widget: Optional[widgets.Widget] = None,
         display_func: Union[display.Names, Callable] = "default",
         model: Optional[BaseEstimator] = None,
@@ -91,7 +91,6 @@ class Labeller(traitlets.HasTraits):
         """
 
         # the widget elements
-        self.layout = widgets.VBox([])
         self.feature_output = widgets.Output()
         self.feature_display = widgets.Box(
             (self.feature_output,),
@@ -116,7 +115,7 @@ class Labeller(traitlets.HasTraits):
         traitlets.link((self, "options"), (self.input_widget, "options"))
 
         if queue is None:
-            raise ValueError("No queue implementation was provided.")
+            queue = SimpleLabellingQueue()
 
         self.queue = queue
 
@@ -173,6 +172,7 @@ class Labeller(traitlets.HasTraits):
             )
 
         # the annotation implementation:
+        super().__init__()
         self._annotation_loop = self._annotation_iterator()
         next(self._annotation_loop)  # kick off the loop
 
@@ -275,7 +275,7 @@ class Labeller(traitlets.HasTraits):
             self._compose()
 
     def _compose(self):
-        self.layout.children = [
+        self.children = [
             self.top_bar,
             self.feature_display,
             self.input_widget,
@@ -311,9 +311,6 @@ class Labeller(traitlets.HasTraits):
     def new_labels(self):
         _, _, labels = self.queue.list_all()
         return labels
-
-    def _ipython_display_(self):
-        IPython.display.display(self.layout)
 
     def retrain(self, button=None):
         """Re-train the classifier you passed when creating this widget.

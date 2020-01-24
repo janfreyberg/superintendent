@@ -65,7 +65,8 @@ doc = [
     "sphinx_rtd_theme>=0.4.3",
     "jupyter-sphinx>=0.1.4",
     "nbsphinx>=0.4.2",
-    "sphinx-automodapi"
+    "sphinx-automodapi",
+    "ipyannotations>=0.2.0"
 ]
 examples = [
     "requests>=2.21",
