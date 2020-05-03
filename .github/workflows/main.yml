@@ -29,3 +29,5 @@ jobs:
       run: python -m pytest --cov=src/
     - name: Update coveralls
       run: python -m coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
