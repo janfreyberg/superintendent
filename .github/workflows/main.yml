@@ -28,6 +28,4 @@ jobs:
     - name: Test with pytest
       run: python -m pytest --cov=src/
     - name: Update coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      run: python -m coveralls
