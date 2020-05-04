@@ -1,6 +1,9 @@
 name: Unit tests and linting
 
-on: [ push ]
+on:
+  push:
+  schedule:
+    - cron: "0 15 * * 5"
 
 jobs:
   lint:
@@ -42,3 +45,21 @@ jobs:
       run: python -m coveralls
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+  run-examples:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install -qq --upgrade pip flit
+        flit install --symlink --extras test,examples
+    - name: Run notebooks
+      run: |
+        find docs -name '*.ipynb' -maxdepth 2 | xargs jupyter nbconvert --to notebook --execute
