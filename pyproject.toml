@@ -41,9 +41,6 @@ requires = [
 dev = [
     "jupyterlab>=1.1",
     "rope",
-    "docargs",
-    "black>=19.3b0",
-    "flake8>=3.7",
 ]
 test = [
     "isort>=4.3.21",
@@ -54,6 +51,10 @@ test = [
     "pytest-mock>=1.10",
     "nbconvert>=5.4",
     "coveralls>=1.7",
+    "docargs>=0.2.0",
+    "black>=19.3b0",
+    "flake8>=3.7",
+    "mypy",
 ]
 doc = [
     "sphinx>=2.0",

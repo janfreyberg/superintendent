@@ -20,7 +20,10 @@ def entropy(probabilities: np.ndarray) -> np.ndarray:
     probabilities : np.ndarray
         An array of probabilities, with the shape n_samples,
         n_classes
-    shuffle_prop : float
+
+    Other Parameters
+    ----------------
+    shuffle_prop : float (default=0.1)
         The proportion of data points that should be randomly shuffled. This
         means the sorting retains some randomness, to avoid biasing your
         new labels and catching any minority classes the algorithm currently
@@ -41,6 +44,9 @@ def margin(probabilities: np.ndarray) -> np.ndarray:
     probabilities : np.ndarray
         An array of probabilities, with the shape n_samples,
         n_classes
+
+    Other Parameters
+    ----------------
     shuffle_prop : float
         The proportion of data points that should be randomly shuffled. This
         means the sorting retains some randomness, to avoid biasing your
@@ -64,6 +70,9 @@ def certainty(probabilities: np.ndarray):
     probabilities : np.ndarray
         An array of probabilities, with the shape n_samples,
         n_classes
+
+    Other Parameters
+    ----------------
     shuffle_prop : float
         The proportion of data points that should be randomly shuffled. This
         means the sorting retains some randomness, to avoid biasing your
