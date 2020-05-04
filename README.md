@@ -1,12 +1,11 @@
 # Superintendent
 
-[![Build Status](https://travis-ci.com/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.com/janfreyberg/superintendent)
 [![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
+![Unit tests and linting](https://github.com/janfreyberg/superintendent/workflows/Unit%20tests%20and%20linting/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/superintendent/badge/?version=latest)](https://superintendent.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
-![Python versions](https://img.shields.io/badge/python-3.5%2B-blue.svg)
-[![Documentation Status](https://readthedocs.org/projects/superintendent/badge/?version=latest)](https://superintendent.readthedocs.io/en/latest/?badge=latest)
 
 
 ---
