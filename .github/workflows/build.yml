@@ -1,4 +1,4 @@
-name: Unit tests and linting
+name: Package build and publishing
 
 on: [ push ]
 
@@ -21,8 +21,10 @@ jobs:
       if: "!startsWith(github.event.ref, 'refs/tags')"
       run: |
         testver src/superintendent/
-        echo "::set-env name=FLIT_INDEX_URL::'https://test.pypi.org/legacy/'"
+        echo "::set-env name=FLIT_INDEX_URL::https://test.pypi.org/legacy/"
         echo "::set-env name=FLIT_PASSWORD::${{ secrets.test_pypi_secret }}"
         testver src/superintendent/
+    - name: Build
+      run: flit build
     - name: Publish
       run: flit publish
