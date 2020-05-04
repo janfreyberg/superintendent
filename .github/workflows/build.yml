@@ -23,7 +23,6 @@ jobs:
         testver src/superintendent/
         echo "::set-env name=FLIT_INDEX_URL::https://test.pypi.org/legacy/"
         echo "::set-env name=FLIT_PASSWORD::${{ secrets.test_pypi_secret }}"
-        testver src/superintendent/
     - name: Build
       run: flit build
     - name: Publish
