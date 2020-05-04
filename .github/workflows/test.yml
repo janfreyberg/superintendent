@@ -1,0 +1,44 @@
+name: Unit tests and linting
+
+on: [ push ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install -qq --upgrade pip flit
+        flit install --symlink --extras test
+    - name: Lint with flake8
+      run: flake8 src/
+    - name: Check black formatting
+      run: black --check src/
+    - name: Mypy test analysis
+      run: mypy --ignore-missing-imports src/
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install -qq --upgrade pip flit
+        flit install --symlink --extras test
+    - name: Test with pytest
+      run: python -m pytest --cov=src/
+    - name: Update coveralls
+      run: python -m coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
