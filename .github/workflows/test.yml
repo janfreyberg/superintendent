@@ -13,8 +13,8 @@ jobs:
         python-version: 3.6
     - name: Install dependencies
       run: |
-        python -m pip install -qq --upgrade pip
-        pip install '.[test]'
+        python -m pip install -qq --upgrade pip flit
+        flit install --symlink --extras test
     - name: Lint with flake8
       run: flake8 src/
     - name: Check black formatting
@@ -34,8 +34,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install -qq --upgrade pip
-        pip install '.[test]'
+        python -m pip install -qq --upgrade pip flit
+        flit install --symlink --extras test
     - name: Test with pytest
       run: python -m pytest --cov=src/
     - name: Update coveralls
