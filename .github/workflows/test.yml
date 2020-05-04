@@ -1,6 +1,9 @@
 name: Unit tests and linting
 
-on: [ push ]
+on:
+  push:
+  schedule:
+    - cron: "0 15 * * 5"
 
 jobs:
   lint:
