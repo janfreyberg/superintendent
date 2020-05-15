@@ -4,4 +4,4 @@ from .multiclass_labeller import MultiClassLabeller
 from .base import Labeller
 
 __all__ = ["MultiClassLabeller", "ClassLabeller", "Labeller"]
-__version__ = "0.5.1"
+__version__ = "0.5.2"

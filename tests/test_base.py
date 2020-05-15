@@ -6,23 +6,27 @@ import pytest
 
 from superintendent.base import Labeller
 from superintendent import display
+from superintendent.controls.submitter import Submitter
+import ipywidgets as widgets
 
-pytestmark = pytest.mark.skip
+# pytestmark = pytest.mark.skip
 
 
 def test_that_creating_a_base_widget_works():
-    widget = Labeller()  # noqa
+    widget = Labeller(input_widget=Submitter())  # noqa
 
 
 def test_that_display_calls_display_func(mocker):
     mock_display = mocker.Mock()
-    widget = Labeller(display_func=mock_display)
+    widget = Labeller(display_func=mock_display, input_widget=Submitter())
     widget._display("dummy feature")
     assert mock_display.call_count == 1
 
 
 def test_that_slow_displays_trigger_render_processing(mocker):
-    widget = Labeller(display_func=lambda _: time.sleep(0.6))
+    widget = Labeller(
+        display_func=lambda _: time.sleep(0.6), input_widget=Submitter()
+    )
     mock_processing = mocker.patch.object(widget, "_render_processing")
     widget._display("dummy feature")
     assert mock_processing.call_count == 0
@@ -30,6 +34,7 @@ def test_that_slow_displays_trigger_render_processing(mocker):
     assert mock_processing.call_count == 1
 
 
+@pytest.mark.skip
 def test_that_from_images_sets_correct_arguments():
 
     # default
@@ -68,8 +73,23 @@ def test_that_from_images_sets_correct_arguments():
         )
 
 
-def test_that_ipython_display_displays_layout(mocker):
-    mock_display = mocker.patch("IPython.display.display")
-    widget = Labeller()
-    widget._ipython_display_()
-    assert mock_display.call_args == ((widget.layout,),)
+def test_that_render_finished_gets_called_when_loop_finished(mocker):
+    widget = Labeller(features=[1, 2], input_widget=Submitter())
+    mock_finish = mocker.patch.object(widget, "_render_finished")
+    widget._annotation_loop.send("a")
+    widget._annotation_loop.send("b")
+    mock_finish.assert_called_once()
+
+
+def test_that_render_finished_sets_children(mocker):
+    widget = Labeller(features=[1, 2], input_widget=Submitter())
+    widget._render_finished()
+
+    children = pytest.helpers.recursively_list_widget_children(widget)
+
+    # children = list(widget.children)
+    assert widget.progressbar in children
+    children.remove(widget.progressbar)
+
+    assert len(children) == 1
+    assert isinstance(children[0], widgets.HTML)
