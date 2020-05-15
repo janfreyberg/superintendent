@@ -142,9 +142,12 @@ class Labeller(widgets.VBox):
 
         self.acquisition_function = acquisition_function
         if isinstance(acquisition_function, str):
-            self.acquisition_function = acquisition_functions.functions[
-                acquisition_function
-            ]
+            self.acquisition_function = getattr(
+                acquisition_functions, acquisition_function
+            )
+            # acquisition_functions.functions[
+            #     acquisition_function
+            # ]
 
         self.shuffle_prop = shuffle_prop
         self.model_preprocess = model_preprocess
@@ -334,11 +337,11 @@ class Labeller(widgets.VBox):
 
         _, labelled_X, labelled_y = self.queue.list_completed()
 
-        if len(labelled_y) < 10:
+        if len(labelled_y) < 2:
             self.model_performance.value = (
                 "Score: Not enough labels to retrain."
             )
-            return
+            return np.nan
 
         if self.model_preprocess is not None:
             labelled_X, labelled_y = self.model_preprocess(
@@ -391,3 +394,4 @@ class Labeller(widgets.VBox):
         # undo the previously popped item and pop the next one
         self.queue.undo()
         self._skip()
+        return self.performance
