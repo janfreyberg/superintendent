@@ -2,6 +2,11 @@ import functools
 import typing
 
 import numpy as np
+from merge_args import merge_args
+
+
+def _dummy_fn(shuffle_prop: float = 0.1):
+    ...
 
 
 def _shuffle_subset(data: np.ndarray, shuffle_prop: float) -> np.ndarray:
@@ -114,23 +119,34 @@ def make_acquisition_function(handle_multioutput="mean"):
         comes as a list of binary classifier outputs.
     """
 
-    def decorator(fn):
-        if handle_multioutput == "mean":  # define fn where scores are avgd
+    def decorator(
+        fn: typing.Callable[[np.ndarray], np.ndarray]
+    ) -> typing.Callable[[np.ndarray, float], np.ndarray]:
+        if handle_multioutput is not None:
 
+            reduce_fn = multioutput_reduce_fns[handle_multioutput]
+
+            @merge_args(_dummy_fn)
             @functools.wraps(fn)
-            def wrapped_fn(probabilities, shuffle_prop=0.1):
+            def wrapped_fn(
+                probabilities: np.ndarray, shuffle_prop: float = 0.1
+            ):
                 if _is_multioutput(probabilities):
                     scores = np.stack(
-                        tuple(fn(prob) for prob in probabilities), axis=0
-                    ).mean(axis=0)
+                        tuple(fn(prob) for prob in probabilities), axis=0,
+                    )
+                    scores = reduce_fn(scores, axis=0)
                 else:
                     scores = fn(probabilities)
                 return _get_indices(scores, shuffle_prop)
 
         else:  # raise error if list is passed
 
+            @merge_args(_dummy_fn)
             @functools.wraps(fn)
-            def wrapped_fn(probabilities, shuffle_prop=0.1):
+            def wrapped_fn(
+                probabilities: np.ndarray, shuffle_prop: float = 0.1
+            ):
                 if _is_multioutput(probabilities):
                     raise ValueError(
                         "The input probabilities is a list of arrays, "
