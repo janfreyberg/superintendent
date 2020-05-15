@@ -305,7 +305,7 @@ class Labeller(widgets.VBox):
                 width="100%",
             ),
         )
-        self.layout.children = [self.progressbar, finish_celebration]
+        self.children = [self.progressbar, finish_celebration]
 
     @property
     def new_labels(self):
