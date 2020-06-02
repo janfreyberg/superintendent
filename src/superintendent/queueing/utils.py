@@ -16,7 +16,7 @@ def _features_to_array(features: list):
         The array of features.
     """
 
-    if len(features) > 0:
+    if features:
         if all(isinstance(feature, pd.Series) for feature in features):
             features = pd.concat([item.to_frame().T for item in features])
         elif all(isinstance(feature, pd.DataFrame) for feature in features):
