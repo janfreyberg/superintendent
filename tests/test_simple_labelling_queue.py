@@ -262,7 +262,7 @@ def test_shuffling():
     q.enqueue_many(inps)
     q.shuffle()
     # assert the order is not the same:
-    assert not all([val == inp for inp, (id_, val) in zip(inps, q)])
+    assert any(val != inp for inp, (id_, val) in zip(inps, q))
 
 
 def test_undo():
@@ -344,9 +344,7 @@ def test_list_all(inputs, labels):
     ids, x, y = q.list_all()
 
     assert len(ids) == len(inputs)
-    assert all([label in labels for label in y if label is not None])
-    assert all(
-        [label is None or id_ in popped_ids for id_, label in zip(ids, y)]
-    )
+    assert all(label in labels for label in y if label is not None)
+    assert all(label is None or id_ in popped_ids for id_, label in zip(ids, y))
     assert Counter(y)[None] == (len(inputs) - 5)
     assert pytest.helpers.same_elements(ids, range(len(inputs)))
