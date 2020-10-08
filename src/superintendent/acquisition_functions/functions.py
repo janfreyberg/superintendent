@@ -58,11 +58,10 @@ def margin(probabilities: np.ndarray) -> np.ndarray:
         new labels and catching any minority classes the algorithm currently
         classifies as a different label.
     """
-    margin = (
+    return (
         np.sort(probabilities, axis=1)[:, -1]
         - np.sort(probabilities, axis=1)[:, -2]
     )
-    return margin
 
 
 @make_acquisition_function(handle_multioutput="mean")  # noqa: D002
@@ -86,8 +85,7 @@ def certainty(probabilities: np.ndarray):
         classifies as a different label.
 
     """
-    certainty = probabilities.max(axis=-1)
-    return certainty
+    return probabilities.max(axis=-1)
 
 
 @make_acquisition_function(handle_multioutput="mean")

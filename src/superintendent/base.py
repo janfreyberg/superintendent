@@ -189,9 +189,7 @@ class Labeller(widgets.VBox):
             self._display(x)
             y = yield
 
-            if y is None:
-                pass
-            else:
+            if y is not None:
                 self.queue.submit(id_, y)
 
             self.progressbar.value = self.queue.progress
@@ -285,13 +283,13 @@ class Labeller(widgets.VBox):
         ]
 
     def _render_processing(self, message="Rendering..."):
-        message = (
-            "<h1>{}".format(message)
-            + '<i class="fa fa-spinner fa-spin"'
-            + ' aria-hidden="true"></i>'
-        )
-        processing_display = widgets.HTML(value=message)
         with self.feature_output:
+            message = (
+                "<h1>{}".format(message)
+                + '<i class="fa fa-spinner fa-spin"'
+                + ' aria-hidden="true"></i>'
+            )
+            processing_display = widgets.HTML(value=message)
             IPython.display.clear_output()
             display.default_display_function(processing_display)
 
