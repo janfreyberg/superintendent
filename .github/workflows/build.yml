@@ -29,8 +29,8 @@ jobs:
       if: "!startsWith(github.event.ref, 'refs/tags')"
       run: |
         testver src/superintendent/
-        echo "::set-env name=FLIT_INDEX_URL::https://test.pypi.org/legacy/"
-        echo "::set-env name=FLIT_PASSWORD::${{ secrets.test_pypi_secret }}"
+        echo "FLIT_INDEX_URL=https://test.pypi.org/legacy/" >> $GITHUB_ENV
+        echo "FLIT_PASSWORD=${{ secrets.test_pypi_secret }}" >> $GITHUB_ENV
     - name: Build
       run: flit build
     - name: Publish
