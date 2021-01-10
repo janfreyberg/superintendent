@@ -51,8 +51,7 @@ If you want to contribute to `superintendent`, you will need to install the test
 dependencies as well. You can do so with
 `pip install superintendent[tests,examples]`
 
-
-## Acknowledgements
+## Acknowledgements
 
 Much of the initial work on `superintendent` was done during my time at
 [Faculty AI](https://faculty.ai/).

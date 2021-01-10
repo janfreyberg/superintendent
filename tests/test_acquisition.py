@@ -37,3 +37,25 @@ def test_certainty():
     assert (
         certainty(probabilites, shuffle_prop=0) == np.array([0, 2, 1])
     ).all()
+
+
+def test_that_multioutput_works_for_certainty():
+    probabilities = np.array(
+        [[0.3, 0.4, 0.3], [0.01, 0.9, 0.09], [0.5, 0.5, 0.0]]
+    )
+    # since aggregation for multioutput is averaging, this should produce same
+    # output as before:
+    probabilities = [probabilities] * 3
+    assert (
+        certainty(probabilities, shuffle_prop=0) == np.array([0, 2, 1])
+    ).all()
+
+    # whereas here the output should be different:
+    probabilities = [
+        np.array([[0.3, 0.4, 0.3], [0.01, 0.9, 0.09], [0.5, 0.5, 0.0]]),
+        np.array([[0.5, 0.5, 0.0], [0.01, 0.9, 0.09], [0.3, 0.4, 0.3]]),
+        np.array([[0.5, 0.5, 0.0], [0.01, 0.9, 0.09], [0.3, 0.4, 0.3]]),
+    ]
+    assert (
+        certainty(probabilities, shuffle_prop=0) == np.array([1, 2, 0])
+    ).all()
