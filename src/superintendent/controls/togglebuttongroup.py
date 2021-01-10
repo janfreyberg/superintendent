@@ -8,15 +8,15 @@ import traitlets
 class ToggleButtonGroup(widgets.HBox):
     """A group of buttons with output widgets underneath.
 
-        Parameters
-        ----------
-        options : list
-            A list of options for this button group.
-        button_width : str, int, float, optional
-            The width of each button as an HTML compatible string or a number.
-            (the default is None, which leads to the width being divided
-            between the buttons.)
-        """
+    Parameters
+    ----------
+    options : list
+        A list of options for this button group.
+    button_width : str, int, float, optional
+        The width of each button as an HTML compatible string or a number.
+        (the default is None, which leads to the width being divided
+        between the buttons.)
+    """
 
     options = traitlets.List(
         trait=traitlets.Unicode(), default_value=list(), allow_none=True
