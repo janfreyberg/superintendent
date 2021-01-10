@@ -217,7 +217,7 @@ class DatabaseQueue(BaseLabellingQueue):
         """
 
         self.set_priorities(
-            [int(id_) for id_ in priorities.keys()],
+            [int(id_) for id_ in priorities],
             [int(priority) for priority in priorities.values()],
         )
 
@@ -374,7 +374,7 @@ class DatabaseQueue(BaseLabellingQueue):
                 .distinct()
             )
             try:
-                return set([self.deserialiser(row.output) for row in rows])
+                return {self.deserialiser(row.output) for row in rows}
             except TypeError:
                 return reduce(
                     operator.or_,

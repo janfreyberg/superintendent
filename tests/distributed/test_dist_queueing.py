@@ -85,9 +85,9 @@ def test_enqueueing_and_popping(input_):
 @settings(deadline=None)
 @given(inputs=lists(one_of(booleans(), floats(), integers(), text())))
 def test_enqueue_many(inputs):
-    n = len(inputs)
     with q_context() as q:
         q.enqueue_many(inputs)
+        n = len(inputs)
         # assert we can pop everything:
         for _ in range(n):
             q.pop()
@@ -99,9 +99,9 @@ def test_enqueue_many(inputs):
 @settings(suppress_health_check=(HealthCheck.too_slow,), deadline=None)
 @given(inputs=dataframe())
 def test_enqueue_dataframe(inputs):
-    n = len(inputs)
     with q_context() as q:
         q.enqueue_many(inputs)
+        n = len(inputs)
         # assert we can pop everything:
         for _ in range(n):
             id_, val = q.pop()
@@ -133,8 +133,8 @@ def test_enqueue_dataframe(inputs):
     )
 )
 def test_enqueue_array(inputs):
-    n = inputs.shape[0]
     with q_context() as q:
+        n = inputs.shape[0]
         q.enqueue_many(inputs)
         # assert we can pop everything:
         for _ in range(n):
@@ -180,8 +180,8 @@ def test_enqueue_with_labels(inputs, labels):
 @settings(deadline=None)
 @given(inputs=lists(one_of(booleans(), floats(), integers(), text())))
 def test_enqueue_at_creation(inputs):
-    n = len(inputs)
     with q_context() as q:
+        n = len(inputs)
         assert len(q.data) == n
         # assert we can pop everything:
         for _ in range(n):
@@ -221,8 +221,8 @@ def test_submitting_list(label1, label2):
 
 
 def test_reordering():
-    inp = ["b", "a", "d", "c"]
     with q_context() as q:
+        inp = ["b", "a", "d", "c"]
         q.enqueue_many(inp)
         q.reorder(OrderedDict([(1, 1), (2, 0), (3, 3), (4, 2)]))
 
@@ -237,8 +237,8 @@ def test_reordering():
 
 
 def test_iterating_over_queue():
-    inps = [str(i) for i in range(50)]
     with q_context() as q:
+        inps = [str(i) for i in range(50)]
         q.enqueue_many(inps)
 
         for i, (id_, val) in enumerate(q):
@@ -254,8 +254,8 @@ def test_length_of_queue():
 
 
 def test_progress():
-    inps = [str(i) for i in range(50)]
     with q_context() as q:
+        inps = [str(i) for i in range(50)]
         # assert my little hack for dividing by zero
         # assert np.isnan(q.progress)
         q.enqueue_many(inps)
@@ -269,17 +269,17 @@ def test_progress():
 
 @pytest.mark.skip
 def test_shuffling():
-    inps = [str(i) for i in range(50)]
     with q_context() as q:
+        inps = [str(i) for i in range(50)]
         q.enqueue_many(inps)
         q.shuffle()
         # assert the order is not the same:
-        assert not all([val == inp for inp, (id_, val) in zip(inps, q)])
+        assert any(val != inp for inp, (id_, val) in zip(inps, q))
 
 
 def test_undo():
-    inp = "input 1"
     with q_context() as q:
+        inp = "input 1"
         q.enqueue(inp)
         id_, val = q.pop()
         q.submit(id_, "label 1")
@@ -361,9 +361,7 @@ def test_list_all(inputs, labels):
         ids, x, y = q.list_all()
 
         assert len(ids) == len(inputs)
-        assert all([label in labels for label in y if label is not None])
-        assert all(
-            [label is None or id_ in popped_ids for id_, label in zip(ids, y)]
-        )
+        assert all(label in labels for label in y if label is not None)
+        assert all(label is None or id_ in popped_ids for id_, label in zip(ids, y))
         assert Counter(y)[None] == (len(inputs) - 5)
         assert pytest.helpers.same_elements(ids, range(1, 1 + len(inputs)))

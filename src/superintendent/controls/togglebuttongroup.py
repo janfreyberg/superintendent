@@ -39,7 +39,7 @@ class ToggleButtonGroup(widgets.HBox):
 
         super().__init__(children=[], **kwargs)
 
-        if button_width is None and len(options) > 0:
+        if button_width is None and options:
             self.button_width = max(1 / len(options), 0.1)
         else:
             self.button_width = button_width

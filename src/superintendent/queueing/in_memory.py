@@ -53,11 +53,7 @@ class SimpleLabellingQueue(BaseLabellingQueue):
         None
         """
 
-        if len(self.data) > 0:
-            idx = max(self.data.keys()) + 1
-        else:
-            idx = 0
-
+        idx = max(self.data.keys()) + 1 if len(self.data) > 0 else 0
         self.data[idx] = feature
 
         if label is not None:
