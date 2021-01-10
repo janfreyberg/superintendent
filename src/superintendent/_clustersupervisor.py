@@ -65,9 +65,7 @@ class ClusterSupervisor(base.Labeller):
                 self.input_widget.remove_options(
                     set(self.input_widget.options) - self.queue.list_labels()
                 )
-            elif sender["source"] == "__skip__":
-                pass
-            else:
+            elif sender["source"] != "__skip__":
                 new_label = sender["value"]
                 self.queue.submit(cluster_index, new_label)
                 # self.input_widget.add_hint(new_label, datapoint)

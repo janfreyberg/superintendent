@@ -54,12 +54,7 @@ def exact_element_match(a, b):
             or b.empty
         )
     else:
-        return all(
-            [
-                a_ == b_ or (np.isnan(a_) and np.isnan(b_))
-                for a_, b_ in zip(a, b)
-            ]
-        )
+        return all(a_ == b_ or (np.isnan(a_) and np.isnan(b_)) for a_, b_ in zip(a, b))
 
 
 @pytest.helpers.register

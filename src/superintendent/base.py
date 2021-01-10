@@ -186,9 +186,7 @@ class Labeller(widgets.VBox):
             self._display(x)
             y = yield
 
-            if y is None:
-                pass
-            else:
+            if y is not None:
                 self.queue.submit(id_, y)
 
             self.progressbar.value = self.queue.progress
@@ -258,21 +256,23 @@ class Labeller(widgets.VBox):
         next(self._annotation_loop)
 
     def _display(self, feature):
-        if feature is not None:
+        if feature is None:
 
-            # if displaying takes longer than 0.5 seconds, we should render
-            # a placeholder
-            if self.display_timer > 0.5:
-                self._render_processing()
+            return
 
-            if self.display_preprocess is not None:
-                feature = self.display_preprocess(feature)
+        # if displaying takes longer than 0.5 seconds, we should render
+        # a placeholder
+        if self.display_timer > 0.5:
+            self._render_processing()
 
-            with self.display_timer:
-                with self.feature_output:
-                    IPython.display.clear_output(wait=True)
-                    self._display_func(feature)
-            self._compose()
+        if self.display_preprocess is not None:
+            feature = self.display_preprocess(feature)
+
+        with self.display_timer:
+            with self.feature_output:
+                IPython.display.clear_output(wait=True)
+                self._display_func(feature)
+        self._compose()
 
     def _compose(self):
         self.children = [
