@@ -59,7 +59,7 @@ class DatabaseQueue(BaseLabellingQueue):
     """
 
     worker_id = None
-    item = namedtuple("QueueItem", ["id", "data", "label"])
+    item = namedtuple("item", ["id", "data", "label"])
 
     def __init__(
         self,

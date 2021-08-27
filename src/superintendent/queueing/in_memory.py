@@ -13,7 +13,7 @@ from .utils import _features_to_array
 
 class SimpleLabellingQueue(BaseLabellingQueue):
 
-    item = namedtuple("QueueItem", ["id", "data", "label"])
+    item = namedtuple("item", ["id", "data", "label"])
 
     def __init__(self, features: Any = None, labels: Any = None):
         """Create an in-memory labelling queue.
