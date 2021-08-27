@@ -52,6 +52,7 @@ test = [
     "black>=19.3b0",
     "flake8>=3.7",
     "mypy",
+    "types-cachetools",
 ]
 doc = [
     "sphinx>=2.0,<3.0",
