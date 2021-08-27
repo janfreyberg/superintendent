@@ -86,9 +86,18 @@ class DatabaseQueue(BaseLabellingQueue):
         self.engine = sa.create_engine(connection_string)
         self._popped = deque([])
 
-        if not self.engine.dialect.has_table(
-            self.engine, self.data.__tablename__
-        ):
+        try:
+            # works with sqlalchemy >= 1.4
+            table_exists = sa.inspect(self.engine).has_table(
+                self.data.__tablename__
+            )
+        except AttributeError:
+            # works with sqlalchemy < 1.3
+            table_exists = self.engine.dialect.has_table(
+                self.engine, self.data.__tablename__
+            )
+
+        if not table_exists:
             self.data.metadata.create_all(bind=self.engine)
 
         try:
