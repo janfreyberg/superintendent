@@ -1,29 +1,38 @@
 """Base class to inherit from."""
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from functools import partial
 from typing import Any, Callable, Optional, Union
+from contextlib import contextmanager
 
-# import ipyevents
-import IPython.display
 import ipywidgets as widgets
 import numpy as np
 import sklearn.model_selection
 import traitlets
 from sklearn.base import BaseEstimator
+import codetiming
 
-from . import acquisition_functions, controls, display
+from . import acquisition_functions
 from .queueing import BaseLabellingQueue, SimpleLabellingQueue
 
 
-class Labeller(widgets.VBox):
+FINISH_MESSAGE = widgets.Box(
+    (widgets.HTML(value="<h1>Finished labelling 🎉!"),),
+    layout=widgets.Layout(
+        justify_content="center",
+        padding="2.5% 0",
+        display="flex",
+        width="100%",
+    ),
+)
+
+
+class Superintendent(widgets.VBox):
     """
     Data point labelling.
 
     This is a base class for data point labelling.
     """
-
-    options = traitlets.List(list(), allow_none=True)
 
     def __init__(
         self,
@@ -31,14 +40,12 @@ class Labeller(widgets.VBox):
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
         queue: Optional[BaseLabellingQueue] = None,
-        input_widget: Optional[widgets.Widget] = None,
-        display_func: Union[display.Names, Callable] = "default",
+        labelling_widget: Optional[widgets.Widget] = None,
         model: Optional[BaseEstimator] = None,
         eval_method: Optional[Callable] = None,
         acquisition_function: Optional[Callable] = None,
         shuffle_prop: float = 0.1,
         model_preprocess: Optional[Callable] = None,
-        display_preprocess: Optional[Callable] = None,
     ):
         """
         Make a class that allows you to label data points.
@@ -56,7 +63,7 @@ class Labeller(widgets.VBox):
             A queue object. The interface needs to follow the abstract class
             superintendent.queueing.BaseLabellingQueue. By default,
             SimpleLabellingQueue (an in-memory queue using python's deque)
-        input_widget : Optional[widgets.Widget]
+        labelling_widget : Optional[widgets.Widget]
             An input widget. This needs to follow the interface of the class
             superintendent.controls.base.SubmissionWidgetMixin
         display_func : str, func, optional
@@ -90,34 +97,15 @@ class Labeller(widgets.VBox):
             this function could re-shape the data to shape (28, 28)
         """
 
-        # the widget elements
-        self.feature_output = widgets.Output()
-        self.feature_display = widgets.Box(
-            (self.feature_output,),
-            layout=widgets.Layout(
-                justify_content="center",
-                padding="2.5% 0",
-                display="flex",
-                width="100%",
-            ),
-        )
-
-        if input_widget is None:
+        if labelling_widget is None:
             raise ValueError("No input widget was provided.")
 
-        self.input_widget = input_widget
+        self.labelling_widget = labelling_widget
 
-        self.input_widget.on_submit(self._apply_annotation)
-        self.input_widget.on_undo(self._undo)
-        self.input_widget.on_skip(self._skip)
+        self.labelling_widget.on_submit(self._apply_annotation)
+        self.labelling_widget.on_undo(self._undo)
 
-        self.options = self.input_widget.options
-        traitlets.link((self, "options"), (self.input_widget, "options"))
-
-        if queue is None:
-            queue = SimpleLabellingQueue()
-
-        self.queue = queue
+        self.queue = queue or SimpleLabellingQueue()
 
         if features is not None:
             self.queue.enqueue_many(features, labels)
@@ -125,17 +113,7 @@ class Labeller(widgets.VBox):
         self.progressbar = widgets.FloatProgress(
             max=1, description="Progress:"
         )
-        self.top_bar = widgets.HBox([self.progressbar])
-
-        if isinstance(display_func, str):
-            self._display_func = display.functions[display_func]
-        else:
-            self._display_func = display_func
-
-        self.display_preprocess = display_preprocess
-
-        self.display_timer = controls.Timer()
-        self.model_fit_timer = controls.Timer()
+        self.timers = defaultdict(lambda: codetiming.Timer(logger=None))
 
         self.model = model
         self.eval_method = eval_method
@@ -150,26 +128,37 @@ class Labeller(widgets.VBox):
         self.model_preprocess = model_preprocess
 
         # if there is a model, we need the interface components for it
-        if self.model is not None:
+        if self.model:
             self.retrain_button = widgets.Button(
                 description="Retrain",
                 disabled=False,
                 button_style="",
-                tooltip="Click me",
+                tooltip=(
+                    "Click here to retrain the model and rank unlabelled data "
+                    "points based on its prediction."
+                ),
                 icon="refresh",
             )
             self.retrain_button.on_click(self.retrain)
             self.model_performance = widgets.HTML(value="")
-            self.top_bar.children = (
+        else:
+            self.retrain_button = widgets.Box()
+            self.model_performance = widgets.Box()
+        self.top_bar = widgets.HBox(
+            [
                 widgets.HBox(
-                    [*self.top_bar.children],
-                    layout=widgets.Layout(width="50%"),
+                    [self.progressbar],
+                    layout=widgets.Layout(
+                        width="50%",
+                        justify_content="space-between",
+                    ),
                 ),
                 widgets.HBox(
                     [self.retrain_button, self.model_performance],
                     layout=widgets.Layout(width="50%"),
                 ),
-            )
+            ]
+        )
 
         # the annotation implementation:
         super().__init__()
@@ -183,56 +172,22 @@ class Labeller(widgets.VBox):
         self._compose()
         for id_, x in self.queue:
 
-            self._display(x)
+            with self._render_hold_message("Loading..."):
+                self.labelling_widget.display(x)
             y = yield
-
-            if y is None:
-                pass
-            else:
+            if y is not None:
                 self.queue.submit(id_, y)
-
             self.progressbar.value = self.queue.progress
 
         yield self._render_finished()
-
-    @classmethod
-    def from_images(cls, *, canvas_size=(500, 500), **kwargs):
-        """Generate a labelling widget from images.
-
-        This is a convenience function that creates a widget with an image
-        display function. All other arguments for creating this widget need to
-        be passed.
-
-        Parameters
-        ----------
-        canvas_size : tuple
-            The width / height that the image will be fit into. By default 500
-            by 500.
-
-        """
-        display_func = partial(
-            display.image_display_function, fit_into=canvas_size
-        )
-
-        kwargs["display_func"] = kwargs.get("display_func", display_func)
-
-        return cls(**kwargs)
 
     def _apply_annotation(self, y):
         self._annotation_loop.send(y)
 
     def _undo(self):
-        # unpop the current item:
-        self.queue.undo()
-        # unpop and unlabel the previous item:
-        self.queue.undo()
-        # try to remove any labels not in the assigned labels:
-        if hasattr(self.input_widget, "remove_options"):
-            self.input_widget.remove_options(
-                set(self.input_widget.options) - self.queue.list_labels()
-            )
-        # send None into the iterator; returning to the loop
-        self._annotation_loop.send(None)
+        self.queue.undo()  # unpop the current item
+        self.queue.undo()  # unpop and unlabel the previous item
+        self._annotation_loop.send(None)  # Advance next item
 
     def _skip(self):
         self._annotation_loop.send(None)
@@ -257,55 +212,34 @@ class Labeller(widgets.VBox):
         self.queue.undo()
         next(self._annotation_loop)
 
-    def _display(self, feature):
-        if feature is not None:
-
-            # if displaying takes longer than 0.5 seconds, we should render
-            # a placeholder
-            if self.display_timer > 0.5:
-                self._render_processing()
-
-            if self.display_preprocess is not None:
-                feature = self.display_preprocess(feature)
-
-            with self.display_timer:
-                with self.feature_output:
-                    IPython.display.clear_output(wait=True)
-                    self._display_func(feature)
-            self._compose()
-
     def _compose(self):
         self.children = [
             self.top_bar,
-            self.feature_display,
-            self.input_widget,
+            self.labelling_widget,
         ]
 
-    def _render_processing(self, message="Rendering..."):
-        message = (
-            "<h1>{}".format(message)
-            + '<i class="fa fa-spinner fa-spin"'
-            + ' aria-hidden="true"></i>'
+    @contextmanager
+    def _render_hold_message(self, message="Rendering..."):
+        timer = self.timers[message]
+        spinner = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i>'
+        message_widget = widgets.HTML(
+            value=(f"<p><b>{message}</b>{spinner}"),
+            layout=widgets.Layout(padding="0 10%"),
         )
-        processing_display = widgets.HTML(value=message)
-        with self.feature_output:
-            IPython.display.clear_output()
-            display.default_display_function(processing_display)
+        if timer.last > 0.5:
+            self.top_bar.children[0].children = [
+                self.progressbar,
+                message_widget,
+            ]
+        try:
+            with timer:
+                yield
+        finally:
+            self.top_bar.children[0].children = [self.progressbar]
 
     def _render_finished(self):
-
         self.progressbar.bar_style = "success"
-
-        finish_celebration = widgets.Box(
-            (widgets.HTML(value="<h1>Finished labelling 🎉!"),),
-            layout=widgets.Layout(
-                justify_content="center",
-                padding="2.5% 0",
-                display="flex",
-                width="100%",
-            ),
-        )
-        self.children = [self.progressbar, finish_celebration]
+        self.children = [self.progressbar, FINISH_MESSAGE]
 
     @property
     def new_labels(self):
@@ -327,66 +261,58 @@ class Labeller(widgets.VBox):
         if self.model is None:
             raise ValueError("No model to retrain.")
 
-        if not self.model_fit_timer < 0.5:
-            self._render_processing(message="Retraining... ")
+        with self._render_hold_message("Retraining..."):
+            _, labelled_X, labelled_y = self.queue.list_completed()
 
-        self.model_fit_timer.start()
-
-        _, labelled_X, labelled_y = self.queue.list_completed()
-
-        if len(labelled_y) < 10:
-            self.model_performance.value = (
-                "Score: Not enough labels to retrain."
-            )
-            return
-
-        if self.model_preprocess is not None:
-            labelled_X, labelled_y = self.model_preprocess(
-                labelled_X, labelled_y
-            )
-
-        # first, fit the model
-        self.model.fit(labelled_X, labelled_y)
-
-        # now evaluate. by default, using cross validation. in sklearn this
-        # clones the model, so it's OK to do after the model fit.
-        if self.eval_method is not None:
-            self.performance = np.mean(
-                self.eval_method(self.model, labelled_X, labelled_y)
-            )
-        else:
-            self.performance = np.mean(
-                sklearn.model_selection.cross_val_score(
-                    self.model,
-                    labelled_X,
-                    labelled_y,
-                    cv=3,
-                    error_score=np.nan,
-                )
-            )
-
-        self.model_performance.value = "Score: {:.3f}".format(self.performance)
-
-        if self.acquisition_function is not None:
-            ids, unlabelled_X = self.queue.list_uncompleted()
+            if len(labelled_y) < 10:
+                self.model_performance.value = "Not enough labels to retrain."
+                return
 
             if self.model_preprocess is not None:
-                unlabelled_X, _ = self.model_preprocess(unlabelled_X, None)
-
-            reordering = list(
-                self.acquisition_function(
-                    self.model.predict_proba(unlabelled_X),
-                    shuffle_prop=self.shuffle_prop,
+                labelled_X, labelled_y = self.model_preprocess(
+                    labelled_X, labelled_y
                 )
-            )
 
-            new_order = OrderedDict(
-                [(id_, index) for id_, index in zip(ids, list(reordering))]
-            )
+            # first, fit the model
+            self.model.fit(labelled_X, labelled_y)
 
-            self.queue.reorder(new_order)
+            # now evaluate. by default, using cross validation. in sklearn this
+            # clones the model, so it's OK to do after the model fit.
+            if self.eval_method is not None:
+                self.performance = np.mean(
+                    self.eval_method(self.model, labelled_X, labelled_y)
+                )
+            else:
+                self.performance = np.mean(
+                    sklearn.model_selection.cross_val_score(
+                        self.model,
+                        labelled_X,
+                        labelled_y,
+                        cv=3,
+                        error_score=np.nan,
+                    )
+                )
 
-        self.model_fit_timer.stop()
+            self.model_performance.value = f"Score: {self.performance:.3f}"
+
+            if self.acquisition_function is not None:
+                ids, unlabelled_X = self.queue.list_uncompleted()
+
+                if self.model_preprocess is not None:
+                    unlabelled_X, _ = self.model_preprocess(unlabelled_X, None)
+
+                reordering = list(
+                    self.acquisition_function(
+                        self.model.predict_proba(unlabelled_X),
+                        shuffle_prop=self.shuffle_prop,
+                    )
+                )
+
+                new_order = OrderedDict(
+                    [(id_, index) for id_, index in zip(ids, list(reordering))]
+                )
+
+                self.queue.reorder(new_order)
 
         # undo the previously popped item and pop the next one
         self.queue.undo()
