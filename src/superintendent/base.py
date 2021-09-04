@@ -1,31 +1,18 @@
 """Base class to inherit from."""
 
 from collections import OrderedDict, defaultdict
-from functools import partial
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 from contextlib import contextmanager
 
 import ipywidgets as widgets
 import numpy as np
 import sklearn.model_selection
-import traitlets
 from sklearn.base import BaseEstimator
 import codetiming
 
 from . import acquisition_functions
 from .queueing import BaseLabellingQueue
 from .db_queue import DatabaseQueue
-
-
-FINISH_MESSAGE = widgets.Box(
-    (widgets.HTML(value="<h1>Finished labelling 🎉!"),),
-    layout=widgets.Layout(
-        justify_content="center",
-        padding="2.5% 0",
-        display="flex",
-        width="100%",
-    ),
-)
 
 
 class Superintendent(widgets.VBox):
@@ -67,11 +54,6 @@ class Superintendent(widgets.VBox):
         labelling_widget : Optional[widgets.Widget]
             An input widget. This needs to follow the interface of the class
             superintendent.controls.base.SubmissionWidgetMixin
-        display_func : str, func, optional
-            A function that accepts a single data point and displays it. Any
-            return values are ignored. For convenience, you can supply the
-            strings "image" and "default", which are defined in
-            superintendent.display.
         model : sklearn.base.BaseEstimator
             An sklearn-interface compliant model (that implements `fit`,
             `predict`, `predict_proba` and `score`).
@@ -92,10 +74,6 @@ class Superintendent(widgets.VBox):
             A function that accepts x and y data and returns x and y data. y
             can be None (in which it should return x, None) as this function is
             used on the un-labelled data too.
-        display_preprocess : callable
-            A function that accepts a single data point and pre-processes it.
-            For example, if you have MNIST data as a vector of shape (784,),
-            this function could re-shape the data to shape (28, 28)
         """
 
         if labelling_widget is None:
@@ -111,9 +89,7 @@ class Superintendent(widgets.VBox):
         if features is not None:
             self.queue.enqueue_many(features, labels)
 
-        self.progressbar = widgets.FloatProgress(
-            max=1, description="Progress:"
-        )
+        self.progressbar = widgets.FloatProgress(max=1, description="Progress:")
         self.timers = defaultdict(lambda: codetiming.Timer(logger=None))
 
         self.model = model
@@ -162,10 +138,7 @@ class Superintendent(widgets.VBox):
             ]
         )
 
-        self.children = [
-            self.top_bar,
-            self.labelling_widget,
-        ]
+        self.children = [self.top_bar, self.labelling_widget]
 
         # the annotation implementation:
         super().__init__()
@@ -174,7 +147,7 @@ class Superintendent(widgets.VBox):
 
     def _annotation_iterator(self):
         """The annotation loop."""
-
+        self.children = [self.top_bar, self.labelling_widget]
         self.progressbar.bar_style = ""
         for id_, x in self.queue:
 
@@ -194,9 +167,6 @@ class Superintendent(widgets.VBox):
         self.queue.undo()  # unpop the current item
         self.queue.undo()  # unpop and unlabel the previous item
         self._annotation_loop.send(None)  # Advance next item
-
-    def _skip(self):
-        self._annotation_loop.send(None)
 
     def add_features(self, features, labels=None):
         """
@@ -220,6 +190,7 @@ class Superintendent(widgets.VBox):
 
     @contextmanager
     def _render_hold_message(self, message="Rendering..."):
+        """Add a message that is followed by a spinner, indicating load time."""
         timer = self.timers[message]
         spinner = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i>'
         message_widget = widgets.HTML(
@@ -238,8 +209,18 @@ class Superintendent(widgets.VBox):
             self.top_bar.children[0].children = [self.progressbar]
 
     def _render_finished(self):
+        """Render a celebratory message to the user."""
         self.progressbar.bar_style = "success"
-        self.children = [self.progressbar, FINISH_MESSAGE]
+        message = widgets.Box(
+            (widgets.HTML(value="<h1>Finished labelling 🎉!"),),
+            layout=widgets.Layout(
+                justify_content="center",
+                padding="2.5% 0",
+                display="flex",
+                width="100%",
+            ),
+        )
+        self.children = [self.progressbar, message]
 
     @property
     def new_labels(self):
@@ -264,36 +245,48 @@ class Superintendent(widgets.VBox):
         with self._render_hold_message("Retraining..."):
             _, labelled_X, labelled_y = self.queue.list_completed()
 
-            if len(labelled_y) < 10:
+            if len(labelled_y) < 4:
                 self.model_performance.value = "Not enough labels to retrain."
                 return
 
             if self.model_preprocess is not None:
-                labelled_X, labelled_y = self.model_preprocess(
-                    labelled_X, labelled_y
-                )
+                labelled_X, labelled_y = self.model_preprocess(labelled_X, labelled_y)
 
             # first, fit the model
-            self.model.fit(labelled_X, labelled_y)
+            try:
+                self.model.fit(labelled_X, labelled_y)
+            except ValueError as e:
+                if str(e).startswith("This solver needs samples of at least 2"):
+                    self.model_performance.value = "Not enough classes to retrain."
+                    return
+                else:
+                    raise
 
             # now evaluate. by default, using cross validation. in sklearn this
             # clones the model, so it's OK to do after the model fit.
-            if self.eval_method is not None:
-                self.performance = np.mean(
-                    self.eval_method(self.model, labelled_X, labelled_y)
-                )
-            else:
-                self.performance = np.mean(
-                    sklearn.model_selection.cross_val_score(
-                        self.model,
-                        labelled_X,
-                        labelled_y,
-                        cv=3,
-                        error_score=np.nan,
+            try:
+                if self.eval_method is not None:
+                    performance = np.mean(
+                        self.eval_method(self.model, labelled_X, labelled_y)
                     )
-                )
+                else:
+                    performance = np.mean(
+                        sklearn.model_selection.cross_val_score(
+                            self.model,
+                            labelled_X,
+                            labelled_y,
+                            cv=3,
+                            error_score=np.nan,
+                        )
+                    )
+            except ValueError as e:
+                if "n_splits=" in str(e):
+                    self.model_performance.value = "Not enough labels to evaluate."
+                    return
+                else:
+                    raise
 
-            self.model_performance.value = f"Score: {self.performance:.3f}"
+            self.model_performance.value = f"Score: {performance:.3f}"
 
             if self.acquisition_function is not None:
                 ids, unlabelled_X = self.queue.list_uncompleted()
@@ -314,6 +307,5 @@ class Superintendent(widgets.VBox):
 
                 self.queue.reorder(new_order)
 
-        # undo the previously popped item and pop the next one
-        self.queue.undo()
-        self._skip()
+        self.queue.undo()  # undo the previously popped item
+        self._annotation_loop.send(None)  # advance the loop
