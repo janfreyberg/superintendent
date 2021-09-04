@@ -12,8 +12,6 @@ import cachetools
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-import sqlalchemy.ext.declarative
-from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from .queueing.base import BaseLabellingQueue
 from .queueing.utils import _features_to_array
@@ -108,25 +106,20 @@ class DatabaseQueue(BaseLabellingQueue):
         config.read(config_path)
 
         connection_string_template = (
-            "{dialect}+{driver}://"
-            "{username}:{password}@{host}:{port}/{database}"
+            "{dialect}+{driver}://" "{username}:{password}@{host}:{port}/{database}"
         )
-        connection_string = connection_string_template.format(
-            **config["database"]
-        )
+        connection_string = connection_string_template.format(**config["database"])
         return cls(connection_string)
 
     @contextmanager
     def session(self):
         session = sa.orm.Session(bind=self.engine)
-        try:
-            yield session
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+        with Session(self.engine) as session:
+            try:
+                yield session
+                session.commit()
+            finally:
+                session.close()
 
     def enqueue(self, feature, label=None, priority=None):
         """Add a feature to the queue.
