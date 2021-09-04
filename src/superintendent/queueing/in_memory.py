@@ -193,9 +193,8 @@ class SimpleLabellingQueue(BaseLabellingQueue):
         """
 
         items = [
-            self.item(id=id_, data=self.data[id_], label=self.labels.get(id_))
-            for id_ in sorted(self._popped)
-            if id_ in self.labels
+            self.item(id=id_, data=self.data[id_], label=label)
+            for id_, label in self.labels.items()
         ]
         ids = [item.id for item in items]
         x = _features_to_array([item.data for item in items])
