@@ -15,9 +15,9 @@ import sqlalchemy as sa
 import sqlalchemy.ext.declarative
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-from ..queueing.base import BaseLabellingQueue
-from ..queueing.utils import _features_to_array
-from .serialization import data_dumps, data_loads
+from .queueing.base import BaseLabellingQueue
+from .queueing.utils import _features_to_array
+from .distributed.serialization import data_dumps, data_loads
 
 from sqlmodel import Field, Session, SQLModel, create_engine
 
@@ -81,7 +81,6 @@ class DatabaseQueue(BaseLabellingQueue):
         self._popped = deque([])
 
         SuperintendentData.metadata.create_all(self.engine)
-
 
     @classmethod
     def from_config_file(cls, config_path):
