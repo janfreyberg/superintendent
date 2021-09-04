@@ -34,7 +34,8 @@ requires = [
     "psycopg2-binary>=2.8",
     "flask>=1.0",
     "ipyevents>=0.6.0",
-    "typing-extensions"
+    "typing-extensions",
+    "sqlmodel",
 ]
 
 [tool.flit.metadata.requires-extra]

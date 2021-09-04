@@ -6,7 +6,7 @@ from collections import deque, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from functools import reduce
-from typing import Any, Dict, Sequence, Set, Tuple
+from typing import Any, Dict, Sequence, Set, Tuple, Optional
 
 import cachetools
 import numpy as np
@@ -19,22 +19,18 @@ from ..queueing.base import BaseLabellingQueue
 from ..queueing.utils import _features_to_array
 from .serialization import data_dumps, data_loads
 
+from sqlmodel import Field, Session, SQLModel, create_engine
 
-def _construct_orm_object(table_name):
-    DeclarativeBase = sqlalchemy.ext.declarative.declarative_base()
 
-    class Superintendent(DeclarativeBase):
-        __tablename__ = table_name
-        id = sa.Column(sa.Integer, primary_key=True)  # noqa: A003
-        input = sa.Column(sa.Text)  # noqa: A003
-        output = sa.Column(sa.Text, nullable=True)
-        inserted_at = sa.Column(sa.DateTime)
-        priority = sa.Column(sa.Integer)
-        popped_at = sa.Column(sa.DateTime, nullable=True)
-        completed_at = sa.Column(sa.DateTime, nullable=True)
-        worker_id = sa.Column(sa.String, nullable=True)
-
-    return Superintendent
+class SuperintendentData(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)  # noqa: A003
+    input: str  # noqa: A003
+    output: Optional[str]
+    inserted_at: datetime
+    priority: Optional[int] = Field(default=None, index=True)
+    popped_at: Optional[datetime]
+    completed_at: Optional[datetime]
+    worker_id: Optional[str]
 
 
 deserialisers = {"json": data_loads}
@@ -64,7 +60,6 @@ class DatabaseQueue(BaseLabellingQueue):
     def __init__(
         self,
         connection_string="sqlite:///:memory:",
-        table_name="superintendent",
         storage_type="json",
     ):
         """Instantiate queue for distributed labelling.
@@ -77,37 +72,16 @@ class DatabaseQueue(BaseLabellingQueue):
         table_name : str
             The name of the table in SQL where to store the data.
         storage_type : str, optional
-            One of 'integer_index', 'pickle' (default) or 'json'.
+            One of 'integer_index', 'pickle' or 'json' (default).
         """
-        self.data = _construct_orm_object(table_name)
 
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
-        self.engine = sa.create_engine(connection_string)
+        self.engine = create_engine(connection_string)
         self._popped = deque([])
 
-        try:
-            # works with sqlalchemy >= 1.4
-            table_exists = sa.inspect(self.engine).has_table(
-                self.data.__tablename__
-            )
-        except AttributeError:
-            # works with sqlalchemy < 1.3
-            table_exists = self.engine.dialect.has_table(
-                self.engine, self.data.__tablename__
-            )
+        SuperintendentData.metadata.create_all(self.engine)
 
-        if not table_exists:
-            self.data.metadata.create_all(bind=self.engine)
-
-        try:
-            # create index for priority
-            ix_labelling = sa.Index("ix_labelling", self.data.priority)
-            ix_labelling.create(self.engine)
-        except OperationalError:
-            pass
-        except ProgrammingError:
-            pass
 
     @classmethod
     def from_config_file(cls, config_path):
@@ -172,7 +146,7 @@ class DatabaseQueue(BaseLabellingQueue):
         now = datetime.now()
         with self.session() as session:
             session.add(
-                self.data(
+                SuperintendentData(
                     input=self.serialiser(feature),
                     inserted_at=now,
                     priority=priority,
@@ -207,7 +181,7 @@ class DatabaseQueue(BaseLabellingQueue):
 
             for feature, label, priority in zip(features, labels, priorities):
                 session.add(
-                    self.data(
+                    SuperintendentData(
                         input=self.serialiser(feature),
                         inserted_at=now,
                         priority=priority,
@@ -242,7 +216,11 @@ class DatabaseQueue(BaseLabellingQueue):
         """
 
         with self.session() as session:
-            rows = session.query(self.data).filter(self.data.id.in_(ids)).all()
+            rows = (
+                session.query(SuperintendentData)
+                .filter(SuperintendentData.id.in_(ids))
+                .all()
+            )
             for row in rows:
                 row.priority = priorities[ids.index(row.id)]
 
@@ -270,18 +248,18 @@ class DatabaseQueue(BaseLabellingQueue):
 
         with self.session() as session:
             row = (
-                session.query(self.data)
+                session.query(SuperintendentData)
                 .filter(
-                    self.data.completed_at.is_(None)
+                    SuperintendentData.completed_at.is_(None)
                     & (
-                        self.data.popped_at.is_(None)
+                        SuperintendentData.popped_at.is_(None)
                         | (
-                            self.data.popped_at
+                            SuperintendentData.popped_at
                             < (datetime.now() - timedelta(seconds=timeout))
                         )
                     )
                 )
-                .order_by(self.data.priority)
+                .order_by(SuperintendentData.priority)
                 .first()
             )
             if row is None:
@@ -312,7 +290,7 @@ class DatabaseQueue(BaseLabellingQueue):
         if id_ not in self._popped:
             raise ValueError("This item was not popped; you cannot label it.")
         with self.session() as session:
-            row = session.query(self.data).filter_by(id=id_).first()
+            row = session.query(SuperintendentData).filter_by(id=id_).first()
             row.output = self.serialiser(label)
             row.worker_id = self.worker_id
             row.completed_at = datetime.now()
@@ -326,14 +304,14 @@ class DatabaseQueue(BaseLabellingQueue):
 
     def _reset(self, id_: int) -> None:
         with self.session() as session:
-            row = session.query(self.data).filter_by(id=id_).first()
+            row = session.query(SuperintendentData).filter_by(id=id_).first()
             row.output = None
             row.completed_at = None
             row.popped_at = None
 
     def list_all(self):
         with self.session() as session:
-            objects = session.query(self.data).all()
+            objects = session.query(SuperintendentData).all()
 
             items = [
                 self.item(
@@ -352,10 +330,10 @@ class DatabaseQueue(BaseLabellingQueue):
     def list_completed(self):
         with self.session() as session:
             objects = (
-                session.query(self.data)
+                session.query(SuperintendentData)
                 .filter(
-                    self.data.output.isnot(None)
-                    & self.data.completed_at.isnot(None)
+                    SuperintendentData.output.isnot(None)
+                    & SuperintendentData.completed_at.isnot(None)
                 )
                 .all()
             )
@@ -378,8 +356,8 @@ class DatabaseQueue(BaseLabellingQueue):
     def list_labels(self) -> Set[str]:
         with self.session() as session:
             rows = (
-                session.query(self.data.output)
-                .filter(self.data.output.isnot(None))
+                session.query(SuperintendentData.output)
+                .filter(SuperintendentData.output.isnot(None))
                 .distinct()
             )
             try:
@@ -398,8 +376,8 @@ class DatabaseQueue(BaseLabellingQueue):
     def list_uncompleted(self):
         with self.session() as session:
             objects = (
-                session.query(self.data)
-                .filter(self.data.output.is_(None))
+                session.query(SuperintendentData)
+                .filter(SuperintendentData.output.is_(None))
                 .all()
             )
             items = [
@@ -419,21 +397,21 @@ class DatabaseQueue(BaseLabellingQueue):
     def clear_queue(self):
         self._popped = deque([])
         with self.session() as session:
-            session.query(self.data).delete()
+            session.query(SuperintendentData).delete()
 
     def drop_table(self, sure=False):  # noqa: D001
         if sure:
-            self.data.metadata.drop_all(bind=self.engine)
+            SuperintendentData.metadata.drop_all(bind=self.engine)
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
     def _unlabelled_count(self) -> int:
         with self.session() as session:
             return (
-                session.query(self.data)
+                session.query(SuperintendentData)
                 .filter(
-                    self.data.completed_at.is_(None)
-                    & self.data.output.is_(None)
+                    SuperintendentData.completed_at.is_(None)
+                    & SuperintendentData.output.is_(None)
                 )
                 .count()
             )
@@ -441,10 +419,10 @@ class DatabaseQueue(BaseLabellingQueue):
     def _labelled_count(self) -> int:
         with self.session() as session:
             return (
-                session.query(self.data)
+                session.query(SuperintendentData)
                 .filter(
-                    self.data.completed_at.isnot(None)
-                    & self.data.output.isnot(None)
+                    SuperintendentData.completed_at.isnot(None)
+                    & SuperintendentData.output.isnot(None)
                 )
                 .count()
             )
@@ -452,7 +430,7 @@ class DatabaseQueue(BaseLabellingQueue):
     @cachetools.cached(cachetools.TTLCache(1, 60))
     def _total_count(self):
         with self.session() as session:
-            n_total = session.query(self.data).count()
+            n_total = session.query(SuperintendentData).count()
         return n_total
 
     @property
@@ -465,8 +443,8 @@ class DatabaseQueue(BaseLabellingQueue):
     def __len__(self):
         with self.session() as session:
             return (
-                session.query(self.data)
-                .filter(self.data.completed_at.is_(None))
+                session.query(SuperintendentData)
+                .filter(SuperintendentData.completed_at.is_(None))
                 .count()
             )
 
