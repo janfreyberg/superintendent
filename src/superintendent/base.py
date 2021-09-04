@@ -13,7 +13,8 @@ from sklearn.base import BaseEstimator
 import codetiming
 
 from . import acquisition_functions
-from .queueing import BaseLabellingQueue, SimpleLabellingQueue
+from .queueing import BaseLabellingQueue
+from .db_queue import DatabaseQueue
 
 
 FINISH_MESSAGE = widgets.Box(
@@ -105,7 +106,7 @@ class Superintendent(widgets.VBox):
         self.labelling_widget.on_submit(self._apply_annotation)
         self.labelling_widget.on_undo(self._undo)
 
-        self.queue = queue or SimpleLabellingQueue()
+        self.queue = queue or DatabaseQueue()
 
         if features is not None:
             self.queue.enqueue_many(features, labels)
@@ -144,6 +145,7 @@ class Superintendent(widgets.VBox):
         else:
             self.retrain_button = widgets.Box()
             self.model_performance = widgets.Box()
+
         self.top_bar = widgets.HBox(
             [
                 widgets.HBox(
@@ -160,6 +162,11 @@ class Superintendent(widgets.VBox):
             ]
         )
 
+        self.children = [
+            self.top_bar,
+            self.labelling_widget,
+        ]
+
         # the annotation implementation:
         super().__init__()
         self._annotation_loop = self._annotation_iterator()
@@ -169,7 +176,6 @@ class Superintendent(widgets.VBox):
         """The annotation loop."""
 
         self.progressbar.bar_style = ""
-        self._compose()
         for id_, x in self.queue:
 
             with self._render_hold_message("Loading..."):
@@ -211,12 +217,6 @@ class Superintendent(widgets.VBox):
         self._annotation_loop = self._annotation_iterator()
         self.queue.undo()
         next(self._annotation_loop)
-
-    def _compose(self):
-        self.children = [
-            self.top_bar,
-            self.labelling_widget,
-        ]
 
     @contextmanager
     def _render_hold_message(self, message="Rendering..."):
