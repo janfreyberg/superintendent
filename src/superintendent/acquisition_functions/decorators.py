@@ -22,9 +22,7 @@ def _get_indices(scores: np.ndarray, shuffle_prop: float) -> np.ndarray:
     return _shuffle_subset(scores.argsort().argsort(), shuffle_prop)
 
 
-def _is_multioutput(
-    probabilities: typing.Union[np.ndarray, typing.List[np.ndarray]]
-):
+def _is_multioutput(probabilities: typing.Union[np.ndarray, typing.List[np.ndarray]]):
     if isinstance(probabilities, list) and (
         isinstance(probabilities[0], np.ndarray)
         and probabilities[0].ndim == 2

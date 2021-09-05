@@ -1,10 +1,11 @@
-import time
 import os
+import time
 
 import sqlalchemy
 from sklearn.datasets import load_digits
 from sklearn.model_selection import cross_val_score
 from tensorflow import keras
+
 from superintendent.distributed import ClassLabeller
 
 
@@ -12,10 +13,7 @@ def keras_model():
     model = keras.models.Sequential(
         [
             keras.layers.Conv2D(
-                filters=8,
-                kernel_size=3,
-                activation="relu",
-                input_shape=(8, 8, 1),
+                filters=8, kernel_size=3, activation="relu", input_shape=(8, 8, 1)
             ),
             keras.layers.MaxPool2D(2),
             keras.layers.Conv2D(filters=16, kernel_size=3, activation="relu"),
@@ -24,9 +22,7 @@ def keras_model():
             keras.layers.Dense(10, activation="softmax"),
         ]
     )
-    model.compile(
-        keras.optimizers.Adam(), keras.losses.CategoricalCrossentropy()
-    )
+    model.compile(keras.optimizers.Adam(), keras.losses.CategoricalCrossentropy())
     return model
 
 

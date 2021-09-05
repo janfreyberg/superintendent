@@ -1,25 +1,22 @@
 import configparser
 import itertools
+import uuid
 import warnings
 from collections import deque, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, Sequence, Tuple, Optional
+from typing import Any, Deque, Dict, Optional, Sequence, Tuple
 
 import cachetools
 import numpy as np
-import pandas as pd
 import sqlalchemy as sa
-import uuid
+from sqlmodel import Field, Session, SQLModel, col, create_engine
 
-from .queueing_utils import features_to_array, iter_features
 from .distributed.serialization import data_dumps, data_loads
+from .queueing_utils import features_to_array, iter_features
 
-from sqlmodel import Field, Session, SQLModel, create_engine
 
-
-class SuperintendentData(SQLModel, table=True):
-    __tablename__: str = "superintendent_data"
+class SuperintendentData(SQLModel, table=True):  # type: ignore
     id: Optional[int] = Field(default=None, primary_key=True)  # noqa: A003
     input: str  # noqa: A003
     output: Optional[str]
@@ -77,7 +74,7 @@ class DatabaseQueue:
         self.worker_id = worker_id or str(uuid.uuid4())
         self.url = connection_string
         self.engine = create_engine(connection_string)
-        self._popped: Sequence[int] = deque([])
+        self._popped: Deque[int] = deque([])
 
         SuperintendentData.metadata.create_all(self.engine)
 
@@ -184,7 +181,7 @@ class DatabaseQueue:
         with self.session() as session:
             rows = (
                 session.query(SuperintendentData)
-                .filter(SuperintendentData.id.in_(ids))
+                .filter(col(SuperintendentData.id).in_(ids))
                 .all()
             )
             for row in rows:
@@ -216,11 +213,11 @@ class DatabaseQueue:
             row = (
                 session.query(SuperintendentData)
                 .filter(
-                    SuperintendentData.completed_at.is_(None)
+                    col(SuperintendentData.completed_at).is_(None)
                     & (
-                        SuperintendentData.popped_at.is_(None)
+                        col(SuperintendentData.popped_at).is_(None)
                         | (
-                            SuperintendentData.popped_at
+                            col(SuperintendentData.popped_at)
                             < (datetime.now() - timedelta(seconds=timeout))
                         )
                     )
@@ -345,8 +342,8 @@ class DatabaseQueue:
             return (
                 session.query(SuperintendentData)
                 .filter(
-                    SuperintendentData.completed_at.is_(None)
-                    & SuperintendentData.output.is_(None)
+                    col(SuperintendentData.completed_at).is_(None)
+                    & col(SuperintendentData.output).is_(None)
                 )
                 .count()
             )
@@ -356,8 +353,8 @@ class DatabaseQueue:
             return (
                 session.query(SuperintendentData)
                 .filter(
-                    SuperintendentData.completed_at.isnot(None)
-                    & SuperintendentData.output.isnot(None)
+                    col(SuperintendentData.completed_at).isnot(None)
+                    & col(SuperintendentData.output).isnot(None)
                 )
                 .count()
             )

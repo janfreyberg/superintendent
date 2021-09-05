@@ -20,7 +20,6 @@
 
 import pkg_resources
 
-
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -112,9 +111,7 @@ todo_include_todos = True
 #
 html_theme = "sphinx_rtd_theme"
 
-html_css_files = [
-    "css/hide-double-widgets.css",
-]
+html_css_files = ["css/hide-double-widgets.css"]
 
 html_favicon = "favicon.ico"
 html_logo = "img/logo.png"

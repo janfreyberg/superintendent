@@ -1,10 +1,9 @@
 from functools import partial
 
-import pytest
-
 import hypothesis.extra.numpy as np_strategies
 import numpy as np
 import pandas as pd
+import pytest
 from hypothesis import given
 from hypothesis.extra.pandas import column, columns, data_frames, series
 from hypothesis.strategies import (
@@ -17,6 +16,7 @@ from hypothesis.strategies import (
     recursive,
     text,
 )
+
 from superintendent.distributed.serialization import data_dumps, data_loads
 
 guaranteed_dtypes = (
@@ -45,25 +45,14 @@ def exact_element_match(a, b):
     elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
         a = a.reset_index(drop=True)
         b = b.reset_index(drop=True)
-        return (
-            ((a == b) | (a.isnull() & b.isnull())).all().all()
-            or a.empty
-            or b.empty
-        )
+        return ((a == b) | (a.isnull() & b.isnull())).all().all() or a.empty or b.empty
     else:
         return all(
-            [
-                a_ == b_ or (np.isnan(a_) and np.isnan(b_))
-                for a_, b_ in zip(a, b)
-            ]
+            [a_ == b_ or (np.isnan(a_) and np.isnan(b_)) for a_, b_ in zip(a, b)]
         )
 
 
-@given(
-    input_=np_strategies.arrays(
-        guaranteed_dtypes, np_strategies.array_shapes()
-    )
-)
+@given(input_=np_strategies.arrays(guaranteed_dtypes, np_strategies.array_shapes()))
 def test_numpy_array_serialisation(input_):
     serialised = data_dumps(input_)
     assert isinstance(serialised, str)
@@ -72,9 +61,7 @@ def test_numpy_array_serialisation(input_):
     assert pytest.helpers.exact_element_match(input_, deserialised)
 
 
-@given(
-    input_=one_of(series(dtype=int), series(dtype=float), series(dtype=str))
-)
+@given(input_=one_of(series(dtype=int), series(dtype=float), series(dtype=str)))
 def test_pandas_series_serialisation(input_):
     serialised = data_dumps(input_)
     assert isinstance(serialised, str)
@@ -88,9 +75,7 @@ def test_pandas_series_serialisation(input_):
         data_frames(columns(3, dtype=int)),
         data_frames(columns(3, dtype=float)),
         data_frames(columns(3, dtype=str)),
-        data_frames(
-            [column(dtype=str), column(dtype=float), column(dtype=int)]
-        ),
+        data_frames([column(dtype=str), column(dtype=float), column(dtype=int)]),
     )
 )
 def test_pandas_df_serialisation(input_):
