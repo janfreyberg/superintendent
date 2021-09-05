@@ -27,7 +27,7 @@ from hypothesis.extra.numpy import (
 
 from hypothesis import HealthCheck
 
-from superintendent.queueing.utils import _features_to_array
+from superintendent.queueing_utils import features_to_array
 
 
 guaranteed_dtypes = one_of(
@@ -43,20 +43,15 @@ guaranteed_dtypes = one_of(
 def dataframe(draw):
     n_cols = draw(integers(min_value=1, max_value=20))
     dtypes = draw(
-        lists(
-            sampled_from([float, int, str]), min_size=n_cols, max_size=n_cols
-        )
+        lists(sampled_from([float, int, str]), min_size=n_cols, max_size=n_cols)
     )
     colnames = draw(
-        lists(
-            text() | integers(), min_size=n_cols, max_size=n_cols, unique=True
-        )
+        lists(text() | integers(), min_size=n_cols, max_size=n_cols, unique=True)
     )
     return draw(
         data_frames(
             columns=[
-                column(name=name, dtype=dtype)
-                for dtype, name in zip(dtypes, colnames)
+                column(name=name, dtype=dtype) for dtype, name in zip(dtypes, colnames)
             ],
             index=range_indexes(min_size=1),
         )
@@ -72,23 +67,18 @@ def exact_element_match(a, b):
     elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
         a = a.reset_index(drop=True)
         b = b.reset_index(drop=True)
-        return (
-            ((a == b) | (a.isnull() & b.isnull())).all().all()
-            or a.empty
-            or b.empty
+        return ((a == b) | (a.isnull() & b.isnull())).all().all() or (
+            a.empty and b.empty
         )
     else:
         return all(
-            [
-                a_ == b_ or (np.isnan(a_) and np.isnan(b_))
-                for a_, b_ in zip(a, b)
-            ]
+            [a_ == b_ or (np.isnan(a_) and np.isnan(b_)) for a_, b_ in zip(a, b)]
         )
 
 
 @given(inp=lists(floats() | integers() | text() | booleans()))
 def test_list_round_trip(inp):
-    assert exact_element_match(inp, _features_to_array(inp))
+    assert exact_element_match(inp, features_to_array(inp))
 
 
 @given(
@@ -103,7 +93,7 @@ def test_list_round_trip(inp):
 @settings(suppress_health_check=(HealthCheck.too_slow,))
 def test_array_round_trip(inp):
     inp_list = list(inp)
-    assert exact_element_match(inp, _features_to_array(inp_list))
+    assert exact_element_match(inp, features_to_array(inp_list))
 
 
 @given(inp=dataframe())
@@ -111,7 +101,7 @@ def test_array_round_trip(inp):
 def test_df_round_trip(inp):
     inp_list = [row for _, row in inp.iterrows()]
     if not inp.empty:
-        assert exact_element_match(inp, _features_to_array(inp_list))
+        assert exact_element_match(inp, features_to_array(inp_list))
 
 
 @given(inp=dataframe())
@@ -119,4 +109,4 @@ def test_df_round_trip(inp):
 def test_dfs_round_trip(inp):
     inp_list = [row.to_frame().T for _, row in inp.iterrows()]
     if not inp.empty:
-        assert exact_element_match(inp, _features_to_array(inp_list))
+        assert exact_element_match(inp, features_to_array(inp_list))

@@ -11,7 +11,6 @@ from sklearn.base import BaseEstimator
 import codetiming
 
 from . import acquisition_functions
-from .queueing import BaseLabellingQueue
 from .db_queue import DatabaseQueue
 
 
@@ -27,7 +26,7 @@ class Superintendent(widgets.VBox):
         *,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
-        queue: Optional[BaseLabellingQueue] = None,
+        queue: Optional[DatabaseQueue] = None,
         labelling_widget: Optional[widgets.Widget] = None,
         model: Optional[BaseEstimator] = None,
         eval_method: Optional[Callable] = None,
@@ -87,7 +86,7 @@ class Superintendent(widgets.VBox):
         self.queue = queue or DatabaseQueue()
 
         if features is not None:
-            self.queue.enqueue_many(features, labels)
+            self.queue.enqueue(features, labels)
 
         self.progressbar = widgets.FloatProgress(max=1, description="Progress:")
         self.timers = defaultdict(lambda: codetiming.Timer(logger=None))
@@ -182,7 +181,7 @@ class Superintendent(widgets.VBox):
         labels : Any, optional
             The labels for the data you're adding; if you have labels.
         """
-        self.queue.enqueue_many(features, labels)
+        self.queue.enqueue(features, labels)
         # reset the iterator
         self._annotation_loop = self._annotation_iterator()
         self.queue.undo()

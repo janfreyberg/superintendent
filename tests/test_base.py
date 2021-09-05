@@ -193,36 +193,3 @@ def test_no_eval_when_not_enough_labels_per_class():
 
     widget.retrain()
     assert widget.model_performance.value.startswith("Not enough labels")
-
-
-# def test_that_slow_displays_trigger_render_processing(mocker):
-#     widget = Labeller(
-#         display_func=lambda _: time.sleep(0.6), input_widget=Submitter()
-#     )
-#     mock_processing = mocker.patch.object(widget, "_render_processing")
-#     widget._display("dummy feature")
-#     assert mock_processing.call_count == 0
-#     widget._display("dummy feature")
-#     assert mock_processing.call_count == 1
-
-
-# def test_that_render_finished_gets_called_when_loop_finished(mocker):
-#     widget = Labeller(features=[1, 2], input_widget=Submitter())
-#     mock_finish = mocker.patch.object(widget, "_render_finished")
-#     widget._annotation_loop.send("a")
-#     widget._annotation_loop.send("b")
-#     mock_finish.assert_called_once()
-
-
-# def test_that_render_finished_sets_children(mocker):
-#     widget = Labeller(features=[1, 2], input_widget=Submitter())
-#     widget._render_finished()
-
-#     children = pytest.helpers.recursively_list_widget_children(widget)
-
-#     # children = list(widget.children)
-#     assert widget.progressbar in children
-#     children.remove(widget.progressbar)
-
-#     assert len(children) == 1
-#     assert isinstance(children[0], widgets.HTML)
