@@ -6,7 +6,7 @@ from contextlib import contextmanager
 import numpy as np
 import pandas as pd
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, settings, assume
 import hypothesis.extra.numpy as np_strategies
 from hypothesis.extra.pandas import column, data_frames
 from hypothesis.strategies import (
@@ -20,7 +20,9 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from superintendent.db_queue import DatabaseQueue
+from superintendent.db_queue import DatabaseQueue, SuperintendentData
+from sqlmodel import Session
+import sqlalchemy as sa
 
 guaranteed_dtypes = one_of(
     np_strategies.scalar_dtypes(),
@@ -37,24 +39,21 @@ def dataframe(draw):
     dtypes = draw(
         lists(
             one_of(
-                np_strategies.floating_dtypes(),
-                np_strategies.integer_dtypes(),
-                np_strategies.unicode_string_dtypes(),
+                np_strategies.floating_dtypes(endianness="="),
+                np_strategies.integer_dtypes(endianness="="),
+                np_strategies.unicode_string_dtypes(endianness="="),
             ),
             min_size=n_cols,
             max_size=n_cols,
         )
     )
     colnames = draw(
-        lists(
-            text() | integers(), min_size=n_cols, max_size=n_cols, unique=True
-        )
+        lists(text() | integers(), min_size=n_cols, max_size=n_cols, unique=True)
     )
     return draw(
         data_frames(
             columns=[
-                column(name=name, dtype=dtype)
-                for dtype, name in zip(dtypes, colnames)
+                column(name=name, dtype=dtype) for dtype, name in zip(dtypes, colnames)
             ]
         )
     )
@@ -69,25 +68,23 @@ def q_context():
             os.remove("testing.db")
 
 
-@settings(deadline=None)
-@given(input_=one_of(booleans(), floats(), integers(), text()))
-def test_enqueueing_and_popping(input_):
-    with q_context() as q:
-        for i in range(1, 10):
-            q.enqueue(input_)
-            id_, datapoint = q.pop()
-            assert id_ == i
-            assert datapoint == input_ or (
-                np.isnan(input_) and np.isnan(datapoint)
-            )
+# @settings(deadline=None)
+# @given(input_=one_of(booleans(), floats(), integers(), text()))
+# def test_enqueueing_and_popping(input_):
+#     with q_context() as q:
+#         for i in range(1, 10):
+#             q.enqueue(input_)
+#             id_, datapoint = q.pop()
+#             assert id_ == i
+#             assert datapoint == input_ or (np.isnan(input_) and np.isnan(datapoint))
 
 
 @settings(deadline=None)
 @given(inputs=lists(one_of(booleans(), floats(), integers(), text())))
-def test_enqueue_many(inputs):
+def test_enqueue(inputs):
     n = len(inputs)
     with q_context() as q:
-        q.enqueue_many(inputs)
+        q.enqueue(inputs)
         # assert we can pop everything:
         for _ in range(n):
             q.pop()
@@ -100,8 +97,9 @@ def test_enqueue_many(inputs):
 @given(inputs=dataframe())
 def test_enqueue_dataframe(inputs):
     n = len(inputs)
+    assume(n > 1)
     with q_context() as q:
-        q.enqueue_many(inputs)
+        q.enqueue(inputs)
         # assert we can pop everything:
         for _ in range(n):
             id_, val = q.pop()
@@ -112,14 +110,14 @@ def test_enqueue_dataframe(inputs):
         # assert it re-constructs a df on list all
         if n > 0:
             ids, X, y = q.list_all()
-            assert isinstance(X, pd.DataFrame) or len(X) == 0
+            assert isinstance(X, pd.DataFrame)
             # assert it re-constructs a df on list uncomplete
             q.submit(ids[0], "hello")
             ids, X = q.list_uncompleted()
-            assert isinstance(X, pd.DataFrame) or len(X) == 0
+            assert isinstance(X, pd.DataFrame)
             # assert it re-constructs a df on list uncomplete
             ids, X, y = q.list_completed()
-            assert isinstance(X, pd.DataFrame) or len(X) == 0
+            assert isinstance(X, pd.DataFrame)
 
 
 @settings(suppress_health_check=(HealthCheck.too_slow,), deadline=None)
@@ -135,7 +133,7 @@ def test_enqueue_dataframe(inputs):
 def test_enqueue_array(inputs):
     n = inputs.shape[0]
     with q_context() as q:
-        q.enqueue_many(inputs)
+        q.enqueue(inputs)
         # assert we can pop everything:
         for _ in range(n):
             id_, val = q.pop()
@@ -166,7 +164,7 @@ def test_enqueue_with_labels(inputs, labels):
     n = len(inputs) - (len(labels) - Counter(labels)[None])
 
     with q_context() as q:
-        q.enqueue_many(inputs, labels)
+        q.enqueue(inputs, labels)
 
         # assert we can pop everything where the label was not none:
         for _ in range(n):
@@ -195,8 +193,7 @@ def test_enqueue_at_creation(inputs):
 @given(label1=text(), label2=text())
 def test_submitting_text(label1, label2):
     with q_context() as q:
-        q.enqueue(1)
-        q.enqueue(2)
+        q.enqueue([1, 2])
         with pytest.raises(ValueError):
             q.submit(1, label1)
         id_, val = q.pop()
@@ -205,25 +202,23 @@ def test_submitting_text(label1, label2):
         id_, val = q.pop()
         q.submit(id_, label2)
         assert q.progress == 1
-        assert q.list_labels() == {label1, label2}
+        assert q.list_completed()[-1] == [label1, label2]
 
 
 @settings(deadline=None)
 @given(label1=text(), label2=text())
 def test_submitting_list(label1, label2):
     with q_context() as q:
-        q.enqueue(1)
-        with pytest.raises(ValueError):
-            q.submit(1, label1)
-        id_, val = q.pop()
+        q.enqueue([1])
+        id_, _ = q.pop()
         q.submit(id_, [label1, label2])
-        assert q.list_labels() == {label1, label2}
+        assert q.list_completed()[-1] == [[label1, label2]]
 
 
 def test_reordering():
     inp = ["b", "a", "d", "c"]
     with q_context() as q:
-        q.enqueue_many(inp)
+        q.enqueue(inp)
         q.reorder(OrderedDict([(1, 1), (2, 0), (3, 3), (4, 2)]))
 
         id_, val = q.pop()
@@ -239,7 +234,7 @@ def test_reordering():
 def test_iterating_over_queue():
     inps = [str(i) for i in range(50)]
     with q_context() as q:
-        q.enqueue_many(inps)
+        q.enqueue(inps)
 
         for i, (id_, val) in enumerate(q):
             assert i + 1 == id_
@@ -249,7 +244,7 @@ def test_length_of_queue():
     inps = [str(i) for i in range(50)]
     with q_context() as q:
         assert len(q) == 0
-        q.enqueue_many(inps)
+        q.enqueue(inps)
         assert len(q) == len(inps)
 
 
@@ -258,7 +253,7 @@ def test_progress():
     with q_context() as q:
         # assert my little hack for dividing by zero
         # assert np.isnan(q.progress)
-        q.enqueue_many(inps)
+        q.enqueue(inps)
 
         for i, (id_, val) in enumerate(q):
             assert q.progress == i / len(inps)
@@ -267,18 +262,8 @@ def test_progress():
         assert np.isnan(q.progress)
 
 
-@pytest.mark.skip
-def test_shuffling():
-    inps = [str(i) for i in range(50)]
-    with q_context() as q:
-        q.enqueue_many(inps)
-        q.shuffle()
-        # assert the order is not the same:
-        assert not all([val == inp for inp, (id_, val) in zip(inps, q)])
-
-
 def test_undo():
-    inp = "input 1"
+    inp = ["input 1"]
     with q_context() as q:
         q.enqueue(inp)
         id_, val = q.pop()
@@ -302,7 +287,7 @@ def no_shared_members(a, b):
 )
 def test_list_completed(inputs, labels):
     with q_context() as q:
-        q.enqueue_many(inputs)
+        q.enqueue(inputs)
 
         popped_ids = []
         for i in range(5):
@@ -325,7 +310,7 @@ def test_list_completed(inputs, labels):
 )
 def test_list_uncompleted(inputs, labels):
     with q_context() as q:
-        q.enqueue_many(inputs)
+        q.enqueue(inputs)
 
         popped_ids = []
         for i in range(5):
@@ -349,7 +334,7 @@ def test_list_uncompleted(inputs, labels):
 )
 def test_list_all(inputs, labels):
     with q_context() as q:
-        q.enqueue_many(inputs)
+        q.enqueue(inputs)
 
         popped_ids = []
         for i in range(5):
@@ -362,8 +347,18 @@ def test_list_all(inputs, labels):
 
         assert len(ids) == len(inputs)
         assert all([label in labels for label in y if label is not None])
-        assert all(
-            [label is None or id_ in popped_ids for id_, label in zip(ids, y)]
-        )
+        assert all([label is None or id_ in popped_ids for id_, label in zip(ids, y)])
         assert Counter(y)[None] == (len(inputs) - 5)
         assert pytest.helpers.same_elements(ids, range(1, 1 + len(inputs)))
+
+
+def test_dropping():
+    with q_context() as q:
+        q.enqueue(["a", "b"])
+
+        assert sa.inspect(q.engine).has_table("superintendent_data")
+        # test that it doesn't drop if sure=False
+        q.drop_table()
+        assert sa.inspect(q.engine).has_table("superintendent_data")
+        q.drop_table(sure=True)
+        assert not sa.inspect(q.engine).has_table("superintendent_data")

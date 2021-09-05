@@ -6,7 +6,7 @@ import ipywidgets as widgets
 import traitlets
 
 from .._compatibility import ignore_widget_on_submit_warning
-from .queueing import DatabaseQueue
+from ..db_queue import DatabaseQueue
 
 
 class _DistributedMixin:
@@ -42,9 +42,7 @@ class _DistributedMixin:
             next(self._annotation_loop)
 
     def _get_worker_id(self):
-        worker_id_field = widgets.Text(
-            placeholder="Please enter your name or ID."
-        )
+        worker_id_field = widgets.Text(placeholder="Please enter your name or ID.")
         self.layout.children = [
             widgets.HTML(value="<h2>Please enter your name:</h2>"),
             widgets.Box(
