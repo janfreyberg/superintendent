@@ -10,6 +10,7 @@ import cachetools
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
+import uuid
 
 from .queueing_utils import features_to_array, iter_features
 from .distributed.serialization import data_dumps, data_loads
@@ -50,13 +51,13 @@ class DatabaseQueue:
     serialiser : builtin_function_or_method
     """
 
-    worker_id = None
     item = namedtuple("item", ["id", "data", "label"])
 
     def __init__(
         self,
-        connection_string="sqlite:///:memory:",
-        storage_type="json",
+        connection_string: str = "sqlite:///:memory:",
+        storage_type: str = "json",
+        worker_id: Optional[str] = None,
     ):
         """Instantiate queue for distributed labelling.
 
@@ -73,6 +74,8 @@ class DatabaseQueue:
 
         self.deserialiser = deserialisers[storage_type]
         self.serialiser = serialisers[storage_type]
+        self.worker_id = worker_id or str(uuid.uuid4())
+        self.url = connection_string
         self.engine = create_engine(connection_string)
         self._popped: Sequence[int] = deque([])
 
@@ -134,9 +137,6 @@ class DatabaseQueue:
             the queue.
         """
         now = datetime.now()
-        if isinstance(features, pd.DataFrame):
-            features = [row for _, row in features.iterrows()]
-
         features = iter_features(features)
         if priorities is None:
             priorities = itertools.cycle([None])

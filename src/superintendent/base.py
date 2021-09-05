@@ -3,13 +3,15 @@
 from collections import OrderedDict, defaultdict
 from typing import Any, Callable, Optional
 from contextlib import contextmanager
-
+import time
+import warnings
 import ipywidgets as widgets
 import numpy as np
 import sklearn.model_selection
 from sklearn.base import BaseEstimator
 import codetiming
 
+from ._compatibility import ignore_widget_on_submit_warning
 from . import acquisition_functions
 from .db_queue import DatabaseQueue
 
@@ -26,6 +28,7 @@ class Superintendent(widgets.VBox):
         *,
         features: Optional[Any] = None,
         labels: Optional[Any] = None,
+        database_url: str = "sqlite:///:memory:",
         queue: Optional[DatabaseQueue] = None,
         labelling_widget: Optional[widgets.Widget] = None,
         model: Optional[BaseEstimator] = None,
@@ -33,10 +36,11 @@ class Superintendent(widgets.VBox):
         acquisition_function: Optional[Callable] = None,
         shuffle_prop: float = 0.1,
         model_preprocess: Optional[Callable] = None,
+        worker_id: bool = False,
+        **kwargs,
     ):
         """
         Make a class that allows you to label data points.
-
 
         Parameters
         ----------
@@ -73,8 +77,12 @@ class Superintendent(widgets.VBox):
             A function that accepts x and y data and returns x and y data. y
             can be None (in which it should return x, None) as this function is
             used on the un-labelled data too.
+        worker_id : bool | str
+            If True, will check for the worker's ID first - this can be helpful
+            when working in a distributed fashion. If a string, this is used as
+            the worker ID. If False, a UUID is generated for this widget.
         """
-
+        super().__init__(**kwargs)
         if labelling_widget is None:
             raise ValueError("No input widget was provided.")
 
@@ -83,7 +91,13 @@ class Superintendent(widgets.VBox):
         self.labelling_widget.on_submit(self._apply_annotation)
         self.labelling_widget.on_undo(self._undo)
 
-        self.queue = queue or DatabaseQueue()
+        self.queue = queue or DatabaseQueue(connection_string=database_url)
+        if self.queue.url == "sqlite:///:memory:":
+            warnings.warn(
+                "You are using an in-memory SQLite database. Even when "
+                "labelling locally, it is recommended to use a persistend DB. "
+                "You can try passing sqlite:///test.db."
+            )
 
         if features is not None:
             self.queue.enqueue(features, labels)
@@ -136,14 +150,43 @@ class Superintendent(widgets.VBox):
                 ),
             ]
         )
+        if isinstance(worker_id, str):
+            self.queue.worker_id = worker_id
+        elif worker_id:
+            self._get_worker_id()
+        else:
+            self._begin_annotation()
 
-        self.children = [self.top_bar, self.labelling_widget]
+    # Workflow functionality ---------
+    def _get_worker_id(self):
+        worker_id_field = widgets.Text(placeholder="Please enter your name or user ID.")
+        self.children = [
+            widgets.HTML(value="<h2>Please enter your name or user ID:</h2>"),
+            widgets.Box(
+                children=[worker_id_field],
+                layout=widgets.Layout(
+                    justify_content="center",
+                    padding="5% 0",
+                    display="flex",
+                    width="100%",
+                    min_height="150px",
+                ),
+            ),
+        ]
+        with ignore_widget_on_submit_warning():
+            worker_id_field.on_submit(self._set_worker_id)
 
-        # the annotation implementation:
-        super().__init__()
+    def _set_worker_id(self, worker_id_field):
+        if len(worker_id_field.value) > 0:
+            self.queue.worker_id = worker_id_field.value
+        self._begin_annotation()
+
+    def _begin_annotation(self):
+        """Set correct UI elements, then kick off the loop."""
         self._annotation_loop = self._annotation_iterator()
         next(self._annotation_loop)  # kick off the loop
 
+    # data labelling functionality
     def _annotation_iterator(self):
         """The annotation loop."""
         self.children = [self.top_bar, self.labelling_widget]
@@ -308,3 +351,72 @@ class Superintendent(widgets.VBox):
 
         self.queue.undo()  # undo the previously popped item
         self._annotation_loop.send(None)  # advance the loop
+
+    # orchestrate when not interactively labelling
+    def orchestrate(
+        self,
+        interval_seconds: Optional[float] = None,
+        interval_n_labels: int = 0,
+        shuffle_prop: float = 0.1,
+        max_runs: float = np.inf,
+    ):
+        """Orchestrate the active learning process.
+
+        This method can either re-train the classifier and re-order the data
+        once, or it can run a never-ending loop to re-train the model at
+        regular intervals, both in time and in the size of labelled data.
+
+        Parameters
+        ----------
+        interval_seconds : int, optional
+            How often the retraining should occur, in seconds. If this is None,
+            the retraining only happens once, then returns (this is suitable)
+            if you want the retraining schedule to be maintained e.g. by a cron
+            job). The default is 60 seconds.
+        interval_n_labels : int, optional
+            How many new data points need to have been labelled in between runs
+            in order for the re-training to occur.
+        shuffle_prop : float
+            What proportion of the data should be randomly sampled on each re-
+            training run.
+        max_runs : float, int
+            How many orchestration runs to do at most. By default infinite.
+
+        Returns
+        -------
+        None
+        """
+        if interval_seconds is None:
+            self._run_orchestration(
+                interval_n_labels=interval_n_labels,
+                shuffle_prop=shuffle_prop,
+            )
+        else:
+            runs = 0
+            while runs < max_runs:
+                runs += self._run_orchestration(
+                    interval_n_labels=interval_n_labels,
+                    shuffle_prop=shuffle_prop,
+                )
+                time.sleep(interval_seconds)
+
+    def _run_orchestration(
+        self,
+        interval_n_labels: int = 0,
+        shuffle_prop: float = 0.1,
+    ) -> bool:
+
+        first_orchestration = not hasattr(self, "_last_n_labelled")
+
+        if first_orchestration:
+            self._last_n_labelled = 0
+
+        n_new_labels = self.queue._labelled_count() - self._last_n_labelled
+        if n_new_labels >= interval_n_labels:
+            self._last_n_labelled += n_new_labels
+            self.shuffle_prop = shuffle_prop
+            self.retrain()  # type: ignore
+            print(self.model_performance.value)  # type: ignore
+            return True
+        else:
+            return False
