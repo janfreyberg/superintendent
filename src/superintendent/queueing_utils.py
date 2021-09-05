@@ -20,12 +20,12 @@ def features_to_array(features: list):
 
     if len(features) > 0:
         if all(isinstance(feature, pd.Series) for feature in features):
-            features = pd.DataFrame(features)
+            return pd.DataFrame(features)
             # features = pd.concat([item.to_frame().T for item in features])
         elif all(isinstance(feature, pd.DataFrame) for feature in features):
-            features = pd.concat(features)
+            return pd.concat(features)
         elif all(isinstance(feature, np.ndarray) for feature in features):
-            features = np.stack(features)
+            return np.stack(features)
 
     return features
 

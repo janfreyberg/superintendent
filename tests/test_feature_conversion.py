@@ -1,34 +1,29 @@
-import pytest  # noqa
-
 import numpy as np
 import pandas as pd
-
-from hypothesis import given, settings
-from hypothesis.strategies import (
-    booleans,
-    floats,
-    integers,
-    lists,
-    tuples,
-    one_of,
-    sampled_from,
-    text,
-    composite,
-)
-from hypothesis.extra.pandas import data_frames, column, range_indexes
+import pytest  # noqa
+from hypothesis import HealthCheck, given, settings
 from hypothesis.extra.numpy import (
     arrays,
-    scalar_dtypes,
-    unsigned_integer_dtypes,
     datetime64_dtypes,
     floating_dtypes,
     integer_dtypes,
+    scalar_dtypes,
+    unsigned_integer_dtypes,
+)
+from hypothesis.extra.pandas import column, data_frames, range_indexes
+from hypothesis.strategies import (
+    booleans,
+    composite,
+    floats,
+    integers,
+    lists,
+    one_of,
+    sampled_from,
+    text,
+    tuples,
 )
 
-from hypothesis import HealthCheck
-
 from superintendent.queueing_utils import features_to_array
-
 
 guaranteed_dtypes = one_of(
     scalar_dtypes(),
@@ -85,8 +80,7 @@ def test_list_round_trip(inp):
     inp=arrays(
         guaranteed_dtypes,
         tuples(
-            integers(min_value=1, max_value=50),
-            integers(min_value=1, max_value=50),
+            integers(min_value=1, max_value=50), integers(min_value=1, max_value=50)
         ),
     )
 )

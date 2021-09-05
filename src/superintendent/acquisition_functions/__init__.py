@@ -1,7 +1,8 @@
 """
 Functions to prioritise labelling data points (to drive active learning).
 """
-from typing import Dict, Callable
+from typing import Callable, Dict
+
 import numpy as np
 import scipy.stats
 
@@ -54,8 +55,7 @@ def margin(probabilities: np.ndarray) -> np.ndarray:
         classifies as a different label.
     """
     margin = (
-        np.sort(probabilities, axis=1)[:, -1]
-        - np.sort(probabilities, axis=1)[:, -2]
+        np.sort(probabilities, axis=1)[:, -1] - np.sort(probabilities, axis=1)[:, -2]
     )
     return margin
 

@@ -3,11 +3,12 @@ import os.path
 from collections import Counter, OrderedDict
 from contextlib import contextmanager
 
+import hypothesis.extra.numpy as np_strategies
 import numpy as np
 import pandas as pd
 import pytest
-from hypothesis import HealthCheck, given, settings, assume
-import hypothesis.extra.numpy as np_strategies
+import sqlalchemy as sa
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.extra.pandas import column, data_frames
 from hypothesis.strategies import (
     booleans,
@@ -19,10 +20,9 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
+from sqlmodel import Session
 
 from superintendent.db_queue import DatabaseQueue, SuperintendentData
-from sqlmodel import Session
-import sqlalchemy as sa
 
 guaranteed_dtypes = one_of(
     np_strategies.scalar_dtypes(),
@@ -125,8 +125,7 @@ def test_enqueue_dataframe(inputs):
     inputs=np_strategies.arrays(
         guaranteed_dtypes,
         tuples(
-            integers(min_value=1, max_value=50),
-            integers(min_value=1, max_value=50),
+            integers(min_value=1, max_value=50), integers(min_value=1, max_value=50)
         ),
     )
 )
@@ -151,8 +150,7 @@ def test_enqueue_array(inputs):
 
 @settings(deadline=None)
 @given(
-    inputs=lists(one_of(booleans(), floats(), integers(), text())),
-    labels=lists(text()),
+    inputs=lists(one_of(booleans(), floats(), integers(), text())), labels=lists(text())
 )
 def test_enqueue_with_labels(inputs, labels):
 
@@ -356,9 +354,9 @@ def test_dropping():
     with q_context() as q:
         q.enqueue(["a", "b"])
 
-        assert sa.inspect(q.engine).has_table("superintendent_data")
+        assert sa.inspect(q.engine).has_table("superintendentdata")
         # test that it doesn't drop if sure=False
         q.drop_table()
-        assert sa.inspect(q.engine).has_table("superintendent_data")
+        assert sa.inspect(q.engine).has_table("superintendentdata")
         q.drop_table(sure=True)
-        assert not sa.inspect(q.engine).has_table("superintendent_data")
+        assert not sa.inspect(q.engine).has_table("superintendentdata")

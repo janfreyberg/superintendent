@@ -1,18 +1,19 @@
 """Base class to inherit from."""
 
-from collections import OrderedDict, defaultdict
-from typing import Any, Callable, Optional
-from contextlib import contextmanager
 import time
 import warnings
+from collections import OrderedDict, defaultdict
+from contextlib import contextmanager
+from typing import Any, Callable, Dict, Optional
+
+import codetiming
 import ipywidgets as widgets
 import numpy as np
 import sklearn.model_selection
 from sklearn.base import BaseEstimator
-import codetiming
 
-from ._compatibility import ignore_widget_on_submit_warning
 from . import acquisition_functions
+from ._compatibility import ignore_widget_on_submit_warning
 from .db_queue import DatabaseQueue
 
 
@@ -103,7 +104,9 @@ class Superintendent(widgets.VBox):
             self.queue.enqueue(features, labels)
 
         self.progressbar = widgets.FloatProgress(max=1, description="Progress:")
-        self.timers = defaultdict(lambda: codetiming.Timer(logger=None))
+        self.timers: Dict[str, codetiming.Timer] = defaultdict(
+            lambda: codetiming.Timer(logger=None)
+        )
 
         self.model = model
         self.eval_method = eval_method
@@ -139,10 +142,7 @@ class Superintendent(widgets.VBox):
             [
                 widgets.HBox(
                     [self.progressbar],
-                    layout=widgets.Layout(
-                        width="50%",
-                        justify_content="space-between",
-                    ),
+                    layout=widgets.Layout(width="50%", justify_content="space-between"),
                 ),
                 widgets.HBox(
                     [self.retrain_button, self.model_performance],
@@ -240,10 +240,7 @@ class Superintendent(widgets.VBox):
             layout=widgets.Layout(padding="0 10%"),
         )
         if timer.last > 0.5:
-            self.top_bar.children[0].children = [
-                self.progressbar,
-                message_widget,
-            ]
+            self.top_bar.children[0].children = [self.progressbar, message_widget]
         try:
             with timer:
                 yield
@@ -256,10 +253,7 @@ class Superintendent(widgets.VBox):
         message = widgets.Box(
             (widgets.HTML(value="<h1>Finished labelling 🎉!"),),
             layout=widgets.Layout(
-                justify_content="center",
-                padding="2.5% 0",
-                display="flex",
-                width="100%",
+                justify_content="center", padding="2.5% 0", display="flex", width="100%"
             ),
         )
         self.children = [self.progressbar, message]
@@ -314,11 +308,7 @@ class Superintendent(widgets.VBox):
                 else:
                     performance = np.mean(
                         sklearn.model_selection.cross_val_score(
-                            self.model,
-                            labelled_X,
-                            labelled_y,
-                            cv=3,
-                            error_score=np.nan,
+                            self.model, labelled_X, labelled_y, cv=3, error_score=np.nan
                         )
                     )
             except ValueError as e:
@@ -388,22 +378,18 @@ class Superintendent(widgets.VBox):
         """
         if interval_seconds is None:
             self._run_orchestration(
-                interval_n_labels=interval_n_labels,
-                shuffle_prop=shuffle_prop,
+                interval_n_labels=interval_n_labels, shuffle_prop=shuffle_prop
             )
         else:
             runs = 0
             while runs < max_runs:
                 runs += self._run_orchestration(
-                    interval_n_labels=interval_n_labels,
-                    shuffle_prop=shuffle_prop,
+                    interval_n_labels=interval_n_labels, shuffle_prop=shuffle_prop
                 )
                 time.sleep(interval_seconds)
 
     def _run_orchestration(
-        self,
-        interval_n_labels: int = 0,
-        shuffle_prop: float = 0.1,
+        self, interval_n_labels: int = 0, shuffle_prop: float = 0.1
     ) -> bool:
 
         first_orchestration = not hasattr(self, "_last_n_labelled")

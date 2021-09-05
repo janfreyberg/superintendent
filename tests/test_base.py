@@ -1,13 +1,14 @@
 import time
 from unittest import mock
-import numpy as np
 
-import pytest
-from sqlmodel import select
-from superintendent.db_queue import SuperintendentData
-from superintendent.base import Superintendent
 import ipywidgets as widgets
+import numpy as np
+import pytest
 from sklearn.linear_model import LogisticRegression
+from sqlmodel import select
+
+from superintendent.base import Superintendent
+from superintendent.db_queue import SuperintendentData
 
 # # pytestmark = pytest.mark.skip
 
@@ -164,8 +165,7 @@ def test_no_training_only_one_class():
     labelling_widget = MinimalInputWidget()
     logistic_regression = LogisticRegression()
     widget = Superintendent(
-        labelling_widget=labelling_widget,
-        model=logistic_regression,
+        labelling_widget=labelling_widget, model=logistic_regression
     )
     feats = np.random.rand(100, 2)
     widget.add_features(feats)
@@ -181,8 +181,7 @@ def test_no_eval_when_not_enough_labels_per_class():
     labelling_widget = MinimalInputWidget()
     logistic_regression = LogisticRegression()
     widget = Superintendent(
-        labelling_widget=labelling_widget,
-        model=logistic_regression,
+        labelling_widget=labelling_widget, model=logistic_regression
     )
     feats = np.random.rand(100, 2)
     widget.add_features(feats)
