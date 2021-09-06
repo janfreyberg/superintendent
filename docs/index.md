@@ -7,15 +7,13 @@
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
 ![Python versions](https://img.shields.io/badge/python-3.5%2B-blue.svg)
 
-Superintendent provides two things: it allows you to interactively label your
-data, and it allows you to do this labelling "actively", i.e. with a
-statistical or machine learning model supporting you.
+Practical data labelling and active learning in Jupyter notebooks.
 
-`superintendent` is a set of `ipywidget`-based interactive labelling tools for
-your data. It allows you to flexibly label all kinds of data.
-
-It also allows you to combine your data-labelling task with a statistical or
-machine learning model to enable quick and practical active learning.
+Superintendent is a library that is intendet to manage your labelling
+workflow in Jupyter notebooks. It provides an easy way to go through your
+dataset and label it, potentially with a statistical or machine learning model
+supporting you. This process, known as "active learning", can help you label
+the most valuable data points sooner.
 
 ```{toctree}
 ---

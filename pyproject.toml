@@ -44,7 +44,10 @@ requires = [
 ]
 
 [tool.flit.metadata.requires-extra]
-dev = ["jupyterlab>=1.1", "rope"]
+dev = [
+    "jupyterlab>=3.0",
+    "rope",
+]
 test = [
     "isort>=4.3.21",
     "pytest>=4.1",

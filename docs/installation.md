@@ -7,22 +7,23 @@ The simplest way to install superintendent is to use pip:
 pip install superintendent
 ```
 
-This will install superintendet alongside all the other libraries that you will
-need to run it.
+You will also want to install libraries that provide the UI for labelling. One
+that was specifically designed to work with superintendent is
+[`ipyannotations`](https://ipyannotations.readthedocs.io/en/latest/).
 
-If you want to use keyboard shortcuts, then you will also need to configure the
-`ipyevents` notebook extension. Simply run on the command line:
-
-```
-jupyter nbextension enable --py --sys-prefix ipyevents
-```
-
-If you also want to run the examples, you need three additional packages:
-`requests`, `bs4` and `wordcloud`. You can install them via pip by running
-`pip install superintendent[examples]`.
+If you also want to run the examples, you need some dependencies not installed
+by default. You can get them by installing the additional `dependencies`
+example `pip install superintendent[examples]`.
 
 ## Development installation
 
-If you want to contribute to `superintendent`, you will need to install the
-test dependencies as well. You can do so with
-`pip install superintendent[tests,examples]`.
+If you want to contribute to superintendent, you can get an editable
+installation of the library by using `flit`, the package used for developing
+superintendent:
+
+```
+git clone https://github.com/janfreyberg/superintendent.git
+cd superintendent
+pip install flit
+flit install --symlink --deps all
+```
