@@ -90,7 +90,8 @@ class Superintendent(widgets.VBox):
         self.labelling_widget = labelling_widget
 
         self.labelling_widget.on_submit(self._apply_annotation)
-        self.labelling_widget.on_undo(self._undo)
+        if hasattr(self.labelling_widget, "on_undo"):
+            self.labelling_widget.on_undo(self._undo)
 
         self.queue = queue or DatabaseQueue(connection_string=database_url)
         if self.queue.url == "sqlite:///:memory:":
