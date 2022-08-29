@@ -47,8 +47,8 @@ extensions = [
     # "jupyter_sphinx.execute",
     "sphinx_automodapi.automodapi",
     "nbsphinx",
-    "m2r",
     "sphinx.ext.napoleon",
+    "myst_parser",
 ]
 
 numpydoc_show_class_members = False
