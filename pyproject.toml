@@ -55,7 +55,7 @@ test = [
     "types-cachetools",
 ]
 doc = [
-    "sphinx>=2.0,<3.0",
+    "sphinx>=4.0",
     "requests>=2.21",
     "html5lib>=1.0",
     "bs4>=0.0.1",
