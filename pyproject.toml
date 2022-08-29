@@ -68,3 +68,7 @@ doc = [
     "ipyannotations>=0.5.1"
 ]
 examples = ["requests>=2.21", "html5lib>=1.0", "bs4>=0.0.1", "wordcloud>=1.5"]
+
+[tool.flit.sdist]
+include = ["src/", "tests/"]
+exclude = ["docs/"]
