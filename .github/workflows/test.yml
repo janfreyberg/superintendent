@@ -62,4 +62,4 @@ jobs:
         flit install --symlink --extras test,examples
     - name: Run notebooks
       run: |
-        find docs -name '*.ipynb' -maxdepth 2 | xargs jupyter nbconvert --to notebook --execute
+        find docs -maxdepth 2 -name '*.ipynb' | xargs jupyter nbconvert --to notebook --execute
