@@ -151,6 +151,7 @@ class Superintendent(widgets.VBox):
                 ),
             ]
         )
+        self.children = [self.top_bar, self.labelling_widget]
         if isinstance(worker_id, str):
             self.queue.worker_id = worker_id
         elif worker_id:
@@ -258,11 +259,15 @@ class Superintendent(widgets.VBox):
             ),
         )
         self.children = [self.progressbar, message]
+    
+    @property
+    def labels(self):
+        _, _, labels = self.queue.list_all()
+        return labels
 
     @property
     def new_labels(self):
-        _, _, labels = self.queue.list_all()
-        return labels
+        return self.labels
 
     def retrain(self, button=None):
         """Re-train the classifier you passed when creating this widget.
