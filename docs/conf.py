@@ -46,7 +46,6 @@ extensions = [
     "jupyter_sphinx",
     "sphinx_automodapi.automodapi",
     "nbsphinx",
-    "m2r",
     "sphinx.ext.napoleon",
     "myst_parser",
 ]
@@ -168,6 +167,7 @@ nbsphinx_prolog = """
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {"https://docs.python.org/": None}
+
 
 def setup(app):
     app.add_css_file("css/custom.css")
