@@ -26,7 +26,7 @@ jobs:
     - name: Set testing variables
       if: "!startsWith(github.event.ref, 'refs/tags')"
       run: |
-        testver src/superintendent/_version.py
+        testver src/superintendent
         echo "FLIT_INDEX_URL=https://test.pypi.org/legacy/" >> $GITHUB_ENV
         echo "FLIT_PASSWORD=${{ secrets.test_pypi_secret }}" >> $GITHUB_ENV
     - name: Build
