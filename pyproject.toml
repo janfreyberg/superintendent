@@ -55,16 +55,20 @@ test = [
     "types-cachetools",
 ]
 doc = [
-    "sphinx>=2.0,<3.0",
+    "sphinx>=4.0",
     "requests>=2.21",
     "html5lib>=1.0",
     "bs4>=0.0.1",
     "wordcloud>=1.5",
-    "m2r>=0.2.1",
+    "myst-parser>=0.18.0",
     "sphinx_rtd_theme>=0.4.3",
     "jupyter-sphinx>=0.1.4",
     "nbsphinx>=0.4.2",
     "sphinx-automodapi",
-    "ipyannotations>=0.2.0"
+    "ipyannotations>=0.5.1"
 ]
 examples = ["requests>=2.21", "html5lib>=1.0", "bs4>=0.0.1", "wordcloud>=1.5"]
+
+[tool.flit.sdist]
+include = ["src/", "tests/"]
+exclude = ["docs/"]

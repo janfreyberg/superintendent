@@ -1,8 +1,3 @@
-.. superintendent documentation master file, created by
-   sphinx-quickstart on Sun Feb 18 13:13:36 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 # Superintendent documentation
 
 [![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
@@ -22,24 +17,30 @@ your data. It allows you to flexibly label all kinds of data.
 It also allows you to combine your data-labelling task with a statistical or
 machine learning model to enable quick and practical active learning.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+```{toctree}
+---
+maxdepth: 2
+caption: "Contents:"
+---
 
-   Installation <installation.md>
-   Labelling data <labelling-data.ipynb>
-   Active learning <active-learning.ipynb>
-   Distributed labelling <distributing-labelling.ipynb>
-   modularity
-   API Reference <api/index.md>
+Installation <installation.md>
+Labelling data <labelling-data.ipynb>
+Active learning <active-learning.ipynb>
+Distributed labelling <distributing-labelling.ipynb>
+modularity
+API Reference <api/index.md>
+```
 
-.. toctree::
-   :caption: Example gallery:
+```{toctree}
+---
+caption: "Example gallery:"
+---
 
-   Examples <examples/index.md>
+Examples <examples/index.md>
+```
 
 ## Indices and tables
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+* {ref}`genindex`
+* {ref}`modindex`
+* {ref}`search`

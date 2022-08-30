@@ -18,5 +18,6 @@ scratchpad.ipynb
 .mypy_cache/
 .coverage*
 postgres-data/
+*.db
 
 .DS_Store
