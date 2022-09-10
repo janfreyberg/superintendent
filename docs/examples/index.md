@@ -7,9 +7,8 @@ These examples showcase how superintendent can work for you.
 maxdepth: 2
 caption: "Examples:"
 ---
-Labelling text <labelling-text.ipynb>
-Labelling images <labelling-images.ipynb>
-Labelling images with active learning <labelling-images-actively.ipynb>
+Labelling text <labelling-text>
+Labelling images <labelling-images>
 Custom pre-processing steps as part of superintendent <preprocessing-data.ipynb>
 docker-compose/index.md
 ```   
