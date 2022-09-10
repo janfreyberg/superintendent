@@ -24,8 +24,7 @@ caption: "Contents:"
 Installation <installation.md>
 Labelling data <labelling-data.md>
 Active learning <active-learning.md>
-Distributed labelling <distributing-labelling.ipynb>
-modularity
+Distributed labelling <distributing-labelling.md>
 API Reference <api/index.md>
 ```
 
