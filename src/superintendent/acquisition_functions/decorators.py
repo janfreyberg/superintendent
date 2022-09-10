@@ -2,6 +2,11 @@ import functools
 import typing
 
 import numpy as np
+from merge_args import merge_args
+
+
+def _dummy_fn(shuffle_prop: float = 0.1):
+    ...
 
 
 def _shuffle_subset(data: np.ndarray, shuffle_prop: float) -> np.ndarray:
@@ -25,6 +30,7 @@ def _get_indices(scores: np.ndarray, shuffle_prop: float) -> np.ndarray:
 def _is_multioutput(
     probabilities: typing.Union[np.ndarray, typing.List[np.ndarray]]
 ):
+    """Test whether predictions are for single- or multi-output"""
     if isinstance(probabilities, list) and (
         isinstance(probabilities[0], np.ndarray)
         and probabilities[0].ndim == 2
@@ -35,6 +41,69 @@ def _is_multioutput(
         return False
     else:
         raise ValueError("Unknown probability format.")
+
+
+def _is_distribution(probabilities: np.ndarray):
+    """
+    Test whether predictions are single value per outcome, or a distribution.
+    """
+    if _is_multioutput(probabilities):
+        return _is_distribution(probabilities[0])
+    else:
+        return probabilities.ndim > 2
+
+
+multioutput_reduce_fns = {"mean": np.mean, "max": np.max}
+
+
+def require_point_estimate(fn: typing.Callable) -> typing.Callable:
+    """
+    Mark a function as requiring point estimate predictions.
+
+    If distributions of predictions get passed, the distribution will be
+    averaged first.
+
+    Parameters
+    ----------
+    fn
+        The function to decorate.
+    """
+
+    @functools.wraps(fn)
+    def wrapped_fn(probabilities: np.ndarray, *args, **kwargs):
+        if _is_distribution(probabilities):
+            if _is_multioutput(probabilities):
+                probabilities = [p.mean(axis=-1) for p in probabilities]
+            else:
+                probabilities = probabilities.mean(axis=-1)
+        return fn(probabilities, *args, **kwargs)
+
+    return wrapped_fn
+
+
+def require_distribution(fn: typing.Callable) -> typing.Callable:
+    """
+    Mark a function as requiring distribution output.
+
+    If non-distribution output gets passed, this function will now raise an
+    error.
+
+    Parameters
+    ----------
+    fn
+        The function to decorate.
+    """
+
+    @functools.wraps(fn)
+    def wrapped_fn(probabilities, *args, **kwargs):
+        if not _is_distribution(probabilities):
+            raise ValueError(
+                f"Acquisition function {fn.__name__} "
+                "requires distribution output."
+            )
+        return fn(probabilities, *args, **kwargs)
+
+    return wrapped_fn
 
 
 def make_acquisition_function(handle_multioutput="mean"):
@@ -50,23 +119,34 @@ def make_acquisition_function(handle_multioutput="mean"):
         comes as a list of binary classifier outputs.
     """
 
-    def decorator(fn):
-        if handle_multioutput == "mean":  # define fn where scores are avgd
+    def decorator(
+        fn: typing.Callable[[np.ndarray], np.ndarray]
+    ) -> typing.Callable[[np.ndarray, float], np.ndarray]:
+        if handle_multioutput is not None:
 
+            reduce_fn = multioutput_reduce_fns[handle_multioutput]
+
+            @merge_args(_dummy_fn)
             @functools.wraps(fn)
-            def wrapped_fn(probabilities, shuffle_prop=0.1):
+            def wrapped_fn(
+                probabilities: np.ndarray, shuffle_prop: float = 0.1
+            ):
                 if _is_multioutput(probabilities):
                     scores = np.stack(
-                        tuple(fn(prob) for prob in probabilities), axis=0
-                    ).mean(axis=0)
+                        tuple(fn(prob) for prob in probabilities), axis=0,
+                    )
+                    scores = reduce_fn(scores, axis=0)
                 else:
                     scores = fn(probabilities)
                 return _get_indices(scores, shuffle_prop)
 
         else:  # raise error if list is passed
 
+            @merge_args(_dummy_fn)
             @functools.wraps(fn)
-            def wrapped_fn(probabilities, shuffle_prop=0.1):
+            def wrapped_fn(
+                probabilities: np.ndarray, shuffle_prop: float = 0.1
+            ):
                 if _is_multioutput(probabilities):
                     raise ValueError(
                         "The input probabilities is a list of arrays, "

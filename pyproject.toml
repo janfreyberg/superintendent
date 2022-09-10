@@ -14,6 +14,7 @@ description-file = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
     "Framework :: Jupyter",
@@ -34,7 +35,8 @@ requires = [
     "psycopg2-binary>=2.8",
     "flask>=1.0",
     "ipyevents>=0.6.0",
-    "typing-extensions"
+    "typing-extensions",
+    "merge-args",
 ]
 
 [tool.flit.metadata.requires-extra]
