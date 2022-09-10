@@ -56,6 +56,7 @@ nbsphinx_requirejs_path = ""
 nbsphinx_widgets_path = ""
 
 numpydoc_show_class_members = False
+autoclass_content = 'both'
 # autosummary_generate = False
 
 # Add any paths that contain templates here, relative to this directory.
@@ -172,7 +173,12 @@ nbsphinx_prolog = """
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {
+    "python":
+        ("https://docs.python.org/3", None),
+    "ipyannotations":
+        ("https://ipyannotations.readthedocs.io/en/latest/", None),
+}
 
 
 def setup(app):
