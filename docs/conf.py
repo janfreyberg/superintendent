@@ -51,6 +51,10 @@ extensions = [
     "myst_parser",
 ]
 
+# Set the nbsphinx JS path to empty to avoid showing twice of the widgets
+nbsphinx_requirejs_path = ""
+nbsphinx_widgets_path = ""
+
 numpydoc_show_class_members = False
 # autosummary_generate = False
 
