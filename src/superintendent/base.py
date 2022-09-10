@@ -259,7 +259,7 @@ class Superintendent(widgets.VBox):
             ),
         )
         self.children = [self.progressbar, message]
-    
+
     @property
     def labels(self):
         _, _, labels = self.queue.list_all()

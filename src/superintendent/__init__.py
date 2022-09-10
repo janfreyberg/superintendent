@@ -1,6 +1,4 @@
 """Interactive machine learning supervision."""
-from superintendent.base import Superintendent
-
 import time
 import warnings
 from collections import OrderedDict, defaultdict
@@ -19,7 +17,7 @@ from .db_queue import DatabaseQueue
 
 
 __all__ = ["Superintendent"]
-__version__ = "0.5.3"
+__version__ = "0.6.0.rc1"
 
 
 class Superintendent(widgets.VBox):
