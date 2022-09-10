@@ -1,4 +1,4 @@
-# Preprocessing data
+# Custom pre-processing steps as part of superintendent
 
 Data often needs to be passed to the display widget and the model in different
 formats. For displaying, since the display widget is custom and supplied by the

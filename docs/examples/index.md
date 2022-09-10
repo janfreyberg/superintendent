@@ -9,8 +9,8 @@ caption: "Examples:"
 ---
 Labelling text <labelling-text>
 Labelling images <labelling-images>
-Custom pre-processing steps as part of superintendent <preprocessing-data.ipynb>
-docker-compose/index.md
+preprocessing-data
+docker-compose/index
 ```   
 
 <br />
