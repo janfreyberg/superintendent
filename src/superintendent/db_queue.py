@@ -12,7 +12,7 @@ import numpy as np
 import sqlalchemy as sa
 from sqlmodel import Field, Session, SQLModel, col, create_engine
 
-from .distributed.serialization import data_dumps, data_loads
+from .serialization import data_dumps, data_loads
 from .queueing_utils import features_to_array, iter_features
 
 

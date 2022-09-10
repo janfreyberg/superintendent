@@ -7,7 +7,7 @@ import pytest
 from sklearn.linear_model import LogisticRegression
 from sqlmodel import select
 
-from superintendent.base import Superintendent
+from superintendent import Superintendent
 from superintendent.db_queue import SuperintendentData
 
 # # pytestmark = pytest.mark.skip

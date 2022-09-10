@@ -17,7 +17,7 @@ from hypothesis.strategies import (
     text,
 )
 
-from superintendent.distributed.serialization import data_dumps, data_loads
+from superintendent.serialization import data_dumps, data_loads
 
 guaranteed_dtypes = (
     np_strategies.boolean_dtypes()
