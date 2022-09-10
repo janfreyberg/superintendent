@@ -28,7 +28,8 @@ continuing.
 Here, we are going to start four machines, and the configuration file will
 look like this:
 
-.. literalinclude:: docker-compose.yml
+```{literalinclude} docker-compose.yml
+```
 
 Let's go through each item.
 
@@ -39,9 +40,10 @@ Let's go through each item.
   are providing a "volume", meaning all the data inside the database is stored
   in the directory `./postgres-data`.
 
-  .. note::
+  ```{note}
      The username / password here are just as examples; and you should use some
      randomly generated strings for safety.
+  ```
 
 - adminer
 
@@ -67,27 +69,27 @@ Let's go through each item.
 ## The notebook (our webapp)
 
 To make superintendent read from the database and display the images (we'll be
-using MNIST again...), we need one notebook with the following content:
+using MNIST again...), we need one file with the following content:
 
 `./voila-interface.ipynb`
 
 ```python
 import os
-from superintendent.distributed import ClassLabeller
+from superintendent import Superintendent
+from ipyannotations.images import ClassLabeller
+from IPython import display
 
 user = os.getenv('POSTGRES_USER', "superintendent")
 pw = os.getenv('POSTGRES_PASSWORD', "superintendent")
 db_name = os.getenv('POSTGRES_DB', "labelling")
 
-db_string = f"postgresql+psycopg2://{user}:{pw}@db:5432/{db_name}"
+db_string = f"postgresql+psycopg2://{user}:{pw}@localhost:5432/{db_name}"
 
-widget = ClassLabeller.from_images(
-    canvas_size=(200, 200),
-    connection_string=db_string,
-    options=range(10),
-    display_preprocess=lambda x: x.reshape(8, 8),
-)
-widget
+input_widget = ClassLabeller(options=list(range(1, 10)) + [0], image_size=(100, 100))
+
+widget = Superintendent(database_url=db_string, labelling_widget=input_widget)
+
+display.display(widget)
 ```
 
 ## The orchestration script (our machine learning model)
@@ -96,27 +98,31 @@ This script will look *very* similar to our notebook, but we will additionally
 create our machine learning model. This time, we will use a neural network,
 using keras.
 
-.. literalinclude:: orchestrate.py
+```{literalinclude} orchestrate.py
+```
 
-.. note::
+```{note}
    In this case, we are adding the data for the images straight into the
    data-base. This means the ``numpy`` array is serialised using JSON. If your
    images are large, this can be too much for the database. Instead, it's
    recommended that you only place the *filepaths* of the image into the
    database.
+```
 
 ## Dockerfiles
 
 Then, we need to actually build two docker images: one that will run the web
 application, and one that will run the orchestratrion:
 
-### Web application (voila) dockerfile
+### Web application (voila) dockerfile
 
-.. literalinclude:: voila.Dockerfile
+```{literalinclude} voila.Dockerfile
+```
 
 ### Model training dockerfile
 
-.. literalinclude:: tensorflow.Dockerfile
+```{literalinclude} tensorflow.Dockerfile
+```
 
 ## Starting
 

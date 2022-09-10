@@ -6,7 +6,8 @@ from sklearn.datasets import load_digits
 from sklearn.model_selection import cross_val_score
 from tensorflow import keras
 
-from superintendent.distributed import ClassLabeller
+from superintendent import Superintendent
+from ipyannotations.images import ClassLabeller
 
 
 def keras_model():
@@ -56,8 +57,11 @@ db_string = f"postgresql+psycopg2://{user}:{pw}@db:5432/{db_name}"
 wait_for_db(db_string)
 
 # create our superintendent class:
-widget = ClassLabeller(
-    connection_string=db_string,
+input_widget = ClassLabeller(options=list(range(1, 10)) + [0], image_size=(100, 100))
+
+widget = Superintendent(
+    database_url=db_string,
+    labelling_widget=input_widget,
     model=model,
     eval_method=evaluate_keras,
     acquisition_function="entropy",
@@ -71,4 +75,5 @@ if len(widget.queue) == 0:
     widget.add_features(digit_data)
 
 if __name__ == "__main__":
+    # run orchestration every 30 seconds
     widget.orchestrate(interval_seconds=30, interval_n_labels=10)
