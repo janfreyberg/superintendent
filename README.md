@@ -1,7 +1,7 @@
 # Superintendent
 
 [![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
-![Unit tests and linting](https://github.com/janfreyberg/superintendent/workflows/Unit%20tests%20and%20linting/badge.svg)
+[![Tests](https://github.com/janfreyberg/superintendent/actions/workflows/test.yml/badge.svg)](https://github.com/janfreyberg/superintendent/actions/workflows/test.yml)
 [![Documentation Status](https://readthedocs.org/projects/superintendent/badge/?version=latest)](https://superintendent.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
