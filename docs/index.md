@@ -1,5 +1,7 @@
 # Superintendent documentation
 
+_Practical data labelling and active learning in Jupyter notebooks._
+
 [![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
 [![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -7,15 +9,39 @@
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
 ![Python versions](https://img.shields.io/badge/python-3.5%2B-blue.svg)
 
-Superintendent provides two things: it allows you to interactively label your
-data, and it allows you to do this labelling "actively", i.e. with a
-statistical or machine learning model supporting you.
-
 `superintendent` is a set of `ipywidget`-based interactive labelling tools for
 your data. It allows you to flexibly label all kinds of data.
 
 It also allows you to combine your data-labelling task with a statistical or
 machine learning model to enable quick and practical active learning.
+
+For example:
+
+```{jupyter-execute}
+:hide-code:
+
+from superintendent import Superintendent
+from ipyannotations.images import ClassLabeller
+from sklearn.datasets import load_digits
+import ipywidgets
+
+input_widget = ClassLabeller(options=list(range(1, 10)) + [0], image_size=(100, 100))
+input_data = load_digits().data.reshape(-1, 8, 8)
+data_labeller = Superintendent(
+    features=input_data,
+    labelling_widget=input_widget,
+)
+
+data_labeller
+```
+
+```{note}
+Throughout the documentation, all widgets will look like they do in a jupyter
+notebook. However, clicking on any of the buttons will not trigger anything.
+This is because there is no running backend. To really get a feel for how it
+all works, you should install superintendent and try it out in a notebook.
+```
+
 
 ```{toctree}
 ---
@@ -24,10 +50,9 @@ caption: "Contents:"
 ---
 
 Installation <installation.md>
-Labelling data <labelling-data.ipynb>
-Active learning <active-learning.ipynb>
-Distributed labelling <distributing-labelling.ipynb>
-modularity
+Labelling data <labelling-data.md>
+Active learning <active-learning.md>
+Distributed labelling <distributing-labelling.md>
 API Reference <api/index.md>
 ```
 

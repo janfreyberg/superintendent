@@ -9,8 +9,9 @@ services:
       POSTGRES_USER: superintendent
       POSTGRES_PASSWORD: superintendent
       POSTGRES_DB: labelling
+      PGDATA: /data/postgres
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - "postgres-data:/data/postgres"
     ports:
       - 5432:5432
 
@@ -41,6 +42,9 @@ services:
       - "db"
     environment: *environment
     volumes:
-      - ./voila-interface.ipynb:/home/anaconda/app/app.ipynb
+      - ./voila-interface.py:/home/anaconda/app/app.py
     ports:
       - 8866:8866
+
+volumes:
+  postgres-data:

@@ -1,4 +1,4 @@
-name: Package build and publishing
+name: Build
 
 on:
   push:
@@ -7,8 +7,6 @@ on:
     tags:
       - '*'
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
@@ -28,7 +26,7 @@ jobs:
     - name: Set testing variables
       if: "!startsWith(github.event.ref, 'refs/tags')"
       run: |
-        testver src/superintendent/
+        testver src/superintendent
         echo "FLIT_INDEX_URL=https://test.pypi.org/legacy/" >> $GITHUB_ENV
         echo "FLIT_PASSWORD=${{ secrets.test_pypi_secret }}" >> $GITHUB_ENV
     - name: Build
