@@ -12,8 +12,8 @@ superintendent:
 
 ## Acquisition functions
 
-During active learning, acquisition functions rank unlabelled data points using
-model output.
+During active learning, acquisition functions rank unlabelled data points based
+on model predictions.
 
 In superintendent, the functions accept a 2- or 3-dimensional array of shape
 `n_samples, n_classes, (n_outputs)`.

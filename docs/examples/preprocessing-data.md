@@ -10,8 +10,7 @@ in which you re-format your data so that the model you build can process it.
 
 However, to make life slightly easier, superintendent also provides an optional
 `model_preprocess` argument. This function needs to accept two arguments - x
-and y - which are the features and annotations. It needs to return two values,
-as well.
+and y - which are the features and annotations. It needs to return two values.
 
 To demonstrate all components of pre-processing, we will write a tool to annotate
 emails, and classify them.
