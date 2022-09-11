@@ -2,12 +2,12 @@
 
 _Practical data labelling and active learning in Jupyter notebooks._
 
-[![Build Status](https://travis-ci.org/janfreyberg/superintendent.svg?branch=master)](https://travis-ci.org/janfreyberg/superintendent)
 [![PyPI version](https://badge.fury.io/py/superintendent.svg)](https://badge.fury.io/py/superintendent)
+[![Tests](https://github.com/janfreyberg/superintendent/actions/workflows/test.yml/badge.svg)](https://github.com/janfreyberg/superintendent/actions/workflows/test.yml)
+[![Documentation Status](https://readthedocs.org/projects/superintendent/badge/?version=latest)](https://superintendent.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master?filepath=examples.ipynb)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/janfreyberg/superintendent/master)
 [![Coverage Status](https://coveralls.io/repos/github/janfreyberg/superintendent/badge.svg)](https://coveralls.io/github/janfreyberg/superintendent)
-![Python versions](https://img.shields.io/badge/python-3.5%2B-blue.svg)
 
 `superintendent` is a set of `ipywidget`-based interactive labelling tools for
 your data. It allows you to flexibly label all kinds of data.
