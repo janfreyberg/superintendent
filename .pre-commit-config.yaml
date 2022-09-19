@@ -1,20 +1,20 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
 repos:
--   repo: https://github.com/pycqa/isort
-    rev: '5.8.0'  # Use the revision sha / tag you want to point at
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.4.0
     hooks:
-    - id: isort
-      exclude: ^tests/
--   repo: https://github.com/psf/black
-    rev: '21.8b0'
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: flake8
+        files: 'src/superintendent/.*\.py'
+-   repo: https://github.com/ambv/black
+    rev: 22.6.0
     hooks:
     - id: black
-      language_version: python3
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 'v2.3.0'
-    hooks:
-    - id: flake8
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: ''
+    rev: 'v0.971'  # Use the sha / tag you want to point at
     hooks:
-    - id: mypy
-      exclude: ^tests/|docs
+    -   id: mypy
+        files: 'src/superintendent/.*\.py'
