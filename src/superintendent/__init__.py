@@ -284,7 +284,7 @@ class Superintendent(widgets.VBox):
             raise ValueError("No model to retrain.")
 
         with self._render_hold_message("Retraining..."):
-            _, labelled_X, labelled_y = self.queue.list_completed()
+            _, labelled_X, labelled_y = self.queue.list_labelled()
 
             if len(labelled_y) < 4:
                 self.model_performance.value = "Not enough labels to retrain."
@@ -326,7 +326,7 @@ class Superintendent(widgets.VBox):
             self.model_performance.value = f"Score: {performance:.3f}"
 
             if self.acquisition_function is not None:
-                ids, unlabelled_X = self.queue.list_uncompleted()
+                ids, unlabelled_X = self.queue.list_unlabelled()
 
                 if self.model_preprocess is not None:
                     unlabelled_X, _ = self.model_preprocess(unlabelled_X, None)
@@ -402,7 +402,7 @@ class Superintendent(widgets.VBox):
         if first_orchestration:
             self._last_n_labelled = 0
 
-        n_new_labels = self.queue._labelled_count() - self._last_n_labelled
+        n_new_labels = self.queue._label_count() - self._last_n_labelled
         if n_new_labels >= interval_n_labels:
             self._last_n_labelled += n_new_labels
             self.shuffle_prop = shuffle_prop

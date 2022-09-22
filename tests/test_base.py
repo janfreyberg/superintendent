@@ -6,9 +6,10 @@ import numpy as np
 import pytest
 from sklearn.linear_model import LogisticRegression
 from sqlmodel import select
+from hypothesis import HealthCheck, assume, given, settings, strategies
 
 from superintendent import Superintendent
-from superintendent.db_queue import SuperintendentData
+from superintendent.db_queue import SuperintendentData, SuperintendentAnnotation
 
 # # pytestmark = pytest.mark.skip
 
@@ -207,19 +208,21 @@ def test_worker_id_default():
         widget._apply_annotation("b")
 
     with widget.queue.session() as session:
-        statement = select(SuperintendentData)
+        statement = select(SuperintendentAnnotation)
         result = session.exec(statement).all()
         ids = [res.worker_id for res in result]
+    assert all(len(id_) > 0 for id_ in ids)
     assert all(id_1 == id_2 for id_1 in ids for id_2 in ids)
 
 
-def test_worker_id_query():
+@given(id_=strategies.text(min_size=1))
+def test_worker_id_query(id_):
     labelling_widget = MinimalInputWidget()
     widget = Superintendent(
         labelling_widget=labelling_widget, worker_id=True, features=np.random.rand(8, 2)
     )
     assert labelling_widget not in widget.children
-    widget.children[1].children[0].value = "test_id"
+    widget.children[1].children[0].value = id_
     widget._set_worker_id(widget.children[1].children[0])
     assert labelling_widget in widget.children
 
@@ -227,15 +230,16 @@ def test_worker_id_query():
         widget._apply_annotation("a")
 
     with widget.queue.session() as session:
-        statement = select(SuperintendentData)
+        statement = select(SuperintendentAnnotation)
         result = session.exec(statement).all()
         ids = [res.worker_id for res in result]
-    assert all(id_1 == "test_id" for id_1 in ids)
+    assert all(id_1 == id_ for id_1 in ids)
 
 
-def test_worker_id_set():
+@given(id_=strategies.text(min_size=1))
+def test_worker_id_set(id_):
     labelling_widget = MinimalInputWidget()
-    widget = Superintendent(labelling_widget=labelling_widget, worker_id="test_id")
+    widget = Superintendent(labelling_widget=labelling_widget, worker_id=id_)
     feats = np.random.rand(8, 2)
     widget.add_features(feats)
     # establish two classes:
@@ -245,10 +249,10 @@ def test_worker_id_set():
         widget._apply_annotation("b")
 
     with widget.queue.session() as session:
-        statement = select(SuperintendentData)
+        statement = select(SuperintendentAnnotation)
         result = session.exec(statement).all()
         ids = [res.worker_id for res in result]
-    assert all(id_1 == "test_id" for id_1 in ids)
+    assert all(id_1 == id_ for id_1 in ids)
 
 
 def test_orchestration_single_run():

@@ -4,27 +4,45 @@ import uuid
 import warnings
 from collections import deque, namedtuple
 from contextlib import contextmanager
-from datetime import datetime, timedelta
-from typing import Any, Deque, Dict, Optional, Sequence, Tuple
+from datetime import datetime
+from typing import Any, Deque, Dict, Optional, Sequence, Tuple, List
 
-import cachetools
 import numpy as np
 import sqlalchemy as sa
-from sqlmodel import Field, Session, SQLModel, col, create_engine
+from sqlmodel import (
+    Field,
+    Session,
+    SQLModel,
+    col,
+    create_engine,
+    select,
+    Relationship,
+)
 
 from .serialization import data_dumps, data_loads
 from .queueing_utils import features_to_array, iter_features
 
 
 class SuperintendentData(SQLModel, table=True):  # type: ignore
-    id: Optional[int] = Field(default=None, primary_key=True)  # noqa: A003
-    input: str  # noqa: A003
+    __tablename__ = "superintendent_data"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    data_json: str
     output: Optional[str]
-    inserted_at: datetime
     priority: Optional[int] = Field(default=None, index=True)
     popped_at: Optional[datetime]
-    completed_at: Optional[datetime]
+
+    annotations: List["SuperintendentAnnotation"] = Relationship(back_populates="data")
+
+
+class SuperintendentAnnotation(SQLModel, table=True):  # type: ignore
+    __tablename__ = "superintendent_annotation"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    data_id: Optional[int] = Field(default=None, foreign_key="superintendent_data.id")
+    annotation: str
+    created_at: datetime = Field(default_factory=datetime.now)
     worker_id: Optional[str]
+
+    data: SuperintendentData = Relationship(back_populates="annotations")
 
 
 deserialisers = {"json": data_loads}
@@ -55,6 +73,7 @@ class DatabaseQueue:
         connection_string: str = "sqlite:///:memory:",
         storage_type: str = "json",
         worker_id: Optional[str] = None,
+        annotations_per_datapoint: int = 1,
     ):
         """Instantiate queue for distributed labelling.
 
@@ -75,6 +94,7 @@ class DatabaseQueue:
         self.url = connection_string
         self.engine = create_engine(connection_string)
         self._popped: Deque[int] = deque([])
+        self.annotations_per_datapoint = annotations_per_datapoint
 
         SuperintendentData.metadata.create_all(self.engine)
 
@@ -111,7 +131,6 @@ class DatabaseQueue:
 
     @contextmanager
     def session(self):
-        session = sa.orm.Session(bind=self.engine)
         with Session(self.engine) as session:
             try:
                 yield session
@@ -133,25 +152,25 @@ class DatabaseQueue:
             The priorities of this label in relation to all other priorities in
             the queue.
         """
-        now = datetime.now()
         features = iter_features(features)
         if priorities is None:
             priorities = itertools.cycle([None])
         if labels is None:
             labels = itertools.cycle([None])
 
-        with self.session() as session:
-
+        with Session(self.engine) as session:
             for feature, label, priority in zip(features, labels, priorities):
-                session.add(
-                    SuperintendentData(
-                        input=self.serialiser(feature),
-                        inserted_at=now,
-                        priority=priority,
-                        output=self.serialiser(label),
-                        completed_at=None if label is None else now,
-                    )
+                data = SuperintendentData(
+                    data_json=self.serialiser(feature),
+                    priority=priority,
                 )
+                session.add(data)
+                if label is not None:
+                    annotation = SuperintendentAnnotation(
+                        data=data, annotation=self.serialiser(label)
+                    )
+                    session.add(annotation)
+            session.commit()
 
     def reorder(self, priorities: Dict[int, int]) -> None:
         """Re-assign priorities for labels.
@@ -177,15 +196,14 @@ class DatabaseQueue:
         priorities : Sequence[int]
             The priorities.
         """
-
-        with self.session() as session:
-            rows = (
-                session.query(SuperintendentData)
-                .filter(col(SuperintendentData.id).in_(ids))
-                .all()
+        # TODO: This is an inefficient updating method and should be optimised.
+        with Session(self.engine) as session:
+            query = select(SuperintendentData).where(
+                col(SuperintendentData.id).in_(ids)
             )
-            for row in rows:
-                row.priority = priorities[ids.index(row.id)]
+            for data in session.exec(query):
+                data.priority = priorities[ids.index(data.id)]
+            session.commit()
 
     def pop(self, timeout: int = 600) -> Tuple[int, Any]:
         """Pop an item from the queue.
@@ -209,39 +227,41 @@ class DatabaseQueue:
             The datapoint.
         """
 
-        with self.session() as session:
-            row = (
-                session.query(SuperintendentData)
-                .filter(
-                    col(SuperintendentData.completed_at).is_(None)
-                    & (
-                        col(SuperintendentData.popped_at).is_(None)
-                        | (
-                            col(SuperintendentData.popped_at)
-                            < (datetime.now() - timedelta(seconds=timeout))
-                        )
-                    )
+        with Session(self.engine) as session:
+            expression = (
+                select(SuperintendentData)
+                .join(SuperintendentAnnotation, isouter=True)
+                .where(col(SuperintendentData.id).not_in(self._popped))
+                .group_by(SuperintendentData.id)
+                .having(
+                    sa.func.count(SuperintendentAnnotation.id)
+                    < self.annotations_per_datapoint
                 )
-                .order_by(SuperintendentData.priority)
-                .first()
+                .order_by(
+                    sa.nulls_first(SuperintendentData.popped_at),
+                    SuperintendentData.priority,
+                )
             )
-            if row is None:
+            row = session.exec(expression).first()
+            if row is None or row.id is None:
                 raise IndexError("Trying to pop off an empty queue.")
             else:
                 row.popped_at = datetime.now()
+                session.commit()
+                session.refresh(row)
                 id_ = row.id
-                value = row.input
+                value = self.deserialiser(row.data_json)
                 self._popped.append(id_)
-                return id_, self.deserialiser(value)
+                return id_, value
 
-    def submit(self, id_: int, label: str) -> None:
+    def submit(self, id_: int, annotation: str) -> None:
         """Submit a label for a data point.
 
         Parameters
         ----------
         id_ : int
             The ID for which you are submitting a data point.
-        label : str
+        annotation : str
             The label you want to submit.
 
         Raises
@@ -251,12 +271,19 @@ class DatabaseQueue:
         """
 
         if id_ not in self._popped:
-            raise ValueError("This item was not popped; you cannot label it.")
-        with self.session() as session:
-            row = session.query(SuperintendentData).filter_by(id=id_).first()
-            row.output = self.serialiser(label)
-            row.worker_id = self.worker_id
-            row.completed_at = datetime.now()
+            raise ValueError(
+                "This item was not popped by this session."
+                "You can not submit a label for it."
+            )
+        with Session(self.engine) as session:
+            session.add(
+                SuperintendentAnnotation(
+                    annotation=self.serialiser(annotation),
+                    data_id=id_,
+                    worker_id=self.worker_id,
+                )
+            )
+            session.commit()
 
     def undo(self) -> None:
         """Undo the most recently popped item."""
@@ -266,119 +293,101 @@ class DatabaseQueue:
             self._reset(id_)
 
     def _reset(self, id_: int) -> None:
-        with self.session() as session:
-            row = session.query(SuperintendentData).filter_by(id=id_).first()
-            row.output = None
-            row.completed_at = None
-            row.popped_at = None
+        with Session(self.engine) as session:
+            # remove the popped_at time from the data
+            data_query = select(SuperintendentData).where(SuperintendentData.id == id_)
+            data = session.exec(data_query).one()
+            if data.popped_at:
+                data.popped_at = None
+            session.add(data)
+            # remove the annotation we (maybe) provided
+            annotation_query = (
+                select(SuperintendentAnnotation)
+                .where(
+                    SuperintendentAnnotation.data_id == id_,
+                    SuperintendentAnnotation.worker_id == self.worker_id,
+                )
+                .order_by(sa.desc(SuperintendentAnnotation.created_at))
+            )
+            annotation = session.exec(annotation_query).first()
+            if annotation:
+                session.delete(annotation)
+            session.commit()
 
     def list_all(self):
-        with self.session() as session:
-            objects = session.query(SuperintendentData).all()
+        ids, x, y = [], [], []
+        with Session(self.engine) as session:
+            query = select(SuperintendentData, SuperintendentAnnotation).join(
+                SuperintendentAnnotation, isouter=True
+            )
+            for data, annotation in session.exec(query):
+                ids.append(data.id)
+                x.append(self.deserialiser(data.data_json))
+                if annotation is not None:
+                    y.append(self.deserialiser(annotation.annotation))
+                else:
+                    y.append(None)
+        return ids, features_to_array(x), features_to_array(y)
 
-            items = [
-                self.item(
-                    id=obj.id,
-                    data=self.deserialiser(obj.input),
-                    label=self.deserialiser(obj.output),
-                )
-                for obj in objects
-            ]
-        ids = [item.id for item in items]
-        x = features_to_array([item.data for item in items])
-        y = [item.label for item in items]
-
-        return ids, x, y
-
-    def list_completed(self):
+    def list_labelled(self):
         """Return the completed ids, features, and labels."""
-        with self.session() as session:
-            objects = (
-                session.query(SuperintendentData)
-                .filter(
-                    SuperintendentData.output.isnot(None)
-                    & SuperintendentData.completed_at.isnot(None)
-                )
-                .all()
+        ids, x, y = [], [], []
+        with Session(self.engine) as session:
+            query = select(SuperintendentData, SuperintendentAnnotation).join(
+                SuperintendentAnnotation, isouter=False
             )
+            for data, annotation in session.exec(query):
+                ids.append(data.id)
+                x.append(self.deserialiser(data.data_json))
+                y.append(self.deserialiser(annotation.annotation))
 
-            items = [
-                self.item(
-                    id=obj.id,
-                    data=self.deserialiser(obj.input),
-                    label=self.deserialiser(obj.output),
-                )
-                for obj in objects
-            ]
+        return ids, features_to_array(x), features_to_array(y)
 
-        ids = [item.id for item in items]
-        x = features_to_array([item.data for item in items])
-        y = [item.label for item in items]
-
-        return ids, x, y
-
-    def list_uncompleted(self):
+    def list_unlabelled(self):
         ids, x = [], []
-        with self.session() as session:
-            objects = (
-                session.query(SuperintendentData)
-                .filter(SuperintendentData.output.is_(None))
-                .all()
+        with Session(self.engine) as session:
+            query = (
+                select(SuperintendentData)
+                .join(SuperintendentAnnotation, isouter=True)
+                .where(SuperintendentAnnotation.id == None)  # noqa: E711
             )
-            for obj in objects:
-                ids.append(obj.id)
-                x.append(self.deserialiser(obj.input))
+            for data in session.exec(query):
+                ids.append(data.id)
+                x.append(self.deserialiser(data.data_json))
 
             return ids, features_to_array(x)
 
-    def drop_table(self, sure=False):  # noqa: D001
+    def drop_table(self, sure: bool = False):  # noqa: D001
         if sure:
             SuperintendentData.metadata.drop_all(bind=self.engine)
         else:
             warnings.warn("To actually drop the table, pass sure=True")
 
-    def _unlabelled_count(self) -> int:
-        with self.session() as session:
-            return (
-                session.query(SuperintendentData)
-                .filter(
-                    col(SuperintendentData.completed_at).is_(None)
-                    & col(SuperintendentData.output).is_(None)
-                )
-                .count()
-            )
+    def _label_count(self) -> int:
+        with Session(self.engine) as session:
+            query = select(sa.func.count(SuperintendentAnnotation.id))  # type: ignore
+            return session.exec(query).one()
 
-    def _labelled_count(self) -> int:
-        with self.session() as session:
-            return (
-                session.query(SuperintendentData)
-                .filter(
-                    col(SuperintendentData.completed_at).isnot(None)
-                    & col(SuperintendentData.output).isnot(None)
-                )
-                .count()
-            )
-
-    @cachetools.cached(cachetools.TTLCache(1, 60))
-    def _total_count(self):
-        with self.session() as session:
-            n_total = session.query(SuperintendentData).count()
-        return n_total
+    def _total_count(self) -> int:
+        with Session(self.engine) as session:
+            query = select(sa.func.count(SuperintendentData.id))  # type: ignore
+            return session.exec(query).one()
 
     @property
     def progress(self) -> float:
         try:
-            return self._labelled_count() / self._total_count()
+            return (
+                self._label_count()
+                / self._total_count()
+                / self.annotations_per_datapoint
+            )
         except ZeroDivisionError:
             return np.nan
 
     def __len__(self):
-        with self.session() as session:
-            return (
-                session.query(SuperintendentData)
-                .filter(SuperintendentData.completed_at.is_(None))
-                .count()
-            )
+        return (
+            self._total_count() * self.annotations_per_datapoint - self._label_count()
+        )
 
     def __iter__(self):
         return self

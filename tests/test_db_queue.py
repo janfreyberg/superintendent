@@ -113,10 +113,10 @@ def test_enqueue_dataframe(inputs):
             assert isinstance(X, pd.DataFrame)
             # assert it re-constructs a df on list uncomplete
             q.submit(ids[0], "hello")
-            ids, X = q.list_uncompleted()
+            ids, X = q.list_unlabelled()
             assert isinstance(X, pd.DataFrame)
             # assert it re-constructs a df on list uncomplete
-            ids, X, y = q.list_completed()
+            ids, X, y = q.list_labelled()
             assert isinstance(X, pd.DataFrame)
 
 
@@ -200,7 +200,7 @@ def test_submitting_text(label1, label2):
         id_, val = q.pop()
         q.submit(id_, label2)
         assert q.progress == 1
-        assert q.list_completed()[-1] == [label1, label2]
+        assert q.list_labelled()[-1] == [label1, label2]
 
 
 @settings(deadline=None)
@@ -210,7 +210,7 @@ def test_submitting_list(label1, label2):
         q.enqueue([1])
         id_, _ = q.pop()
         q.submit(id_, [label1, label2])
-        assert q.list_completed()[-1] == [[label1, label2]]
+        assert q.list_labelled()[-1] == [[label1, label2]]
 
 
 def test_reordering():
@@ -294,7 +294,7 @@ def test_list_completed(inputs, labels):
 
             popped_ids.append(id_)
 
-        ids, x, y = q.list_completed()
+        ids, x, y = q.list_labelled()
 
         assert len(ids) == 5
         # test that the popped IDs and completed IDs have the same members
@@ -317,10 +317,9 @@ def test_list_uncompleted(inputs, labels):
 
             popped_ids.append(id_)
 
-        ids, x = q.list_uncompleted()
+        ids, x = q.list_unlabelled()
 
         assert len(ids) == (len(inputs) - 5)
-        assert q._unlabelled_count() == (len(inputs) - 5)
         # test that the popped IDs and completed IDs don't share members
         assert pytest.helpers.no_shared_members(ids, popped_ids)
         # assert pytest.helpers.same_elements(x, [inputs[idx] for idx in id])
@@ -354,9 +353,12 @@ def test_dropping():
     with q_context() as q:
         q.enqueue(["a", "b"])
 
-        assert sa.inspect(q.engine).has_table("superintendentdata")
+        assert sa.inspect(q.engine).has_table("superintendent_data")
+        assert sa.inspect(q.engine).has_table("superintendent_annotation")
         # test that it doesn't drop if sure=False
         q.drop_table()
-        assert sa.inspect(q.engine).has_table("superintendentdata")
+        assert sa.inspect(q.engine).has_table("superintendent_data")
+        assert sa.inspect(q.engine).has_table("superintendent_annotation")
         q.drop_table(sure=True)
-        assert not sa.inspect(q.engine).has_table("superintendentdata")
+        assert not sa.inspect(q.engine).has_table("superintendent_data")
+        assert not sa.inspect(q.engine).has_table("superintendent_annotation")
